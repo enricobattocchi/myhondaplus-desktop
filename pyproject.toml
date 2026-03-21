@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "myhondaplus-desktop"
+version = "0.1.0"
+description = "Desktop GUI for Honda Connect Europe (My Honda+)"
+requires-python = ">=3.11"
+license = "GPL-3.0-or-later"
+dependencies = [
+    "pymyhondaplus",
+    "PyQt6>=6.6",
+]
+
+[project.gui-scripts]
+myhondaplus-desktop = "myhondaplus_desktop.app:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
