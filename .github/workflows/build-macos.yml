@@ -1,0 +1,62 @@
+name: Build macOS app
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: |
+          pip install pymyhondaplus PyQt6 pyinstaller
+
+      - name: Install app
+        run: pip install -e .
+
+      - name: Build .app bundle
+        run: |
+          pyinstaller \
+            --name "My Honda+ for desktop" \
+            --windowed \
+            --icon src/myhondaplus_desktop/icons/app-icon.svg \
+            --add-data "src/myhondaplus_desktop/icons:myhondaplus_desktop/icons" \
+            --hidden-import myhondaplus_desktop \
+            --hidden-import myhondaplus_desktop.widgets \
+            --hidden-import myhondaplus_desktop.widgets.login \
+            --hidden-import myhondaplus_desktop.widgets.dashboard \
+            --hidden-import myhondaplus_desktop.widgets.commands \
+            --hidden-import myhondaplus_desktop.widgets.status_bar \
+            --hidden-import pymyhondaplus \
+            --hidden-import pymyhondaplus.storage \
+            src/myhondaplus_desktop/__main__.py
+
+      - name: Create DMG
+        run: |
+          brew install create-dmg
+          create-dmg \
+            --volname "My Honda+ for desktop" \
+            --window-size 600 400 \
+            --icon-size 128 \
+            --icon "My Honda+ for desktop.app" 150 200 \
+            --app-drop-link 450 200 \
+            "My Honda+ for desktop.dmg" \
+            "dist/My Honda+ for desktop.app"
+
+      - name: Upload DMG
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-dmg
+          path: "My Honda+ for desktop.dmg"
+
+      - name: Upload app bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-app
+          path: "dist/My Honda+ for desktop.app"
