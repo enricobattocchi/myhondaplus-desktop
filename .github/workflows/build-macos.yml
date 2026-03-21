@@ -15,7 +15,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install pymyhondaplus PyQt6 pyinstaller cairosvg Pillow
+          brew install librsvg
+          pip install pymyhondaplus PyQt6 pyinstaller
 
       - name: Install app
         run: pip install -e .
@@ -23,7 +24,7 @@ jobs:
       - name: Convert SVG icon to ICNS
         run: |
           mkdir -p icon.iconset
-          cairosvg src/myhondaplus_desktop/icons/app-icon.svg -o icon_1024.png -W 1024 -H 1024
+          rsvg-convert -w 1024 -h 1024 src/myhondaplus_desktop/icons/app-icon.svg -o icon_1024.png
           sips -z 16 16     icon_1024.png --out icon.iconset/icon_16x16.png
           sips -z 32 32     icon_1024.png --out icon.iconset/icon_16x16@2x.png
           sips -z 32 32     icon_1024.png --out icon.iconset/icon_32x32.png
