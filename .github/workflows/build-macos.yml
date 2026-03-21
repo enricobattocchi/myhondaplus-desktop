@@ -37,6 +37,13 @@ jobs:
           cp icon_1024.png  icon.iconset/icon_512x512@2x.png
           iconutil -c icns icon.iconset -o app-icon.icns
 
+      - name: Create launcher script
+        run: |
+          cat > launcher.py << 'PYEOF'
+          from myhondaplus_desktop.app import main
+          main()
+          PYEOF
+
       - name: Build .app bundle
         run: |
           pyinstaller \
@@ -45,14 +52,19 @@ jobs:
             --icon app-icon.icns \
             --add-data "src/myhondaplus_desktop/icons:myhondaplus_desktop/icons" \
             --hidden-import myhondaplus_desktop \
+            --hidden-import myhondaplus_desktop.icons \
+            --hidden-import myhondaplus_desktop.config \
+            --hidden-import myhondaplus_desktop.workers \
             --hidden-import myhondaplus_desktop.widgets \
             --hidden-import myhondaplus_desktop.widgets.login \
             --hidden-import myhondaplus_desktop.widgets.dashboard \
             --hidden-import myhondaplus_desktop.widgets.commands \
             --hidden-import myhondaplus_desktop.widgets.status_bar \
             --hidden-import pymyhondaplus \
+            --hidden-import pymyhondaplus.api \
+            --hidden-import pymyhondaplus.auth \
             --hidden-import pymyhondaplus.storage \
-            src/myhondaplus_desktop/__main__.py
+            launcher.py
 
       - name: Create DMG
         run: |
