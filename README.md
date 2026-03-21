@@ -14,6 +14,8 @@ Built with PyQt6 and [pymyhondaplus](https://github.com/enricobattocchi/pymyhond
 - **Remote commands** — lock/unlock, climate on/off/settings, charge on/off/limit, horn + lights, locate
 - **Multi-vehicle support** — dropdown with vehicle name and plate number, auto-populated from your account
 - **Persistent login** — tokens saved locally, auto-refresh on expiry
+- **Lucide SVG icons** — crisp, theme-aware icons throughout the UI
+- **Light/dark theme** — follows system theme, or force with `--light` / `--dark`
 
 ## Supported vehicles
 
@@ -40,6 +42,10 @@ python -m venv .venv
 myhondaplus-desktop
 # or
 python -m myhondaplus_desktop
+
+# Force light or dark theme
+myhondaplus-desktop --light
+myhondaplus-desktop --dark
 ```
 
 ### First login
@@ -58,8 +64,8 @@ Commands that could be disruptive (unlock, horn + lights) require confirmation b
 ## Requirements
 
 - Python 3.11+
-- PyQt6
-- [pymyhondaplus](https://pypi.org/project/pymyhondaplus/)
+- PyQt6 >= 6.6
+- [pymyhondaplus](https://pypi.org/project/pymyhondaplus/) >= 1.1.0
 
 ## Disclaimer
 
