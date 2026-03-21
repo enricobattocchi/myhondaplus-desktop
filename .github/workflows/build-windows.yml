@@ -76,5 +76,5 @@ jobs:
       - name: Upload app
         uses: actions/upload-artifact@v4
         with:
-          name: windows-app
+          name: My Honda+ for desktop (Windows)
           path: "dist/My Honda+ for desktop"

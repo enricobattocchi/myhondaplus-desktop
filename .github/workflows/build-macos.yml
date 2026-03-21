@@ -66,8 +66,20 @@ jobs:
             --hidden-import pymyhondaplus.storage \
             launcher.py
 
-      - name: Upload app bundle
+      - name: Create DMG
+        run: |
+          brew install create-dmg
+          create-dmg \
+            --volname "My Honda+ for desktop" \
+            --window-size 600 400 \
+            --icon-size 128 \
+            --icon "My Honda+ for desktop.app" 150 200 \
+            --app-drop-link 450 200 \
+            "My Honda+ for desktop.dmg" \
+            "dist/My Honda+ for desktop.app"
+
+      - name: Upload DMG
         uses: actions/upload-artifact@v4
         with:
-          name: macos-app
-          path: "dist/My Honda+ for desktop.app"
+          name: My Honda+ for desktop (macOS)
+          path: "My Honda+ for desktop.dmg"
