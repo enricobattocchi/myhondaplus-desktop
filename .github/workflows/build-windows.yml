@@ -1,0 +1,84 @@
+name: Build Windows app
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: |
+          pip install pymyhondaplus PyQt6 pyinstaller Pillow
+
+      - name: Install app
+        run: pip install -e .
+
+      - name: Convert SVG icon to ICO
+        run: |
+          python -c "
+          from PIL import Image
+          from PyQt6.QtSvg import QSvgRenderer
+          from PyQt6.QtGui import QImage, QPainter
+          from PyQt6.QtCore import QSize, Qt
+          from PyQt6.QtWidgets import QApplication
+          import sys
+          app = QApplication(sys.argv)
+          renderer = QSvgRenderer('src/myhondaplus_desktop/icons/app-icon.svg')
+          sizes = [16, 32, 48, 64, 128, 256]
+          images = []
+          for sz in sizes:
+              img = QImage(QSize(sz, sz), QImage.Format.Format_ARGB32)
+              img.fill(Qt.GlobalColor.transparent)
+              painter = QPainter(img)
+              renderer.render(painter)
+              painter.end()
+              img.save(f'icon_{sz}.png')
+              images.append(Image.open(f'icon_{sz}.png'))
+          images[0].save('app-icon.ico', format='ICO', sizes=[(s, s) for s in sizes], append_images=images[1:])
+          "
+
+      - name: Create launcher script
+        run: |
+          @"
+          from myhondaplus_desktop.app import main
+          main()
+          "@ | Out-File -Encoding utf8 launcher.py
+
+      - name: Build .exe
+        run: |
+          pyinstaller `
+            --name "My Honda+ for desktop" `
+            --windowed `
+            --icon app-icon.ico `
+            --add-data "src/myhondaplus_desktop/icons;myhondaplus_desktop/icons" `
+            --hidden-import myhondaplus_desktop `
+            --hidden-import myhondaplus_desktop.icons `
+            --hidden-import myhondaplus_desktop.config `
+            --hidden-import myhondaplus_desktop.workers `
+            --hidden-import myhondaplus_desktop.widgets `
+            --hidden-import myhondaplus_desktop.widgets.login `
+            --hidden-import myhondaplus_desktop.widgets.dashboard `
+            --hidden-import myhondaplus_desktop.widgets.commands `
+            --hidden-import myhondaplus_desktop.widgets.status_bar `
+            --hidden-import pymyhondaplus `
+            --hidden-import pymyhondaplus.api `
+            --hidden-import pymyhondaplus.auth `
+            --hidden-import pymyhondaplus.storage `
+            launcher.py
+
+      - name: Create ZIP
+        run: |
+          Compress-Archive -Path "dist/My Honda+ for desktop" -DestinationPath "My Honda+ for desktop-windows.zip"
+
+      - name: Upload ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-zip
+          path: "My Honda+ for desktop-windows.zip"
