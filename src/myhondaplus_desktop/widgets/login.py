@@ -25,17 +25,26 @@ class LoginWidget(QWidget):
         layout = QVBoxLayout(self)
         layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        title = QLabel("My Honda+")
+        from ..icons import pixmap
+        icon_lbl = QLabel()
+        icon_lbl.setPixmap(pixmap("app-icon", 96))
+        icon_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(icon_lbl)
+
+        title = QLabel("My Honda+ for desktop")
         title.setStyleSheet("font-size: 24px; font-weight: bold; margin-bottom: 20px;")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(title)
 
-        form = QFormLayout()
-        form.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow)
+        # Fixed-width container for form
+        form_container = QWidget()
+        form_container.setFixedWidth(350)
+        form_layout = QVBoxLayout(form_container)
+        form_layout.setContentsMargins(0, 0, 0, 0)
 
+        form = QFormLayout()
         self._email = QLineEdit()
         self._email.setPlaceholderText("user@example.com")
-        self._email.setMinimumWidth(300)
         form.addRow("Email:", self._email)
 
         self._password = QLineEdit()
@@ -43,17 +52,19 @@ class LoginWidget(QWidget):
         self._password.setPlaceholderText("Password")
         form.addRow("Password:", self._password)
 
-        layout.addLayout(form)
+        form_layout.addLayout(form)
 
         self._login_btn = QPushButton("Login")
         self._login_btn.setMinimumHeight(36)
         self._login_btn.clicked.connect(self._do_login)
-        layout.addWidget(self._login_btn)
+        form_layout.addWidget(self._login_btn)
 
         self._status = QLabel("")
         self._status.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._status.setWordWrap(True)
-        layout.addWidget(self._status)
+        form_layout.addWidget(self._status)
+
+        layout.addWidget(form_container, alignment=Qt.AlignmentFlag.AlignCenter)
 
         self._password.returnPressed.connect(self._do_login)
 

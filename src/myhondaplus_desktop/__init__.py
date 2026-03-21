@@ -1,1 +1,1 @@
-"""My Honda+ Desktop — GUI for Honda Connect Europe."""
+"""My Honda+ for desktop — unofficial GUI for Honda Connect Europe."""

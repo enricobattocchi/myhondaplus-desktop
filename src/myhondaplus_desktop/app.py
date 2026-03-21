@@ -181,9 +181,8 @@ class MainScreen(QWidget):
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("My Honda+")
+        self.setWindowTitle("My Honda+ for desktop")
         self._settings = Settings.load()
-        self.resize(self._settings.window_width, self._settings.window_height)
 
         self._storage = get_storage(DEFAULT_TOKEN_FILE, DEFAULT_DEVICE_KEY_FILE)
         self._api = HondaAPI(storage=self._storage)
@@ -224,9 +223,13 @@ class MainWindow(QMainWindow):
         self._main._api = self._api
         self._stack.setCurrentWidget(self._login)
 
+    def showEvent(self, event):
+        super().showEvent(event)
+        # Lock to the natural size after layout is computed
+        self.adjustSize()
+        self.setFixedSize(self.size())
+
     def closeEvent(self, event):
-        self._settings.window_width = self.width()
-        self._settings.window_height = self.height()
         self._settings.save()
         super().closeEvent(event)
 
@@ -280,7 +283,8 @@ def main():
     if force_theme:
         os.environ.pop("QT_QPA_PLATFORMTHEME", None)
     app = QApplication(sys.argv)
-    app.setApplicationName("My Honda+")
+    app.setApplicationName("My Honda+ for desktop")
+    app.setWindowIcon(icon("app-icon"))
     if force_theme:
         _force_palette(app, force_theme)
     window = MainWindow()

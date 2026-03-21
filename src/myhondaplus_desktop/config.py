@@ -14,8 +14,6 @@ SETTINGS_FILE = SETTINGS_DIR / "settings.json"
 @dataclass
 class Settings:
     vin: str = ""
-    window_width: int = 800
-    window_height: int = 600
 
     def save(self):
         SETTINGS_DIR.mkdir(parents=True, exist_ok=True)

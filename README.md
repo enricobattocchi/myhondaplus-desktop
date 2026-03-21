@@ -1,6 +1,6 @@
-# My Honda+ Desktop
+# My Honda+ for desktop
 
-Desktop GUI for Honda Connect Europe (My Honda+). Control and monitor your Honda vehicle from your computer.
+Unofficial desktop GUI for Honda Connect Europe (My Honda+). Control and monitor your Honda vehicle from your computer.
 
 Built with PyQt6 and [pymyhondaplus](https://github.com/enricobattocchi/pymyhondaplus).
 
