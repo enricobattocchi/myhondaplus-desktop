@@ -6,6 +6,7 @@ from PyQt6.QtWidgets import (
 )
 
 from ..workers import CommandWorker
+from ..icons import icon
 from pymyhondaplus import HondaAPI
 
 
@@ -81,20 +82,20 @@ class CommandsWidget(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
 
         buttons = [
-            ("\U0001F512 Lock", self._lock),
-            ("\U0001F513 Unlock", self._unlock),
-            ("\u2744 Climate On", self._climate_start),
-            ("\u26D4 Climate Off", self._climate_stop),
-            ("\u2699 Climate Settings", self._climate_settings),
-            ("\u26A1 Charge On", self._charge_start),
-            ("\u23F9 Charge Off", self._charge_stop),
-            ("\U0001F50B Charge Limit", self._charge_limit),
-            ("\U0001F4EF Horn + Lights", self._horn_lights),
-            ("\U0001F4CD Locate", self._locate),
+            ("lock", "Lock", self._lock),
+            ("lock-open", "Unlock", self._unlock),
+            ("snowflake", "Climate On", self._climate_start),
+            ("circle-stop", "Climate Off", self._climate_stop),
+            ("settings", "Climate Settings", self._climate_settings),
+            ("zap", "Charge On", self._charge_start),
+            ("square", "Charge Off", self._charge_stop),
+            ("battery-charging", "Charge Limit", self._charge_limit),
+            ("megaphone", "Horn + Lights", self._horn_lights),
+            ("map-pin", "Locate", self._locate),
         ]
 
-        for label, handler in buttons:
-            btn = QPushButton(label)
+        for icon_name, label, handler in buttons:
+            btn = QPushButton(icon(icon_name), label)
             btn.clicked.connect(handler)
             layout.addWidget(btn)
 

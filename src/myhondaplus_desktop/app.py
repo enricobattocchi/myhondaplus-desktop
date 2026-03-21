@@ -13,6 +13,7 @@ from pymyhondaplus import HondaAPI, HondaAuth
 from pymyhondaplus.api import DEFAULT_TOKEN_FILE
 
 from .config import Settings
+from .icons import icon
 from .workers import DashboardWorker, VehiclesWorker
 from .widgets.login import LoginWidget
 from .widgets.dashboard import DashboardWidget
@@ -44,22 +45,24 @@ class MainScreen(QWidget):
 
         # Top bar
         top = QHBoxLayout()
-        top.addWidget(QLabel("\U0001F697"))
+        car_lbl = QLabel()
+        car_lbl.setPixmap(icon("car").pixmap(20, 20))
+        top.addWidget(car_lbl)
         self._vin_combo = QComboBox()
         self._vin_combo.setMinimumWidth(250)
         self._vin_combo.currentIndexChanged.connect(self._on_vin_changed)
         top.addWidget(self._vin_combo)
         top.addStretch()
 
-        refresh_btn = QPushButton("\U0001F504 Refresh")
+        refresh_btn = QPushButton(icon("refresh-cw"), "Refresh")
         refresh_btn.clicked.connect(lambda: self._load_dashboard(fresh=False))
         top.addWidget(refresh_btn)
 
-        refresh_car_btn = QPushButton("\U0001F697 Refresh from Car")
+        refresh_car_btn = QPushButton(icon("car"), "Refresh from Car")
         refresh_car_btn.clicked.connect(lambda: self._load_dashboard(fresh=True))
         top.addWidget(refresh_car_btn)
 
-        logout_btn = QPushButton("\U0001F6AA Logout")
+        logout_btn = QPushButton(icon("log-out"), "Logout")
         logout_btn.clicked.connect(on_logout)
         top.addWidget(logout_btn)
 
@@ -227,10 +230,58 @@ class MainWindow(QMainWindow):
         super().closeEvent(event)
 
 
+def _force_palette(app: QApplication, mode: str):
+    """Force a light or dark palette regardless of system theme."""
+    from PyQt6.QtGui import QPalette, QColor
+    app.setStyle("Fusion")
+    p = QPalette()
+    if mode == "light":
+        p.setColor(QPalette.ColorRole.Window, QColor(240, 240, 240))
+        p.setColor(QPalette.ColorRole.WindowText, QColor(0, 0, 0))
+        p.setColor(QPalette.ColorRole.Base, QColor(255, 255, 255))
+        p.setColor(QPalette.ColorRole.AlternateBase, QColor(245, 245, 245))
+        p.setColor(QPalette.ColorRole.Text, QColor(0, 0, 0))
+        p.setColor(QPalette.ColorRole.Button, QColor(240, 240, 240))
+        p.setColor(QPalette.ColorRole.ButtonText, QColor(0, 0, 0))
+        p.setColor(QPalette.ColorRole.BrightText, QColor(255, 0, 0))
+        p.setColor(QPalette.ColorRole.Link, QColor(0, 100, 200))
+        p.setColor(QPalette.ColorRole.Highlight, QColor(50, 120, 200))
+        p.setColor(QPalette.ColorRole.HighlightedText, QColor(255, 255, 255))
+        p.setColor(QPalette.ColorRole.ToolTipBase, QColor(255, 255, 220))
+        p.setColor(QPalette.ColorRole.ToolTipText, QColor(0, 0, 0))
+        p.setColor(QPalette.ColorRole.PlaceholderText, QColor(128, 128, 128))
+    else:  # dark
+        p.setColor(QPalette.ColorRole.Window, QColor(45, 45, 45))
+        p.setColor(QPalette.ColorRole.WindowText, QColor(220, 220, 220))
+        p.setColor(QPalette.ColorRole.Base, QColor(30, 30, 30))
+        p.setColor(QPalette.ColorRole.AlternateBase, QColor(50, 50, 50))
+        p.setColor(QPalette.ColorRole.Text, QColor(220, 220, 220))
+        p.setColor(QPalette.ColorRole.Button, QColor(55, 55, 55))
+        p.setColor(QPalette.ColorRole.ButtonText, QColor(220, 220, 220))
+        p.setColor(QPalette.ColorRole.BrightText, QColor(255, 50, 50))
+        p.setColor(QPalette.ColorRole.Link, QColor(80, 160, 255))
+        p.setColor(QPalette.ColorRole.Highlight, QColor(50, 120, 200))
+        p.setColor(QPalette.ColorRole.HighlightedText, QColor(255, 255, 255))
+        p.setColor(QPalette.ColorRole.ToolTipBase, QColor(50, 50, 50))
+        p.setColor(QPalette.ColorRole.ToolTipText, QColor(220, 220, 220))
+        p.setColor(QPalette.ColorRole.PlaceholderText, QColor(128, 128, 128))
+    app.setPalette(p)
+
+
 def main():
+    import os
     logging.basicConfig(level=logging.INFO)
+    force_theme = None
+    if "--light" in sys.argv:
+        force_theme = "light"
+    elif "--dark" in sys.argv:
+        force_theme = "dark"
+    if force_theme:
+        os.environ.pop("QT_QPA_PLATFORMTHEME", None)
     app = QApplication(sys.argv)
     app.setApplicationName("My Honda+")
+    if force_theme:
+        _force_palette(app, force_theme)
     window = MainWindow()
     window.show()
     sys.exit(app.exec())
