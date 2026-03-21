@@ -9,8 +9,9 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt
 
-from pymyhondaplus import HondaAPI, HondaAuth
+from pymyhondaplus import HondaAPI, HondaAuth, get_storage
 from pymyhondaplus.api import DEFAULT_TOKEN_FILE
+from pymyhondaplus.auth import DEFAULT_DEVICE_KEY_FILE
 
 from .config import Settings
 from .icons import icon
@@ -184,13 +185,16 @@ class MainWindow(QMainWindow):
         self._settings = Settings.load()
         self.resize(self._settings.window_width, self._settings.window_height)
 
-        self._api = HondaAPI(token_file=DEFAULT_TOKEN_FILE)
+        self._storage = get_storage(DEFAULT_TOKEN_FILE, DEFAULT_DEVICE_KEY_FILE)
+        self._api = HondaAPI(storage=self._storage)
 
         self._stack = QStackedWidget()
         self.setCentralWidget(self._stack)
 
         # Login screen
-        self._login = LoginWidget(on_login_success=self._on_login_success)
+        self._login = LoginWidget(
+            on_login_success=self._on_login_success,
+            storage=self._storage)
         self._stack.addWidget(self._login)
 
         # Main screen
@@ -215,11 +219,8 @@ class MainWindow(QMainWindow):
         self._main.activate()  # will fetch vehicles and populate dropdown
 
     def _logout(self):
-        import os
-        for path in [DEFAULT_TOKEN_FILE]:
-            if path.exists():
-                os.unlink(path)
-        self._api = HondaAPI(token_file=DEFAULT_TOKEN_FILE)
+        self._storage.clear()
+        self._api = HondaAPI(storage=self._storage)
         self._main._api = self._api
         self._stack.setCurrentWidget(self._login)
 

@@ -5,9 +5,7 @@ import logging
 
 from PyQt6.QtCore import QThread, pyqtSignal
 
-from pymyhondaplus import HondaAPI, HondaAuth, DeviceKey, HondaAPIError, parse_ev_status
-from pymyhondaplus.api import DEFAULT_TOKEN_FILE
-from pymyhondaplus.auth import DEFAULT_DEVICE_KEY_FILE
+from pymyhondaplus import HondaAPI, HondaAuth, DeviceKey, HondaAPIError, parse_ev_status, SecretStorage
 
 logger = logging.getLogger(__name__)
 
@@ -40,12 +38,18 @@ class LoginWorker(QThread):
     progress = pyqtSignal(str)
     device_registration_needed = pyqtSignal()
 
-    def __init__(self, email: str, password: str, locale: str = "it"):
+    def __init__(self, email: str, password: str, storage: SecretStorage,
+                 locale: str = "it"):
         super().__init__()
         self.email = email
         self.password = password
         self.locale = locale
-        self.device_key = DeviceKey(key_file=DEFAULT_DEVICE_KEY_FILE)
+        try:
+            self.device_key = DeviceKey(storage=storage)
+        except (ValueError, Exception):
+            # Corrupted key — clear and generate fresh
+            storage.clear()
+            self.device_key = DeviceKey(storage=storage)
         self.auth = HondaAuth(device_key=self.device_key)
 
     def run(self):
@@ -247,8 +251,7 @@ class VehiclesWorker(QThread):
             vehicles = self.api.get_vehicles()
             # Store in tokens for persistence
             self.api.tokens.vehicles = vehicles
-            if self.api._token_file is not None:
-                self.api.tokens.save(self.api._token_file)
+            self.api._save_tokens()
             self.finished.emit(vehicles)
         except Exception as e:
             logger.exception("Vehicles error")

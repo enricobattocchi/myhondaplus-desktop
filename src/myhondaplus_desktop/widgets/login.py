@@ -9,13 +9,14 @@ from PyQt6.QtCore import Qt
 from ..workers import (
     LoginWorker, DeviceRegistrationWorker, VerifyAndLoginWorker,
 )
-from pymyhondaplus.auth import DEFAULT_DEVICE_KEY_FILE, DeviceKey, HondaAuth
+from pymyhondaplus import SecretStorage
 
 
 class LoginWidget(QWidget):
-    def __init__(self, on_login_success):
+    def __init__(self, on_login_success, storage: SecretStorage):
         super().__init__()
         self._on_login_success = on_login_success
+        self._storage = storage
         self._worker = None
         self._reg_worker = None
         self._verify_worker = None
@@ -66,7 +67,7 @@ class LoginWidget(QWidget):
         self._login_btn.setEnabled(False)
         self._status.setText("Logging in...")
 
-        self._worker = LoginWorker(email, password)
+        self._worker = LoginWorker(email, password, storage=self._storage)
         self._worker.finished.connect(self._on_login_done)
         self._worker.error.connect(self._on_login_error)
         self._worker.progress.connect(self._status.setText)
