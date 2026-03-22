@@ -82,6 +82,11 @@ Commands that could be disruptive (unlock, horn + lights) require confirmation b
 
 - `keyring` — for OS keyring integration (gnome-keyring, KDE Wallet, macOS Keychain). Without it, secrets are encrypted with a machine-derived key.
 
+## Related projects
+
+- [pymyhondaplus](https://github.com/enricobattocchi/pymyhondaplus) — Python client library and CLI for the Honda Connect Europe API
+- [myhondaplus-homeassistant](https://github.com/enricobattocchi/myhondaplus-homeassistant) — Home Assistant integration
+
 ## Disclaimer
 
 This project is **unofficial** and **not affiliated with, endorsed by, or connected to Honda Motor Co., Ltd.** in any way.
