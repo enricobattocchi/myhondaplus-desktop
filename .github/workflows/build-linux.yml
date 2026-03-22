@@ -1,0 +1,100 @@
+name: Build Linux AppImage
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libxcb-cursor0 libxkbcommon0 libfuse2
+
+      - name: Install Python dependencies
+        run: |
+          pip install pymyhondaplus PyQt6 pyinstaller
+
+      - name: Install app
+        run: pip install -e .
+
+      - name: Create launcher script
+        run: |
+          cat > launcher.py << 'PYEOF'
+          from myhondaplus_desktop.app import main
+          main()
+          PYEOF
+
+      - name: Build with PyInstaller
+        run: |
+          pyinstaller \
+            --name "My Honda+ for desktop" \
+            --windowed \
+            --add-data "src/myhondaplus_desktop/icons:myhondaplus_desktop/icons" \
+            --hidden-import myhondaplus_desktop \
+            --hidden-import myhondaplus_desktop.icons \
+            --hidden-import myhondaplus_desktop.config \
+            --hidden-import myhondaplus_desktop.workers \
+            --hidden-import myhondaplus_desktop.widgets \
+            --hidden-import myhondaplus_desktop.widgets.login \
+            --hidden-import myhondaplus_desktop.widgets.dashboard \
+            --hidden-import myhondaplus_desktop.widgets.commands \
+            --hidden-import myhondaplus_desktop.widgets.status_bar \
+            --hidden-import pymyhondaplus \
+            --hidden-import pymyhondaplus.api \
+            --hidden-import pymyhondaplus.auth \
+            --hidden-import pymyhondaplus.storage \
+            launcher.py
+
+      - name: Create AppImage
+        run: |
+          # Download appimagetool
+          wget -q https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
+          chmod +x appimagetool-x86_64.AppImage
+
+          # Build AppDir structure
+          mkdir -p AppDir/usr/bin AppDir/usr/share/icons/hicolor/256x256/apps AppDir/usr/share/applications
+
+          # Copy PyInstaller output
+          cp -r "dist/My Honda+ for desktop"/* AppDir/usr/bin/
+
+          # Convert SVG to PNG for AppImage icon
+          pip install cairosvg
+          python -c "import cairosvg; cairosvg.svg2png(url='src/myhondaplus_desktop/icons/app-icon.svg', write_to='AppDir/usr/share/icons/hicolor/256x256/apps/myhondaplus-desktop.png', output_width=256, output_height=256)"
+          cp AppDir/usr/share/icons/hicolor/256x256/apps/myhondaplus-desktop.png AppDir/myhondaplus-desktop.png
+
+          # Desktop entry
+          cat > AppDir/myhondaplus-desktop.desktop << 'DESKTOP'
+          [Desktop Entry]
+          Type=Application
+          Name=My Honda+ for desktop
+          Comment=Unofficial GUI for Honda Connect Europe
+          Exec=My Honda+ for desktop
+          Icon=myhondaplus-desktop
+          Categories=Utility;
+          DESKTOP
+          cp AppDir/myhondaplus-desktop.desktop AppDir/usr/share/applications/
+
+          # AppRun
+          cat > AppDir/AppRun << 'APPRUN'
+          #!/bin/bash
+          HERE="$(dirname "$(readlink -f "$0")")"
+          exec "$HERE/usr/bin/My Honda+ for desktop" "$@"
+          APPRUN
+          chmod +x AppDir/AppRun
+
+          # Build AppImage
+          ARCH=x86_64 ./appimagetool-x86_64.AppImage AppDir "My Honda+ for desktop-x86_64.AppImage"
+
+      - name: Upload AppImage
+        uses: actions/upload-artifact@v4
+        with:
+          name: My Honda+ for desktop (Linux)
+          path: "My Honda+ for desktop-x86_64.AppImage"
