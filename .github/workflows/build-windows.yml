@@ -2,6 +2,11 @@ name: Build Windows app
 
 on:
   workflow_dispatch:
+  release:
+    types: [created]
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -54,7 +59,7 @@ jobs:
       - name: Build .exe
         run: |
           pyinstaller `
-            --name "My Honda+ for desktop" `
+            --name "My-Honda-for-desktop-Windows" `
             --onefile `
             --windowed `
             --icon app-icon.ico `
@@ -74,8 +79,14 @@ jobs:
             --hidden-import pymyhondaplus.storage `
             launcher.py
 
-      - name: Upload app
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: My Honda+ for desktop (Windows)
-          path: "dist/My Honda+ for desktop.exe"
+          path: "dist/My-Honda-for-desktop-Windows.exe"
+
+      - name: Attach to release
+        if: github.event_name == 'release'
+        run: gh release upload "${{ github.event.release.tag_name }}" "dist/My-Honda-for-desktop-Windows.exe"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

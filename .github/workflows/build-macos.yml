@@ -2,6 +2,11 @@ name: Build macOS app
 
 on:
   workflow_dispatch:
+  release:
+    types: [created]
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -75,11 +80,17 @@ jobs:
             --icon-size 128 \
             --icon "My Honda+ for desktop.app" 150 200 \
             --app-drop-link 450 200 \
-            "My Honda+ for desktop.dmg" \
+            "My-Honda-for-desktop-macOS.dmg" \
             "dist/My Honda+ for desktop.app"
 
-      - name: Upload DMG
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: My Honda+ for desktop (macOS)
-          path: "My Honda+ for desktop.dmg"
+          path: "My-Honda-for-desktop-macOS.dmg"
+
+      - name: Attach to release
+        if: github.event_name == 'release'
+        run: gh release upload "${{ github.event.release.tag_name }}" "My-Honda-for-desktop-macOS.dmg"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

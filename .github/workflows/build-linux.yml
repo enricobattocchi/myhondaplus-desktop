@@ -2,6 +2,11 @@ name: Build Linux AppImage
 
 on:
   workflow_dispatch:
+  release:
+    types: [created]
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -91,10 +96,16 @@ jobs:
           chmod +x AppDir/AppRun
 
           # Build AppImage
-          ARCH=x86_64 ./appimagetool-x86_64.AppImage AppDir "My Honda+ for desktop-x86_64.AppImage"
+          ARCH=x86_64 ./appimagetool-x86_64.AppImage AppDir "My-Honda-for-desktop-Linux-x86_64.AppImage"
 
-      - name: Upload AppImage
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: My Honda+ for desktop (Linux)
-          path: "My Honda+ for desktop-x86_64.AppImage"
+          path: "My-Honda-for-desktop-Linux-x86_64.AppImage"
+
+      - name: Attach to release
+        if: github.event_name == 'release'
+        run: gh release upload "${{ github.event.release.tag_name }}" "My-Honda-for-desktop-Linux-x86_64.AppImage"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
