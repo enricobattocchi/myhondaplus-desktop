@@ -22,13 +22,23 @@ Built with PyQt6 and [pymyhondaplus](https://github.com/enricobattocchi/pymyhond
 
 Tested on Honda e. Should work with other Honda Connect Europe vehicles (e:Ny1, ZR-V, CR-V, Civic, HR-V, Jazz 2020+) — contributions welcome!
 
-## Installation
+## Download
+
+Pre-built binaries are available from the [latest release](https://github.com/enricobattocchi/myhondaplus-desktop/releases/latest):
+
+| Platform | Download |
+|----------|----------|
+| macOS | `My-Honda-for-desktop-macOS.dmg` |
+| Windows | `My-Honda-for-desktop-Windows.exe` |
+| Linux | `My-Honda-for-desktop-Linux-x86_64.AppImage` |
+
+### Install via pip
 
 ```bash
 pip install myhondaplus-desktop
 ```
 
-Or from source:
+### From source
 
 ```bash
 git clone https://github.com/enricobattocchi/myhondaplus-desktop.git
