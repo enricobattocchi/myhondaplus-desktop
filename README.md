@@ -81,7 +81,7 @@ Switch to the Trips tab to see trip history for the current month. Use the arrow
 
 - Python 3.11+
 - PyQt6 >= 6.6
-- [pymyhondaplus](https://pypi.org/project/pymyhondaplus/) >= 1.2.0
+- [pymyhondaplus](https://pypi.org/project/pymyhondaplus/) >= 1.3.0
 
 ### Optional
 
