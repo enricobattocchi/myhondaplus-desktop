@@ -46,6 +46,7 @@ class TripsWidget(QWidget):
         self._worker = None
         self._current_month = date.today().replace(day=1)
         self._trips_data = []
+        self._last_consumption_unit = ""
 
         layout = QVBoxLayout(self)
 
@@ -179,7 +180,7 @@ class TripsWidget(QWidget):
             self, "Export Trips", default_name, "CSV Files (*.csv)")
         if not path:
             return
-        unit = self._consumption_unit()
+        unit = self._last_consumption_unit or self._consumption_unit()
         has_locs = any("start_lat" in t for t in self._trips_data)
         with open(path, "w", newline="") as f:
             writer = csv.writer(f)
@@ -216,6 +217,8 @@ class TripsWidget(QWidget):
         trips = data["trips"]
         stats = data["stats"]
         self._trips_data = trips
+        if stats:
+            self._last_consumption_unit = stats.get("consumption_unit", self._consumption_unit())
 
         # Update stats
         if stats:
@@ -227,7 +230,7 @@ class TripsWidget(QWidget):
             self._stat_labels["avg_speed"].setText(f"{stats['avg_speed_kmh']} km/h")
             self._stat_labels["max_speed"].setText(f"{stats['max_speed_kmh']} km/h")
             self._stat_labels["consumption"].setText(
-                f"{stats['avg_consumption_l100km']} {self._consumption_unit()}")
+                f"{stats['avg_consumption']} {stats['consumption_unit']}")
             self._period_label.setText(
                 f"{stats['start_date']} \u2014 {stats['end_date']}")
         else:
@@ -239,7 +242,7 @@ class TripsWidget(QWidget):
         has_locs = any("start_lat" in t for t in trips)
 
         # Update table columns
-        unit = self._consumption_unit()
+        unit = self._last_consumption_unit or self._consumption_unit()
         headers = [
             "Date", "Start", "End", "Distance", "Duration",
             "Avg Speed", "Consumption",
