@@ -6,6 +6,7 @@ import logging
 from PyQt6.QtCore import QThread, pyqtSignal
 
 from pymyhondaplus import HondaAPI, HondaAuth, DeviceKey, HondaAPIError, parse_ev_status, SecretStorage
+from pymyhondaplus.api import compute_trip_stats
 
 logger = logging.getLogger(__name__)
 
@@ -235,6 +236,56 @@ class CommandWorker(QThread):
         except Exception as e:
             logger.exception("Command error")
             self.error.emit(f"{self.label}: {e}")
+
+
+class TripsWorker(QThread):
+    """Fetches trip history and statistics."""
+    finished = pyqtSignal(object)
+    error = pyqtSignal(str)
+    progress = pyqtSignal(str)
+
+    def __init__(self, api: HondaAPI, vin: str, month_start: str = "",
+                 include_locations: bool = False):
+        super().__init__()
+        self.api = api
+        self.vin = vin
+        self.month_start = month_start
+        self.include_locations = include_locations
+
+    def run(self):
+        import requests
+        try:
+            self.progress.emit("Loading trips...")
+            trips = self.api.get_all_trips(self.vin, month_start=self.month_start)
+            if self.include_locations and trips:
+                for i, trip in enumerate(trips):
+                    start = trip.get("StartTime", "")
+                    end = trip.get("EndTime", "")
+                    if start and end:
+                        self.progress.emit(
+                            f"Loading locations ({i + 1}/{len(trips)})...")
+                        try:
+                            locs = self.api.get_trip_locations(
+                                self.vin, start, end)
+                            trip.update(locs)
+                        except Exception:
+                            pass
+            stats = compute_trip_stats(trips) if trips else None
+            self.finished.emit({"trips": trips, "stats": stats})
+        except requests.HTTPError:
+            # Check if user role is non-primary (e.g. secondary driver)
+            vehicle = next(
+                (v for v in self.api.tokens.vehicles if v["vin"] == self.vin),
+                None)
+            role = (vehicle or {}).get("role", "")
+            if role and role != "primary":
+                self.error.emit(
+                    f"Trip history is not available for {role} users")
+            else:
+                self.error.emit("Failed to load trip history")
+        except Exception as e:
+            logger.exception("Trips error")
+            self.error.emit(str(e))
 
 
 class VehiclesWorker(QThread):

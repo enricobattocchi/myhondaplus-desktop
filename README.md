@@ -12,6 +12,7 @@ Built with PyQt6 and [pymyhondaplus](https://github.com/enricobattocchi/pymyhond
 - **Climate** — active/off status, cabin and interior temperature
 - **Warnings** — active warning lamps
 - **Remote commands** — lock/unlock, climate on/off/settings, charge on/off/limit, horn + lights, locate
+- **Trip history** — monthly trip list with statistics, optional GPS locations, CSV export
 - **Multi-vehicle support** — dropdown with vehicle name and plate number, auto-populated from your account
 - **Secure storage** — tokens and device keys encrypted at rest via OS keyring or machine-derived key
 - **Persistent login** — auto-refresh on expiry, no need to re-enter credentials
@@ -71,6 +72,10 @@ myhondaplus-desktop --dark
 Once logged in, the app shows your vehicle status with auto-refresh. Use the buttons at the bottom to send commands to your car.
 
 Commands that could be disruptive (unlock, horn + lights) require confirmation before sending.
+
+### Trips
+
+Switch to the Trips tab to see trip history for the current month. Use the arrows to navigate between months. Enable "Include locations" for start/end GPS coordinates (double-click to open in OpenStreetMap). Export to CSV with the Export button.
 
 ## Requirements
 

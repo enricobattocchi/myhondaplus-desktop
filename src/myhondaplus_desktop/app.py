@@ -5,7 +5,7 @@ import logging
 
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-    QStackedWidget, QComboBox, QPushButton, QLabel, QFrame,
+    QStackedWidget, QComboBox, QPushButton, QLabel, QFrame, QTabWidget,
 )
 from PyQt6.QtCore import Qt
 
@@ -19,6 +19,7 @@ from .workers import DashboardWorker, VehiclesWorker
 from .widgets.login import LoginWidget
 from .widgets.dashboard import DashboardWidget
 from .widgets.commands import CommandsWidget
+from .widgets.trips import TripsWidget
 from .widgets.status_bar import StatusBarWidget
 
 logger = logging.getLogger(__name__)
@@ -74,16 +75,19 @@ class MainScreen(QWidget):
         line.setFrameShape(QFrame.Shape.HLine)
         layout.addWidget(line)
 
-        # Dashboard
-        self._dashboard = DashboardWidget()
-        layout.addWidget(self._dashboard)
+        # Tabs
+        self._tabs = QTabWidget()
 
-        # Separator
+        # Dashboard tab
+        dash_tab = QWidget()
+        dash_layout = QVBoxLayout(dash_tab)
+        dash_layout.setContentsMargins(0, 0, 0, 0)
+        self._dashboard = DashboardWidget()
+        dash_layout.addWidget(self._dashboard)
+        # Commands
         line2 = QFrame()
         line2.setFrameShape(QFrame.Shape.HLine)
-        layout.addWidget(line2)
-
-        # Commands
+        dash_layout.addWidget(line2)
         self._commands = CommandsWidget(
             get_api=lambda: self._api,
             get_vin=self._current_vin,
@@ -91,7 +95,21 @@ class MainScreen(QWidget):
             on_finished=self._status_bar_set_success,
             on_error=self._status_bar_set_error,
         )
-        layout.addWidget(self._commands)
+        dash_layout.addWidget(self._commands)
+        self._tabs.addTab(dash_tab, icon("car"), "Dashboard")
+
+        # Trips tab
+        self._trips = TripsWidget(
+            get_api=lambda: self._api,
+            get_vin=self._current_vin,
+            get_vehicles=lambda: self._vehicles,
+            on_status=self._status_bar_set_status,
+            on_error=self._status_bar_set_error,
+        )
+        self._tabs.addTab(self._trips, icon("route"), "Trips")
+        self._tabs.currentChanged.connect(self._on_tab_changed)
+
+        layout.addWidget(self._tabs)
 
         # Status bar
         self._status_bar = StatusBarWidget()
@@ -167,6 +185,10 @@ class MainScreen(QWidget):
     def _on_dashboard(self, status: dict):
         self._dashboard.update_status(status)
         self._status_bar.set_success("Status loaded")
+
+    def _on_tab_changed(self, index: int):
+        if index == 1:  # Trips tab
+            self._trips.load_trips()
 
     def _status_bar_set_status(self, text: str):
         self._status_bar.set_status(text)
