@@ -7,24 +7,27 @@ from PyQt6.QtWidgets import (
 
 from ..workers import CommandWorker
 from ..icons import icon
+from ..i18n import t
 from pymyhondaplus import HondaAPI
 
 
 class ClimateSettingsDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Climate Settings")
+        self.setWindowTitle(t("commands.climate_settings"))
         layout = QFormLayout(self)
 
+        self._temp_values = ["cooler", "normal", "hotter"]
         self.temp_combo = QComboBox()
-        self.temp_combo.addItems(["cooler", "normal", "hotter"])
-        self.temp_combo.setCurrentText("normal")
-        layout.addRow("Temperature:", self.temp_combo)
+        for val in self._temp_values:
+            self.temp_combo.addItem(t(f"commands.{val}"), val)
+        self.temp_combo.setCurrentIndex(1)  # normal
+        layout.addRow(t("commands.temperature"), self.temp_combo)
 
         self.duration_combo = QComboBox()
         self.duration_combo.addItems(["10", "20", "30"])
         self.duration_combo.setCurrentText("30")
-        layout.addRow("Duration (min):", self.duration_combo)
+        layout.addRow(t("commands.duration"), self.duration_combo)
 
         buttons = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Ok |
@@ -35,7 +38,7 @@ class ClimateSettingsDialog(QDialog):
 
     @property
     def temp(self) -> str:
-        return self.temp_combo.currentText()
+        return self.temp_combo.currentData()
 
     @property
     def duration(self) -> int:
@@ -45,20 +48,20 @@ class ClimateSettingsDialog(QDialog):
 class ChargeLimitDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Charge Limits")
+        self.setWindowTitle(t("commands.charge_limit"))
         layout = QFormLayout(self)
 
         self.home_spin = QSpinBox()
         self.home_spin.setRange(50, 100)
         self.home_spin.setValue(80)
         self.home_spin.setSuffix("%")
-        layout.addRow("Home:", self.home_spin)
+        layout.addRow(t("commands.home"), self.home_spin)
 
         self.away_spin = QSpinBox()
         self.away_spin.setRange(50, 100)
         self.away_spin.setValue(90)
         self.away_spin.setSuffix("%")
-        layout.addRow("Away:", self.away_spin)
+        layout.addRow(t("commands.away"), self.away_spin)
 
         buttons = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Ok |
@@ -82,16 +85,16 @@ class CommandsWidget(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
 
         buttons = [
-            ("lock", "Lock", self._lock),
-            ("lock-open", "Unlock", self._unlock),
-            ("snowflake", "Climate On", self._climate_start),
-            ("circle-stop", "Climate Off", self._climate_stop),
-            ("settings", "Climate Settings", self._climate_settings),
-            ("zap", "Charge On", self._charge_start),
-            ("square", "Charge Off", self._charge_stop),
-            ("battery-charging", "Charge Limit", self._charge_limit),
-            ("megaphone", "Horn + Lights", self._horn_lights),
-            ("map-pin", "Locate", self._locate),
+            ("lock", t("commands.lock"), self._lock),
+            ("lock-open", t("commands.unlock"), self._unlock),
+            ("snowflake", t("commands.climate_on"), self._climate_start),
+            ("circle-stop", t("commands.climate_off"), self._climate_stop),
+            ("settings", t("commands.climate_settings"), self._climate_settings),
+            ("zap", t("commands.charge_on"), self._charge_start),
+            ("square", t("commands.charge_off"), self._charge_stop),
+            ("battery-charging", t("commands.charge_limit"), self._charge_limit),
+            ("megaphone", t("commands.horn_lights"), self._horn_lights),
+            ("map-pin", t("commands.locate"), self._locate),
         ]
 
         for icon_name, label, handler in buttons:
@@ -101,8 +104,8 @@ class CommandsWidget(QWidget):
 
     def _confirm(self, action: str) -> bool:
         return QMessageBox.question(
-            self, "Confirm",
-            f"Are you sure you want to {action}?",
+            self, t("commands.confirm"),
+            t("commands.confirm_action", action=action),
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         ) == QMessageBox.StandardButton.Yes
 
@@ -115,25 +118,25 @@ class CommandsWidget(QWidget):
         self._worker.start()
 
     def _cmd_done(self, label):
-        self._on_finished(f"{label}: done!")
+        self._on_finished(t("commands.done", label=label))
 
     def _lock(self):
         api, vin = self._get_api(), self._get_vin()
-        self._run_command("Lock", api.remote_lock, vin)
+        self._run_command(t("commands.lock"), api.remote_lock, vin)
 
     def _unlock(self):
-        if not self._confirm("unlock the car"):
+        if not self._confirm(t("commands.confirm_unlock")):
             return
         api, vin = self._get_api(), self._get_vin()
-        self._run_command("Unlock", api.remote_unlock, vin)
+        self._run_command(t("commands.unlock"), api.remote_unlock, vin)
 
     def _climate_start(self):
         api, vin = self._get_api(), self._get_vin()
-        self._run_command("Climate start", api.remote_climate_start, vin)
+        self._run_command(t("commands.climate_on"), api.remote_climate_start, vin)
 
     def _climate_stop(self):
         api, vin = self._get_api(), self._get_vin()
-        self._run_command("Climate stop", api.remote_climate_stop, vin)
+        self._run_command(t("commands.climate_off"), api.remote_climate_stop, vin)
 
     def _climate_settings(self):
         dlg = ClimateSettingsDialog(self)
@@ -141,16 +144,16 @@ class CommandsWidget(QWidget):
             return
         api, vin = self._get_api(), self._get_vin()
         self._run_command(
-            f"Climate ({dlg.temp}, {dlg.duration}min)",
+            f"{t('commands.climate_settings')} ({dlg.temp}, {dlg.duration}min)",
             api.remote_climate_on, vin, temp=dlg.temp, duration=dlg.duration)
 
     def _charge_start(self):
         api, vin = self._get_api(), self._get_vin()
-        self._run_command("Charge start", api.remote_charge_start, vin)
+        self._run_command(t("commands.charge_on"), api.remote_charge_start, vin)
 
     def _charge_stop(self):
         api, vin = self._get_api(), self._get_vin()
-        self._run_command("Charge stop", api.remote_charge_stop, vin)
+        self._run_command(t("commands.charge_off"), api.remote_charge_stop, vin)
 
     def _charge_limit(self):
         dlg = ChargeLimitDialog(self)
@@ -158,16 +161,16 @@ class CommandsWidget(QWidget):
             return
         api, vin = self._get_api(), self._get_vin()
         self._run_command(
-            f"Charge limit ({dlg.home_spin.value()}%/{dlg.away_spin.value()}%)",
+            f"{t('commands.charge_limit')} ({dlg.home_spin.value()}%/{dlg.away_spin.value()}%)",
             api.set_charge_limit, vin,
             home=dlg.home_spin.value(), away=dlg.away_spin.value())
 
     def _horn_lights(self):
-        if not self._confirm("activate horn and lights"):
+        if not self._confirm(t("commands.confirm_horn")):
             return
         api, vin = self._get_api(), self._get_vin()
-        self._run_command("Horn + Lights", api.remote_horn_lights, vin)
+        self._run_command(t("commands.horn_lights"), api.remote_horn_lights, vin)
 
     def _locate(self):
         api, vin = self._get_api(), self._get_vin()
-        self._run_command("Locate", api.request_car_location, vin)
+        self._run_command(t("commands.locate"), api.request_car_location, vin)

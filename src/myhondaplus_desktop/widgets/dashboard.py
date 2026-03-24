@@ -7,6 +7,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt
 
 from ..icons import pixmap
+from ..i18n import t
 
 
 def _dms_to_decimal(dms: str) -> float | None:
@@ -25,7 +26,6 @@ def _card(title: str, icon_name: str) -> tuple[QGroupBox, QVBoxLayout]:
     box = QGroupBox(title)
     box.setStyleSheet("QGroupBox { font-weight: bold; }")
     layout = QVBoxLayout(box)
-    # Add icon to the title via a header row
     header = QHBoxLayout()
     icon_lbl = QLabel()
     icon_lbl.setPixmap(pixmap(icon_name, 20))
@@ -34,7 +34,6 @@ def _card(title: str, icon_name: str) -> tuple[QGroupBox, QVBoxLayout]:
     header.addWidget(icon_lbl)
     header.addWidget(title_lbl)
     header.addStretch()
-    # Clear the QGroupBox title since we use our own header
     box.setTitle("")
     layout.addLayout(header)
     return box, layout
@@ -63,31 +62,31 @@ def _row(icon_name: str, label: str, value: str = "") -> tuple[QHBoxLayout, QLab
     return h, val
 
 
-# Maps field keys to (icon_name, display_label)
+# Maps field keys to (icon_name, i18n_key)
 _FIELDS = {
-    "range_km": ("ruler", "Range"),
-    "total_range_km": ("ruler", "Total Range"),
-    "charge_status": ("zap", "Charge Status"),
-    "plug_status": ("plug", "Plug"),
-    "charge_mode": ("zap", "Charge Mode"),
-    "time_to_charge": ("timer", "Time to Charge"),
-    "charge_limit_home": ("house", "Limit (Home)"),
-    "charge_limit_away": ("globe", "Limit (Away)"),
-    "doors_locked": ("lock", "Doors"),
-    "all_doors_closed": ("door-open", "All Closed"),
-    "all_windows_closed": ("app-window", "Windows"),
-    "hood_open": ("wrench", "Hood"),
-    "trunk_open": ("package", "Trunk"),
-    "lights_on": ("lightbulb", "Lights"),
-    "headlights": ("flashlight", "Headlights"),
-    "parking_lights": ("siren", "Parking Lights"),
-    "home_away": ("house", "Home/Away"),
-    "speed_kmh": ("gauge", "Speed"),
-    "climate_active": ("snowflake", "Status"),
-    "cabin_temp_c": ("thermometer", "Cabin"),
-    "interior_temp_c": ("thermometer", "Interior"),
-    "odometer_km": ("milestone", "Odometer"),
-    "ignition": ("key-round", "Ignition"),
+    "range_km": ("ruler", "dashboard.range"),
+    "total_range_km": ("ruler", "dashboard.total_range"),
+    "charge_status": ("zap", "dashboard.charge_status"),
+    "plug_status": ("plug", "dashboard.plug"),
+    "charge_mode": ("zap", "dashboard.charge_mode"),
+    "time_to_charge": ("timer", "dashboard.time_to_charge"),
+    "charge_limit_home": ("house", "dashboard.limit_home"),
+    "charge_limit_away": ("globe", "dashboard.limit_away"),
+    "doors_locked": ("lock", "dashboard.doors"),
+    "all_doors_closed": ("door-open", "dashboard.all_closed"),
+    "all_windows_closed": ("app-window", "dashboard.windows"),
+    "hood_open": ("wrench", "dashboard.hood"),
+    "trunk_open": ("package", "dashboard.trunk"),
+    "lights_on": ("lightbulb", "dashboard.lights"),
+    "headlights": ("flashlight", "dashboard.headlights"),
+    "parking_lights": ("siren", "dashboard.parking_lights"),
+    "home_away": ("house", "dashboard.home_away"),
+    "speed_kmh": ("gauge", "dashboard.speed"),
+    "climate_active": ("snowflake", "dashboard.status"),
+    "cabin_temp_c": ("thermometer", "dashboard.cabin"),
+    "interior_temp_c": ("thermometer", "dashboard.interior"),
+    "odometer_km": ("milestone", "dashboard.odometer"),
+    "ignition": ("key-round", "dashboard.ignition"),
 }
 
 
@@ -99,7 +98,7 @@ class DashboardWidget(QWidget):
         grid = QGridLayout(self)
 
         # Battery card
-        bat_box, bat_layout = _card("Battery", "battery-charging")
+        bat_box, bat_layout = _card(t("dashboard.battery"), "battery-charging")
         self._battery_bar = QProgressBar()
         self._battery_bar.setRange(0, 100)
         self._battery_bar.setTextVisible(True)
@@ -107,25 +106,25 @@ class DashboardWidget(QWidget):
         for key in ("range_km", "total_range_km", "charge_status",
                      "plug_status", "charge_mode", "time_to_charge",
                      "charge_limit_home", "charge_limit_away"):
-            icon_name, label = _FIELDS[key]
-            h, val = _row(icon_name, label)
+            icon_name, i18n_key = _FIELDS[key]
+            h, val = _row(icon_name, t(i18n_key))
             bat_layout.addLayout(h)
             self._labels[key] = val
         grid.addWidget(bat_box, 0, 0)
 
         # Security card
-        sec_box, sec_layout = _card("Security", "shield")
+        sec_box, sec_layout = _card(t("dashboard.security"), "shield")
         for key in ("doors_locked", "all_doors_closed", "all_windows_closed",
                      "hood_open", "trunk_open", "lights_on",
                      "headlights", "parking_lights"):
-            icon_name, label = _FIELDS[key]
-            h, val = _row(icon_name, label)
+            icon_name, i18n_key = _FIELDS[key]
+            h, val = _row(icon_name, t(i18n_key))
             sec_layout.addLayout(h)
             self._labels[key] = val
         grid.addWidget(sec_box, 0, 1)
 
         # Location card
-        loc_box, loc_layout = _card("Location", "map-pin")
+        loc_box, loc_layout = _card(t("dashboard.location"), "map-pin")
         self._location_link = QLabel("")
         self._location_link.setOpenExternalLinks(True)
         self._location_link.setTextFormat(Qt.TextFormat.RichText)
@@ -133,36 +132,36 @@ class DashboardWidget(QWidget):
             Qt.TextInteractionFlag.TextBrowserInteraction)
         loc_layout.addWidget(self._location_link)
         for key in ("home_away", "speed_kmh"):
-            icon_name, label = _FIELDS[key]
-            h, val = _row(icon_name, label)
+            icon_name, i18n_key = _FIELDS[key]
+            h, val = _row(icon_name, t(i18n_key))
             loc_layout.addLayout(h)
             self._labels[key] = val
         grid.addWidget(loc_box, 1, 0)
 
         # Climate card
-        clim_box, clim_layout = _card("Climate", "snowflake")
+        clim_box, clim_layout = _card(t("dashboard.climate"), "snowflake")
         for key in ("climate_active", "cabin_temp_c", "interior_temp_c"):
-            icon_name, label = _FIELDS[key]
-            h, val = _row(icon_name, label)
+            icon_name, i18n_key = _FIELDS[key]
+            h, val = _row(icon_name, t(i18n_key))
             clim_layout.addLayout(h)
             self._labels[key] = val
         grid.addWidget(clim_box, 1, 1)
 
         # Vehicle card
-        veh_box, veh_layout = _card("Vehicle", "car")
-        h, val = _row("clipboard", "VIN")
+        veh_box, veh_layout = _card(t("dashboard.vehicle"), "car")
+        h, val = _row("clipboard", t("dashboard.vin"))
         veh_layout.addLayout(h)
         self._vin_label = val
         for key in ("odometer_km", "ignition"):
-            icon_name, label = _FIELDS[key]
-            h, val = _row(icon_name, label)
+            icon_name, i18n_key = _FIELDS[key]
+            h, val = _row(icon_name, t(i18n_key))
             veh_layout.addLayout(h)
             self._labels[key] = val
         grid.addWidget(veh_box, 2, 0)
 
         # Warnings card
-        warn_box, warn_layout = _card("Warnings", "triangle-alert")
-        self._warnings_label = _selectable(QLabel("(none)"))
+        warn_box, warn_layout = _card(t("dashboard.warnings"), "triangle-alert")
+        self._warnings_label = _selectable(QLabel(t("dashboard.no_warnings")))
         warn_layout.addWidget(self._warnings_label)
         grid.addWidget(warn_box, 2, 1)
 
@@ -188,7 +187,7 @@ class DashboardWidget(QWidget):
             self._location_link.setText(
                 f'<a href="{osm_url}">{lat:.6f}, {lon:.6f}</a>')
         else:
-            self._location_link.setText("Unknown")
+            self._location_link.setText(t("dashboard.unknown"))
 
         formatters = {
             "range_km": lambda v: f"{v} km",
@@ -196,13 +195,13 @@ class DashboardWidget(QWidget):
             "time_to_charge": lambda v: f"{v} min" if v else "\u2014",
             "charge_limit_home": lambda v: f"{v}%",
             "charge_limit_away": lambda v: f"{v}%",
-            "doors_locked": lambda v: "Locked" if v else "UNLOCKED",
-            "all_doors_closed": lambda v: "Yes" if v else "NO",
-            "all_windows_closed": lambda v: "Yes" if v else "NO",
-            "hood_open": lambda v: "Open" if v else "Closed",
-            "trunk_open": lambda v: "Open" if v else "Closed",
-            "lights_on": lambda v: "On" if v else "Off",
-            "climate_active": lambda v: "ON" if v else "Off",
+            "doors_locked": lambda v: t("dashboard.locked") if v else t("dashboard.unlocked"),
+            "all_doors_closed": lambda v: t("dashboard.yes") if v else t("dashboard.no"),
+            "all_windows_closed": lambda v: t("dashboard.yes") if v else t("dashboard.no"),
+            "hood_open": lambda v: t("dashboard.open") if v else t("dashboard.closed"),
+            "trunk_open": lambda v: t("dashboard.open") if v else t("dashboard.closed"),
+            "lights_on": lambda v: t("dashboard.on") if v else t("dashboard.off"),
+            "climate_active": lambda v: t("dashboard.climate_on") if v else t("dashboard.climate_off"),
             "cabin_temp_c": lambda v: f"{v}\u00b0C",
             "interior_temp_c": lambda v: f"{v}\u00b0C",
             "odometer_km": lambda v: f"{v:,} km",
@@ -214,7 +213,6 @@ class DashboardWidget(QWidget):
             fmt = formatters.get(key)
             label.setText(fmt(value) if fmt else str(value))
 
-        # Color doors_locked
         if "doors_locked" in self._labels:
             locked = status.get("doors_locked", False)
             self._labels["doors_locked"].setStyleSheet(
@@ -223,7 +221,7 @@ class DashboardWidget(QWidget):
 
         warnings = status.get("warning_lamps", [])
         self._warnings_label.setText(
-            ", ".join(warnings) if warnings else "(none)")
+            ", ".join(warnings) if warnings else t("dashboard.no_warnings"))
 
         self._timestamp.setText(
-            f"Last updated: {status.get('timestamp', '')}")
+            t("dashboard.last_updated", timestamp=status.get("timestamp", "")))

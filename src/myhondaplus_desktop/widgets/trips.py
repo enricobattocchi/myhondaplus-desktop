@@ -12,6 +12,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt
 
 from ..icons import icon, pixmap
+from ..i18n import t
 from ..workers import TripsWorker
 from pymyhondaplus import HondaAPI
 
@@ -67,11 +68,11 @@ class TripsWidget(QWidget):
         next_btn.clicked.connect(self._next_month)
         month_bar.addWidget(next_btn)
         month_bar.addStretch()
-        self._locations_cb = QCheckBox("Include locations")
-        self._locations_cb.setToolTip("Fetch start/end GPS coordinates (slower, 2 API calls per trip)")
+        self._locations_cb = QCheckBox(t("trips.include_locations"))
+        self._locations_cb.setToolTip(t("trips.locations_tooltip"))
         self._locations_cb.stateChanged.connect(self._on_locations_toggled)
         month_bar.addWidget(self._locations_cb)
-        export_btn = QPushButton(icon("download"), "Export CSV")
+        export_btn = QPushButton(icon("download"), t("trips.export_csv"))
         export_btn.clicked.connect(self._export_csv)
         month_bar.addWidget(export_btn)
         layout.addLayout(month_bar)
@@ -82,12 +83,12 @@ class TripsWidget(QWidget):
 
         self._stat_labels = {}
         stats = [
-            ("route", "Total Distance", "trips"),
-            ("bar-chart-2", "Trips", "count"),
-            ("clock", "Total Time", "time"),
-            ("gauge", "Avg Speed", "avg_speed"),
-            ("gauge", "Max Speed", "max_speed"),
-            ("fuel", "Avg Consumption", "consumption"),
+            ("route", t("trips.total_distance"), "trips"),
+            ("bar-chart-2", t("trips.trip_count"), "count"),
+            ("clock", t("trips.total_time"), "time"),
+            ("gauge", t("trips.avg_speed"), "avg_speed"),
+            ("gauge", t("trips.max_speed"), "max_speed"),
+            ("fuel", t("trips.avg_consumption"), "consumption"),
         ]
         for icon_name, label, key in stats:
             s_layout, val_lbl = _stat_card(icon_name, label)
@@ -106,8 +107,9 @@ class TripsWidget(QWidget):
         self._table = QTableWidget()
         self._table.setColumnCount(7)
         self._table.setHorizontalHeaderLabels([
-            "Date", "Start", "End", "Distance", "Duration",
-            "Avg Speed", "Consumption",
+            t("trips.date"), t("trips.start"), t("trips.end"),
+            t("trips.distance"), t("trips.duration"),
+            t("trips.avg_speed"), t("trips.consumption"),
         ])
         self._table.horizontalHeader().setStretchLastSection(False)
         self._table.horizontalHeader().setSectionResizeMode(
@@ -172,12 +174,12 @@ class TripsWidget(QWidget):
 
     def _export_csv(self):
         if not self._trips_data:
-            self._on_error("No trips to export")
+            self._on_error(t("trips.no_trips_export"))
             return
         vin = self._get_vin()
         default_name = f"trips-{vin}-{self._current_month.strftime('%Y-%m')}.csv"
         path, _ = QFileDialog.getSaveFileName(
-            self, "Export Trips", default_name, "CSV Files (*.csv)")
+            self, t("trips.export_title"), default_name, t("trips.csv_filter"))
         if not path:
             return
         unit = self._last_consumption_unit or self._consumption_unit()
@@ -211,7 +213,7 @@ class TripsWidget(QWidget):
                         trip.get("end_lon", ""),
                     ])
                 writer.writerow(row)
-        self._on_status(f"Exported {len(self._trips_data)} trips to {path}")
+        self._on_status(t("trips.exported", count=len(self._trips_data), path=path))
 
     def _on_trips_loaded(self, data: dict):
         trips = data["trips"]
@@ -236,7 +238,7 @@ class TripsWidget(QWidget):
         else:
             for lbl in self._stat_labels.values():
                 lbl.setText("\u2014")
-            self._period_label.setText("No trips")
+            self._period_label.setText(t("trips.no_trips"))
 
         # Check if trips have location data
         has_locs = any("start_lat" in t for t in trips)
@@ -244,11 +246,12 @@ class TripsWidget(QWidget):
         # Update table columns
         unit = self._last_consumption_unit or self._consumption_unit()
         headers = [
-            "Date", "Start", "End", "Distance", "Duration",
-            "Avg Speed", "Consumption",
+            t("trips.date"), t("trips.start"), t("trips.end"),
+            t("trips.distance"), t("trips.duration"),
+            t("trips.avg_speed"), t("trips.consumption"),
         ]
         if has_locs:
-            headers.extend(["From", "To"])
+            headers.extend([t("trips.from"), t("trips.to")])
         self._table.setColumnCount(len(headers))
         self._table.setHorizontalHeaderLabels(headers)
 
@@ -291,7 +294,7 @@ class TripsWidget(QWidget):
                                f"?mlat={lat}&mlon={lon}#map=17/{lat}/{lon}")
                         item.setData(Qt.ItemDataRole.UserRole, url)
                         item.setForeground(link_color)
-                        item.setToolTip("Double-click to open in OpenStreetMap")
+                        item.setToolTip(t("trips.location_tooltip"))
                     self._table.setItem(i, base_col + offset, item)
 
-        self._on_status("Trips loaded")
+        self._on_status(t("trips.loaded"))

@@ -14,6 +14,7 @@ SETTINGS_FILE = SETTINGS_DIR / "settings.json"
 @dataclass
 class Settings:
     vin: str = ""
+    language: str = ""  # empty = auto-detect from system locale
 
     def save(self):
         SETTINGS_DIR.mkdir(parents=True, exist_ok=True)

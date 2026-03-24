@@ -18,6 +18,7 @@ Built with PyQt6 and [pymyhondaplus](https://github.com/enricobattocchi/pymyhond
 - **Persistent login** — auto-refresh on expiry, no need to re-enter credentials
 - **Lucide SVG icons** — crisp, theme-aware icons throughout the UI
 - **Light/dark theme** — follows system theme, or force with `--light` / `--dark`
+- **Multi-language** — English and Italian included, [easy to add more](TRANSLATING.md)
 
 ## Supported vehicles
 
@@ -76,6 +77,12 @@ Commands that could be disruptive (unlock, horn + lights) require confirmation b
 ### Trips
 
 Switch to the Trips tab to see trip history for the current month. Use the arrows to navigate between months. Enable "Include locations" for start/end GPS coordinates (double-click to open in OpenStreetMap). Export to CSV with the Export button.
+
+### Language
+
+The app auto-detects your system language. To change it manually, open the About dialog (info button in the top bar) and select a language. The change takes effect on restart.
+
+Available: English, Italian. See [TRANSLATING.md](TRANSLATING.md) to contribute a new language.
 
 ## Requirements
 

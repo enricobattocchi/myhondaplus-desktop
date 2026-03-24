@@ -9,6 +9,7 @@ from PyQt6.QtCore import Qt
 from ..workers import (
     LoginWorker, DeviceRegistrationWorker, VerifyAndLoginWorker,
 )
+from ..i18n import t
 from pymyhondaplus import SecretStorage
 
 
@@ -31,7 +32,7 @@ class LoginWidget(QWidget):
         icon_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(icon_lbl)
 
-        title = QLabel("My Honda+ for desktop")
+        title = QLabel(t("app.name"))
         title.setStyleSheet("font-size: 24px; font-weight: bold; margin-bottom: 20px;")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(title)
@@ -44,17 +45,17 @@ class LoginWidget(QWidget):
 
         form = QFormLayout()
         self._email = QLineEdit()
-        self._email.setPlaceholderText("user@example.com")
-        form.addRow("Email:", self._email)
+        self._email.setPlaceholderText(t("login.email_placeholder"))
+        form.addRow(t("login.email"), self._email)
 
         self._password = QLineEdit()
         self._password.setEchoMode(QLineEdit.EchoMode.Password)
-        self._password.setPlaceholderText("Password")
-        form.addRow("Password:", self._password)
+        self._password.setPlaceholderText(t("login.password_placeholder"))
+        form.addRow(t("login.password"), self._password)
 
         form_layout.addLayout(form)
 
-        self._login_btn = QPushButton("Login")
+        self._login_btn = QPushButton(t("login.button"))
         self._login_btn.setMinimumHeight(36)
         self._login_btn.clicked.connect(self._do_login)
         form_layout.addWidget(self._login_btn)
@@ -78,11 +79,11 @@ class LoginWidget(QWidget):
         email = self._email.text().strip()
         password = self._password.text()
         if not email or not password:
-            self._status.setText("Enter email and password")
+            self._status.setText(t("login.enter_credentials"))
             return
 
         self._login_btn.setEnabled(False)
-        self._status.setText("Logging in...")
+        self._status.setText(t("login.logging_in"))
 
         self._worker = LoginWorker(email, password, storage=self._storage)
         self._worker.finished.connect(self._on_login_done)
@@ -93,17 +94,17 @@ class LoginWidget(QWidget):
         self._worker.start()
 
     def _on_login_done(self, tokens):
-        self._status.setText("Login successful!")
+        self._status.setText(t("login.success"))
         self._login_btn.setEnabled(True)
         self._on_login_success(
             tokens, self._email.text().strip(), self._password.text())
 
     def _on_login_error(self, msg):
-        self._status.setText(f"Error: {msg}")
+        self._status.setText(t("login.error", message=msg))
         self._login_btn.setEnabled(True)
 
     def _on_device_registration_needed(self):
-        self._status.setText("Device not registered. Requesting verification email...")
+        self._status.setText(t("login.device_not_registered"))
 
         auth = self._worker.auth
         email = self._email.text().strip()
@@ -117,14 +118,13 @@ class LoginWidget(QWidget):
         self._reg_worker.start()
 
     def _ask_for_verification_link(self, auth, email, password):
-        self._status.setText("Check your email!")
+        self._status.setText(t("login.check_email"))
         link, ok = QInputDialog.getText(
-            self, "Email Verification",
-            "Check your email from Honda.\n"
-            "DO NOT click the link — copy the URL and paste it here:",
+            self, t("login.verification_title"),
+            t("login.verification_text"),
         )
         if not ok or not link.strip():
-            self._status.setText("Verification cancelled")
+            self._status.setText(t("login.verification_cancelled"))
             self._login_btn.setEnabled(True)
             return
 

@@ -3,6 +3,8 @@
 from PyQt6.QtWidgets import QWidget, QHBoxLayout, QLabel
 from PyQt6.QtCore import Qt, QTimer
 
+from ..i18n import t
+
 
 class StatusBarWidget(QWidget):
     def __init__(self):
@@ -10,7 +12,7 @@ class StatusBarWidget(QWidget):
         layout = QHBoxLayout(self)
         layout.setContentsMargins(4, 2, 4, 2)
 
-        self._status = QLabel("Ready")
+        self._status = QLabel(t("status.ready"))
         layout.addWidget(self._status)
 
         layout.addStretch()
@@ -26,7 +28,7 @@ class StatusBarWidget(QWidget):
     def set_success(self, text: str):
         self._status.setText(text)
         self._status.setStyleSheet("color: green; font-weight: bold;")
-        QTimer.singleShot(5000, lambda: self.set_status("Ready"))
+        QTimer.singleShot(5000, lambda: self.set_status(t("status.ready")))
 
     def set_error(self, text: str):
         self._status.setText(text)

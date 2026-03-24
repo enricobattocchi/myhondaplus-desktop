@@ -8,6 +8,8 @@ from PyQt6.QtCore import QThread, pyqtSignal
 from pymyhondaplus import HondaAPI, HondaAuth, DeviceKey, HondaAPIError, parse_ev_status, SecretStorage
 from pymyhondaplus.api import compute_trip_stats
 
+from .i18n import t
+
 logger = logging.getLogger(__name__)
 
 
@@ -55,10 +57,10 @@ class LoginWorker(QThread):
 
     def run(self):
         try:
-            self.progress.emit("Logging in...")
+            self.progress.emit(t("workers.logging_in"))
             result = self.auth.initiate_login(
                 self.email, self.password, locale=self.locale)
-            self.progress.emit("Completing login...")
+            self.progress.emit(t("workers.completing_login"))
             tokens = self.auth.complete_login(
                 self.email, self.password,
                 result["transactionId"], result["signatureChallenge"],
@@ -77,13 +79,13 @@ class LoginWorker(QThread):
     def do_device_registration(self):
         """Called after user provides verification link (runs in thread)."""
         try:
-            self.progress.emit("Requesting device verification...")
+            self.progress.emit(t("workers.device_verification"))
             try:
                 self.auth.reset_device_authenticator(self.email, self.password)
             except RuntimeError as e:
                 if "currently blocked" not in str(e):
                     raise
-            self.progress.emit("Waiting for email verification...")
+            self.progress.emit(t("workers.device_verification"))
             self.device_registration_needed.emit()
         except Exception as e:
             self.error.emit(str(e))
@@ -95,9 +97,9 @@ class LoginWorker(QThread):
             if not key:
                 self.error.emit(f"Could not extract key from link: {link}")
                 return
-            self.progress.emit("Verifying link...")
+            self.progress.emit(t("workers.verifying_link"))
             self.auth.verify_magic_link(key, link_type)
-            self.progress.emit("Logging in...")
+            self.progress.emit(t("workers.logging_in"))
             result = self.auth.initiate_login(
                 self.email, self.password, locale=self.locale)
             tokens = self.auth.complete_login(
@@ -124,7 +126,7 @@ class DeviceRegistrationWorker(QThread):
 
     def run(self):
         try:
-            self.progress.emit("Requesting device verification email...")
+            self.progress.emit(t("workers.device_verification"))
             try:
                 self.auth.reset_device_authenticator(self.email, self.password)
             except RuntimeError as e:
@@ -156,9 +158,9 @@ class VerifyAndLoginWorker(QThread):
             if not key:
                 self.error.emit(f"Could not extract key from link: {self.link}")
                 return
-            self.progress.emit("Verifying link...")
+            self.progress.emit(t("workers.verifying_link"))
             self.auth.verify_magic_link(key, link_type)
-            self.progress.emit("Logging in...")
+            self.progress.emit(t("workers.logging_in"))
             result = self.auth.initiate_login(
                 self.email, self.password, locale=self.locale)
             tokens = self.auth.complete_login(
@@ -186,9 +188,9 @@ class DashboardWorker(QThread):
     def run(self):
         try:
             if self.fresh:
-                self.progress.emit("Waking up car...")
+                self.progress.emit(t("workers.waking_car"))
             else:
-                self.progress.emit("Loading status...")
+                self.progress.emit(t("workers.loading_status"))
             dashboard = self.api.get_dashboard(self.vin, fresh=self.fresh)
             status = parse_ev_status(dashboard)
             self.finished.emit(status)
@@ -216,23 +218,24 @@ class CommandWorker(QThread):
 
     def run(self):
         try:
-            self.progress.emit(f"Sending {self.label}...")
+            self.progress.emit(t("workers.sending", label=self.label))
             command_id = self._func(*self._args, **self._kwargs)
             if not command_id:
-                self.error.emit(f"{self.label}: no command ID returned")
+                self.error.emit(t("workers.no_command_id", label=self.label))
                 return
 
             start = time.time()
             while time.time() - start < self.TIMEOUT:
                 self.progress.emit(
-                    f"{self.label}: polling... ({int(time.time() - start)}s)")
+                    t("workers.polling", label=self.label,
+                      seconds=int(time.time() - start)))
                 result = self.api.poll_command(command_id)
                 if result["status_code"] == 200:
                     self.finished.emit(self.label)
                     return
                 time.sleep(self.POLL_INTERVAL)
 
-            self.error.emit(f"{self.label}: timed out")
+            self.error.emit(t("workers.timed_out", label=self.label))
         except Exception as e:
             logger.exception("Command error")
             self.error.emit(f"{self.label}: {e}")
@@ -255,7 +258,7 @@ class TripsWorker(QThread):
     def run(self):
         import requests
         try:
-            self.progress.emit("Loading trips...")
+            self.progress.emit(t("trips.loading"))
             trips = self.api.get_all_trips(self.vin, month_start=self.month_start)
             if self.include_locations and trips:
                 for i, trip in enumerate(trips):
@@ -263,7 +266,8 @@ class TripsWorker(QThread):
                     end = trip.get("EndTime", "")
                     if start and end:
                         self.progress.emit(
-                            f"Loading locations ({i + 1}/{len(trips)})...")
+                            t("trips.loading_locations",
+                              current=i + 1, total=len(trips)))
                         try:
                             locs = self.api.get_trip_locations(
                                 self.vin, start, end)
@@ -284,10 +288,9 @@ class TripsWorker(QThread):
                 None)
             role = (vehicle or {}).get("role", "")
             if role and role != "primary":
-                self.error.emit(
-                    f"Trip history is not available for {role} users")
+                self.error.emit(t("trips.not_available", role=role))
             else:
-                self.error.emit("Failed to load trip history")
+                self.error.emit(t("trips.failed"))
         except Exception as e:
             logger.exception("Trips error")
             self.error.emit(str(e))

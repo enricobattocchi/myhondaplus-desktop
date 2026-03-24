@@ -20,4 +20,4 @@ myhondaplus-desktop = "myhondaplus_desktop.app:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-myhondaplus_desktop = ["icons/*.svg"]
+myhondaplus_desktop = ["icons/*.svg", "translations/*.json"]
