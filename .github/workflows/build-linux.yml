@@ -43,6 +43,7 @@ jobs:
             --name "My Honda+ for desktop" \
             --windowed \
             --add-data "src/myhondaplus_desktop/icons:myhondaplus_desktop/icons" \
+            --add-data "src/myhondaplus_desktop/translations:myhondaplus_desktop/translations" \
             --hidden-import myhondaplus_desktop \
             --hidden-import myhondaplus_desktop.icons \
             --hidden-import myhondaplus_desktop.config \
