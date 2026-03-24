@@ -293,6 +293,37 @@ class TripsWorker(QThread):
             self.error.emit(str(e))
 
 
+class UpdateCheckWorker(QThread):
+    """Checks GitHub for a newer release."""
+    update_available = pyqtSignal(str, str)  # (new_version, release_url)
+
+    RELEASES_URL = "https://api.github.com/repos/enricobattocchi/myhondaplus-desktop/releases/latest"
+
+    def __init__(self, current_version: str):
+        super().__init__()
+        self._current = current_version
+
+    @staticmethod
+    def _parse_version(v: str) -> tuple:
+        return tuple(int(x) for x in v.strip().lstrip("v").split("."))
+
+    def run(self):
+        try:
+            import urllib.request
+            import json
+            req = urllib.request.Request(
+                self.RELEASES_URL,
+                headers={"Accept": "application/vnd.github+json"})
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                data = json.loads(resp.read())
+            tag = data.get("tag_name", "")
+            url = data.get("html_url", "")
+            if tag and self._parse_version(tag) > self._parse_version(self._current):
+                self.update_available.emit(tag.lstrip("v"), url)
+        except Exception:
+            pass  # Fail silently
+
+
 class VehiclesWorker(QThread):
     """Fetches vehicle list (VIN, name, plate)."""
     finished = pyqtSignal(object)

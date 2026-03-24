@@ -6,16 +6,19 @@ import logging
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QStackedWidget, QComboBox, QPushButton, QLabel, QFrame, QTabWidget,
+    QDialog, QDialogButtonBox,
 )
 from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QDesktopServices
 
 from pymyhondaplus import HondaAPI, HondaAuth, get_storage
 from pymyhondaplus.api import DEFAULT_TOKEN_FILE
 from pymyhondaplus.auth import DEFAULT_DEVICE_KEY_FILE
 
+from . import __version__
 from .config import Settings
-from .icons import icon
-from .workers import DashboardWorker, VehiclesWorker
+from .icons import icon, pixmap
+from .workers import DashboardWorker, VehiclesWorker, UpdateCheckWorker
 from .widgets.login import LoginWidget
 from .widgets.dashboard import DashboardWidget
 from .widgets.commands import CommandsWidget
@@ -23,6 +26,52 @@ from .widgets.trips import TripsWidget
 from .widgets.status_bar import StatusBarWidget
 
 logger = logging.getLogger(__name__)
+
+
+REPO_URL = "https://github.com/enricobattocchi/myhondaplus-desktop"
+LIB_URL = "https://github.com/enricobattocchi/pymyhondaplus"
+
+
+class AboutDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("About")
+        self.setFixedWidth(400)
+        layout = QVBoxLayout(self)
+        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        icon_lbl = QLabel()
+        icon_lbl.setPixmap(pixmap("app-icon", 96))
+        icon_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(icon_lbl)
+
+        title = QLabel("My Honda+ for desktop")
+        title.setStyleSheet("font-size: 18px; font-weight: bold;")
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(title)
+
+        version = QLabel(f"Version {__version__}")
+        version.setStyleSheet("color: gray;")
+        version.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(version)
+
+        links = QLabel(
+            f'<a href="{REPO_URL}">GitHub</a>'
+            f' · Built with <a href="{LIB_URL}">pymyhondaplus</a>')
+        links.setOpenExternalLinks(True)
+        links.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(links)
+
+        disclaimer = QLabel(
+            "Unofficial — not affiliated with Honda Motor Co., Ltd.")
+        disclaimer.setStyleSheet("color: gray; font-size: 11px; margin-top: 10px;")
+        disclaimer.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        disclaimer.setWordWrap(True)
+        layout.addWidget(disclaimer)
+
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+        buttons.rejected.connect(self.accept)
+        layout.addWidget(buttons)
 
 
 def _vehicle_label(v: dict) -> str:
@@ -68,7 +117,32 @@ class MainScreen(QWidget):
         logout_btn.clicked.connect(on_logout)
         top.addWidget(logout_btn)
 
+        about_btn = QPushButton(icon("info"), "")
+        about_btn.setFixedWidth(32)
+        about_btn.setToolTip("About")
+        about_btn.clicked.connect(lambda: AboutDialog(self).exec())
+        top.addWidget(about_btn)
+
         layout.addLayout(top)
+
+        # Update banner (hidden by default)
+        self._update_banner = QFrame()
+        self._update_banner.setStyleSheet(
+            "QFrame { background: #1a5276; border-radius: 4px; padding: 4px; }")
+        self._update_banner.setVisible(False)
+        banner_layout = QHBoxLayout(self._update_banner)
+        banner_layout.setContentsMargins(8, 4, 8, 4)
+        self._update_label = QLabel()
+        self._update_label.setOpenExternalLinks(True)
+        self._update_label.setTextFormat(Qt.TextFormat.RichText)
+        banner_layout.addWidget(self._update_label)
+        banner_layout.addStretch()
+        dismiss_btn = QPushButton(icon("x"), "")
+        dismiss_btn.setFixedSize(24, 24)
+        dismiss_btn.setFlat(True)
+        dismiss_btn.clicked.connect(self._update_banner.hide)
+        banner_layout.addWidget(dismiss_btn)
+        layout.addWidget(self._update_banner)
 
         # Separator
         line = QFrame()
@@ -122,6 +196,8 @@ class MainScreen(QWidget):
             self._populate_vehicles(self._api.tokens.vehicles)
         # Then refresh from API in background
         self._fetch_vehicles()
+        # Check for updates
+        self._check_update()
 
     def _current_vin(self) -> str:
         """Get the VIN for the currently selected vehicle."""
@@ -185,6 +261,17 @@ class MainScreen(QWidget):
     def _on_dashboard(self, status: dict):
         self._dashboard.update_status(status)
         self._status_bar.set_success("Status loaded")
+
+    def _check_update(self):
+        self._update_worker = UpdateCheckWorker(__version__)
+        self._update_worker.update_available.connect(self._on_update_available)
+        self._update_worker.start()
+
+    def _on_update_available(self, new_version: str, release_url: str):
+        self._update_label.setText(
+            f'Version {new_version} is available — '
+            f'<a href="{release_url}" style="color: white;">Download</a>')
+        self._update_banner.setVisible(True)
 
     def _on_tab_changed(self, index: int):
         if index == 1:  # Trips tab

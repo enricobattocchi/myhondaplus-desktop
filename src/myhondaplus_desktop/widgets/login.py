@@ -66,6 +66,12 @@ class LoginWidget(QWidget):
 
         layout.addWidget(form_container, alignment=Qt.AlignmentFlag.AlignCenter)
 
+        from .. import __version__
+        version_lbl = QLabel(f"v{__version__}")
+        version_lbl.setStyleSheet("color: gray; font-size: 11px; margin-top: 10px;")
+        version_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(version_lbl)
+
         self._password.returnPressed.connect(self._do_login)
 
     def _do_login(self):
