@@ -33,7 +33,7 @@ LIB_URL = "https://github.com/enricobattocchi/pymyhondaplus"
 
 
 class AboutDialog(QDialog):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, update_info: tuple = None):
         super().__init__(parent)
         self.setWindowTitle("About")
         self.setFixedWidth(400)
@@ -54,6 +54,15 @@ class AboutDialog(QDialog):
         version.setStyleSheet("color: gray;")
         version.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(version)
+
+        if update_info:
+            new_ver, release_url = update_info
+            update_lbl = QLabel(
+                f'<a href="{release_url}">Version {new_ver} available</a>')
+            update_lbl.setOpenExternalLinks(True)
+            update_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            update_lbl.setStyleSheet("color: #3498db; font-weight: bold;")
+            layout.addWidget(update_lbl)
 
         links = QLabel(
             f'<a href="{REPO_URL}">GitHub</a>'
@@ -89,6 +98,7 @@ class MainScreen(QWidget):
         self._api = api
         self._settings = settings
         self._vehicles = []  # list of {"vin", "name", "plate"}
+        self._update_info = None  # (new_version, release_url) or None
         self._worker = None
         self._vehicles_worker = None
 
@@ -120,7 +130,8 @@ class MainScreen(QWidget):
         about_btn = QPushButton(icon("info"), "")
         about_btn.setFixedWidth(32)
         about_btn.setToolTip("About")
-        about_btn.clicked.connect(lambda: AboutDialog(self).exec())
+        about_btn.clicked.connect(
+            lambda: AboutDialog(self, update_info=self._update_info).exec())
         top.addWidget(about_btn)
 
         layout.addLayout(top)
@@ -268,6 +279,7 @@ class MainScreen(QWidget):
         self._update_worker.start()
 
     def _on_update_available(self, new_version: str, release_url: str):
+        self._update_info = (new_version, release_url)
         self._update_label.setText(
             f'Version {new_version} is available — '
             f'<a href="{release_url}" style="color: white;">Download</a>')
