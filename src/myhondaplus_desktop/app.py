@@ -366,13 +366,34 @@ class MainScreen(QWidget):
         self._run_command(t("commands.charge_off"), self._api.remote_charge_stop, self._current_vin())
 
     def _cmd_charge_limit(self):
-        dlg = ChargeLimitDialog(self)
-        if dlg.exec() != QDialog.DialogCode.Accepted:
-            return
-        self._run_command(
-            t("commands.charge_limit"),
-            self._api.set_charge_limit, self._current_vin(),
-            home=dlg.home_spin.value(), away=dlg.away_spin.value())
+        status = self._dashboard._status
+        dlg = ChargeLimitDialog(
+            self,
+            home=status.get("charge_limit_home", 80),
+            away=status.get("charge_limit_away", 90),
+        )
+
+        def on_accept():
+            dlg.set_saving(True, t("workers.sending", label=t("commands.charge_limit")))
+            w = CommandWorker(
+                self._api, t("commands.charge_limit"),
+                self._api.set_charge_limit, self._current_vin(),
+                home=dlg.home, away=dlg.away)
+            w.progress.connect(lambda msg: dlg.set_saving(True, msg))
+            w.finished.connect(lambda lbl: (
+                dlg.set_saving(False),
+                dlg.accept(),
+                self._status_bar_set_success(t("commands.done", label=lbl)),
+                self._load_dashboard()))
+            w.error.connect(lambda msg: (
+                dlg.set_saving(False, ""),
+                self._status_bar_set_error(msg)))
+            w.start()
+            self._cmd_worker = w
+
+        dlg._buttons.accepted.disconnect()
+        dlg._buttons.accepted.connect(on_accept)
+        dlg.exec()
 
     def _cmd_climate_start(self):
         self._run_command(t("commands.climate_on"), self._api.remote_climate_start, self._current_vin())

@@ -199,29 +199,62 @@ class ClimateSettingsDialog(QDialog):
 class ChargeLimitDialog(QDialog):
     """Set charge limits for home and away."""
 
-    def __init__(self, parent=None):
+    LIMITS = [80, 85, 90, 95, 100]
+
+    def __init__(self, parent=None, home: int = 80, away: int = 90):
         super().__init__(parent)
         self.setWindowTitle(t("commands.charge_limit"))
-        layout = QFormLayout(self)
+        self._saving = False
+        self._layout = QFormLayout(self)
 
-        self.home_spin = QSpinBox()
-        self.home_spin.setRange(50, 100)
-        self.home_spin.setValue(80)
-        self.home_spin.setSuffix("%")
-        layout.addRow(t("commands.home"), self.home_spin)
+        self._home = QComboBox()
+        for v in self.LIMITS:
+            self._home.addItem(f"{v}%", v)
+        idx = self._home.findData(home)
+        if idx >= 0:
+            self._home.setCurrentIndex(idx)
+        self._layout.addRow(t("commands.home"), self._home)
 
-        self.away_spin = QSpinBox()
-        self.away_spin.setRange(50, 100)
-        self.away_spin.setValue(90)
-        self.away_spin.setSuffix("%")
-        layout.addRow(t("commands.away"), self.away_spin)
+        self._away = QComboBox()
+        for v in self.LIMITS:
+            self._away.addItem(f"{v}%", v)
+        idx = self._away.findData(away)
+        if idx >= 0:
+            self._away.setCurrentIndex(idx)
+        self._layout.addRow(t("commands.away"), self._away)
 
-        buttons = QDialogButtonBox(
+        self._status_label = QLabel("")
+        self._status_label.setStyleSheet("color: gray; font-style: italic;")
+        self._status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._status_label.setVisible(False)
+        self._layout.addRow(self._status_label)
+
+        self._buttons = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Ok |
             QDialogButtonBox.StandardButton.Cancel)
-        buttons.accepted.connect(self.accept)
-        buttons.rejected.connect(self.reject)
-        layout.addRow(buttons)
+        self._buttons.accepted.connect(self.accept)
+        self._buttons.rejected.connect(self.reject)
+        self._layout.addRow(self._buttons)
+
+    @property
+    def home(self) -> int:
+        return self._home.currentData()
+
+    @property
+    def away(self) -> int:
+        return self._away.currentData()
+
+    def set_saving(self, saving: bool, message: str = ""):
+        self._saving = saving
+        self._buttons.setEnabled(not saving)
+        self._home.setEnabled(not saving)
+        self._away.setEnabled(not saving)
+        self._status_label.setText(message)
+        self._status_label.setVisible(bool(message))
+
+    def reject(self):
+        if not self._saving:
+            super().reject()
 
 
 class ClimateScheduleDialog(QDialog):
