@@ -1,12 +1,12 @@
-"""Dashboard widget showing vehicle status."""
+"""Dashboard widget showing vehicle status with integrated actions."""
 
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
-    QGroupBox, QLabel, QProgressBar, QFrame,
+    QGroupBox, QLabel, QProgressBar, QPushButton, QMessageBox,
 )
 from PyQt6.QtCore import Qt
 
-from ..icons import pixmap
+from ..icons import icon, pixmap
 from ..i18n import t
 
 
@@ -40,7 +40,6 @@ def _card(title: str, icon_name: str) -> tuple[QGroupBox, QVBoxLayout]:
 
 
 def _selectable(label: QLabel) -> QLabel:
-    """Make a QLabel's text selectable by mouse."""
     label.setTextInteractionFlags(
         Qt.TextInteractionFlag.TextSelectableByMouse)
     label.setCursor(Qt.CursorShape.IBeamCursor)
@@ -91,9 +90,19 @@ _FIELDS = {
 
 
 class DashboardWidget(QWidget):
-    def __init__(self):
+    def __init__(self, actions: dict = None):
+        """
+        Args:
+            actions: dict of callback functions:
+                on_lock, on_unlock, on_horn_lights,
+                on_charge_start, on_charge_stop, on_charge_limit, on_charge_schedule,
+                on_climate_start, on_climate_stop, on_climate_settings, on_climate_schedule,
+                on_locate
+        """
         super().__init__()
+        self._actions = actions or {}
         self._labels = {}
+        self._status = {}
 
         grid = QGridLayout(self)
 
@@ -110,6 +119,18 @@ class DashboardWidget(QWidget):
             h, val = _row(icon_name, t(i18n_key))
             bat_layout.addLayout(h)
             self._labels[key] = val
+        # Battery actions
+        bat_actions = QHBoxLayout()
+        self._charge_btn = QPushButton(icon("zap"), t("commands.charge_on"))
+        self._charge_btn.clicked.connect(self._on_charge_toggle)
+        bat_actions.addWidget(self._charge_btn)
+        limit_btn = QPushButton(icon("battery-charging"), t("commands.charge_limit"))
+        limit_btn.clicked.connect(lambda: self._call("on_charge_limit"))
+        bat_actions.addWidget(limit_btn)
+        schedule_btn = QPushButton(icon("calendar-clock"), t("schedules.charge"))
+        schedule_btn.clicked.connect(lambda: self._call("on_charge_schedule"))
+        bat_actions.addWidget(schedule_btn)
+        bat_layout.addLayout(bat_actions)
         grid.addWidget(bat_box, 0, 0)
 
         # Security card
@@ -121,6 +142,15 @@ class DashboardWidget(QWidget):
             h, val = _row(icon_name, t(i18n_key))
             sec_layout.addLayout(h)
             self._labels[key] = val
+        # Security actions
+        sec_actions = QHBoxLayout()
+        self._lock_btn = QPushButton(icon("lock"), t("commands.lock"))
+        self._lock_btn.clicked.connect(self._on_lock_toggle)
+        sec_actions.addWidget(self._lock_btn)
+        horn_btn = QPushButton(icon("megaphone"), t("commands.horn_lights"))
+        horn_btn.clicked.connect(self._on_horn_lights)
+        sec_actions.addWidget(horn_btn)
+        sec_layout.addLayout(sec_actions)
         grid.addWidget(sec_box, 0, 1)
 
         # Location card
@@ -136,6 +166,13 @@ class DashboardWidget(QWidget):
             h, val = _row(icon_name, t(i18n_key))
             loc_layout.addLayout(h)
             self._labels[key] = val
+        # Location action
+        loc_actions = QHBoxLayout()
+        locate_btn = QPushButton(icon("map-pin"), t("commands.locate"))
+        locate_btn.clicked.connect(lambda: self._call("on_locate"))
+        loc_actions.addWidget(locate_btn)
+        loc_actions.addStretch()
+        loc_layout.addLayout(loc_actions)
         grid.addWidget(loc_box, 1, 0)
 
         # Climate card
@@ -145,6 +182,18 @@ class DashboardWidget(QWidget):
             h, val = _row(icon_name, t(i18n_key))
             clim_layout.addLayout(h)
             self._labels[key] = val
+        # Climate actions
+        clim_actions = QHBoxLayout()
+        self._climate_btn = QPushButton(icon("snowflake"), t("commands.climate_on"))
+        self._climate_btn.clicked.connect(self._on_climate_toggle)
+        clim_actions.addWidget(self._climate_btn)
+        settings_btn = QPushButton(icon("settings"), t("commands.climate_settings"))
+        settings_btn.clicked.connect(lambda: self._call("on_climate_settings"))
+        clim_actions.addWidget(settings_btn)
+        clim_sched_btn = QPushButton(icon("calendar-clock"), t("schedules.climate"))
+        clim_sched_btn.clicked.connect(lambda: self._call("on_climate_schedule"))
+        clim_actions.addWidget(clim_sched_btn)
+        clim_layout.addLayout(clim_actions)
         grid.addWidget(clim_box, 1, 1)
 
         # Vehicle card
@@ -171,10 +220,49 @@ class DashboardWidget(QWidget):
         self._timestamp.setStyleSheet("color: gray; font-size: 11px;")
         grid.addWidget(self._timestamp, 3, 0, 1, 2)
 
+    def _call(self, action_name: str):
+        cb = self._actions.get(action_name)
+        if cb:
+            cb()
+
+    def _on_lock_toggle(self):
+        if self._status.get("doors_locked", False):
+            # Currently locked -> unlock (needs confirmation)
+            if QMessageBox.question(
+                self, t("commands.confirm"),
+                t("commands.confirm_action", action=t("commands.confirm_unlock")),
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            ) == QMessageBox.StandardButton.Yes:
+                self._call("on_unlock")
+        else:
+            self._call("on_lock")
+
+    def _on_charge_toggle(self):
+        status = self._status.get("charge_status", "")
+        if status in ("running", "charging"):
+            self._call("on_charge_stop")
+        else:
+            self._call("on_charge_start")
+
+    def _on_climate_toggle(self):
+        if self._status.get("climate_active", False):
+            self._call("on_climate_stop")
+        else:
+            self._call("on_climate_start")
+
+    def _on_horn_lights(self):
+        if QMessageBox.question(
+            self, t("commands.confirm"),
+            t("commands.confirm_action", action=t("commands.confirm_horn")),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+        ) == QMessageBox.StandardButton.Yes:
+            self._call("on_horn_lights")
+
     def set_vin(self, vin: str):
         self._vin_label.setText(vin)
 
     def update_status(self, status: dict):
+        self._status = status
         self._battery_bar.setValue(status.get("battery_level", 0))
 
         lat_raw = status.get("latitude", "")
@@ -218,6 +306,30 @@ class DashboardWidget(QWidget):
             self._labels["doors_locked"].setStyleSheet(
                 "color: green; font-weight: bold;" if locked
                 else "color: red; font-weight: bold;")
+
+        # Update toggle buttons
+        locked = status.get("doors_locked", False)
+        if locked:
+            self._lock_btn.setText(t("commands.unlock"))
+            self._lock_btn.setIcon(icon("lock-open"))
+        else:
+            self._lock_btn.setText(t("commands.lock"))
+            self._lock_btn.setIcon(icon("lock"))
+
+        charge_status = status.get("charge_status", "")
+        if charge_status in ("running", "charging"):
+            self._charge_btn.setText(t("commands.charge_off"))
+            self._charge_btn.setIcon(icon("square"))
+        else:
+            self._charge_btn.setText(t("commands.charge_on"))
+            self._charge_btn.setIcon(icon("zap"))
+
+        if status.get("climate_active", False):
+            self._climate_btn.setText(t("commands.climate_off"))
+            self._climate_btn.setIcon(icon("circle-stop"))
+        else:
+            self._climate_btn.setText(t("commands.climate_on"))
+            self._climate_btn.setIcon(icon("snowflake"))
 
         warnings = status.get("warning_lamps", [])
         self._warnings_label.setText(

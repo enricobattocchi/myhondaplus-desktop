@@ -5,7 +5,10 @@ import logging
 
 from PyQt6.QtCore import QThread, pyqtSignal
 
-from pymyhondaplus import HondaAPI, HondaAuth, DeviceKey, HondaAPIError, parse_ev_status, SecretStorage
+from pymyhondaplus import (
+    HondaAPI, HondaAuth, DeviceKey, HondaAPIError,
+    parse_ev_status, parse_climate_schedule, parse_charge_schedule, SecretStorage,
+)
 from pymyhondaplus.api import compute_trip_stats
 
 from .i18n import t
@@ -325,6 +328,78 @@ class UpdateCheckWorker(QThread):
                 self.update_available.emit(tag.lstrip("v"), url)
         except Exception:
             pass  # Fail silently
+
+
+class ScheduleLoadWorker(QThread):
+    """Fetches schedules and climate settings from dashboard."""
+    finished = pyqtSignal(object)
+    error = pyqtSignal(str)
+    progress = pyqtSignal(str)
+
+    def __init__(self, api: HondaAPI, vin: str):
+        super().__init__()
+        self.api = api
+        self.vin = vin
+
+    def run(self):
+        try:
+            self.progress.emit(t("schedules.loading"))
+            dashboard = self.api.get_dashboard(self.vin)
+            ev = parse_ev_status(dashboard)
+            climate_schedule = parse_climate_schedule(dashboard)
+            charge_schedule = parse_charge_schedule(dashboard)
+            self.finished.emit({
+                "climate_schedule": climate_schedule,
+                "charge_schedule": charge_schedule,
+                "climate_temp": ev.get("climate_temp", "normal"),
+                "climate_duration": ev.get("climate_duration", 30),
+                "climate_defrost": ev.get("climate_defrost", True),
+            })
+        except Exception as e:
+            logger.exception("Schedule load error")
+            self.error.emit(str(e))
+
+
+class ScheduleSaveWorker(QThread):
+    """Saves a schedule and polls for completion."""
+    finished = pyqtSignal(str)
+    error = pyqtSignal(str)
+    progress = pyqtSignal(str)
+
+    POLL_INTERVAL = 2
+    TIMEOUT = 60
+
+    def __init__(self, api: HondaAPI, label: str, func, *args, **kwargs):
+        super().__init__()
+        self.api = api
+        self.label = label
+        self._func = func
+        self._args = args
+        self._kwargs = kwargs
+
+    def run(self):
+        try:
+            self.progress.emit(t("workers.sending", label=self.label))
+            command_id = self._func(*self._args, **self._kwargs)
+            if not command_id:
+                self.finished.emit(self.label)
+                return
+
+            start = time.time()
+            while time.time() - start < self.TIMEOUT:
+                self.progress.emit(
+                    t("workers.polling", label=self.label,
+                      seconds=int(time.time() - start)))
+                result = self.api.poll_command(command_id)
+                if result["status_code"] == 200:
+                    self.finished.emit(self.label)
+                    return
+                time.sleep(self.POLL_INTERVAL)
+
+            self.error.emit(t("workers.timed_out", label=self.label))
+        except Exception as e:
+            logger.exception("Schedule save error")
+            self.error.emit(f"{self.label}: {e}")
 
 
 class VehiclesWorker(QThread):

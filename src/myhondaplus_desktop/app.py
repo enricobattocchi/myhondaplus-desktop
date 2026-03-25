@@ -19,11 +19,14 @@ from . import __version__
 from .config import Settings
 from .i18n import t, load_language, available_languages, active_language
 from .icons import icon, pixmap
-from .workers import DashboardWorker, VehiclesWorker, UpdateCheckWorker
+from .workers import DashboardWorker, VehiclesWorker, UpdateCheckWorker, CommandWorker, ScheduleLoadWorker, ScheduleSaveWorker
 from .widgets.login import LoginWidget
 from .widgets.dashboard import DashboardWidget
-from .widgets.commands import CommandsWidget
 from .widgets.trips import TripsWidget
+from .widgets.schedules import (
+    ClimateScheduleDialog, ChargeScheduleDialog,
+    ClimateSettingsDialog, ChargeLimitDialog,
+)
 from .widgets.status_bar import StatusBarWidget
 
 logger = logging.getLogger(__name__)
@@ -152,11 +155,11 @@ class MainScreen(QWidget):
         top.addStretch()
 
         refresh_btn = QPushButton(icon("refresh-cw"), t("app.refresh"))
-        refresh_btn.clicked.connect(lambda: self._load_dashboard(fresh=False))
+        refresh_btn.clicked.connect(lambda: self._refresh_current_tab(fresh=False))
         top.addWidget(refresh_btn)
 
         refresh_car_btn = QPushButton(icon("car"), t("app.refresh_car"))
-        refresh_car_btn.clicked.connect(lambda: self._load_dashboard(fresh=True))
+        refresh_car_btn.clicked.connect(lambda: self._refresh_current_tab(fresh=True))
         top.addWidget(refresh_car_btn)
 
         logout_btn = QPushButton(icon("log-out"), t("app.logout"))
@@ -202,24 +205,21 @@ class MainScreen(QWidget):
         self._tabs = QTabWidget()
 
         # Dashboard tab
-        dash_tab = QWidget()
-        dash_layout = QVBoxLayout(dash_tab)
-        dash_layout.setContentsMargins(0, 0, 0, 0)
-        self._dashboard = DashboardWidget()
-        dash_layout.addWidget(self._dashboard)
-        # Commands
-        line2 = QFrame()
-        line2.setFrameShape(QFrame.Shape.HLine)
-        dash_layout.addWidget(line2)
-        self._commands = CommandsWidget(
-            get_api=lambda: self._api,
-            get_vin=self._current_vin,
-            on_progress=self._status_bar_set_status,
-            on_finished=self._status_bar_set_success,
-            on_error=self._status_bar_set_error,
-        )
-        dash_layout.addWidget(self._commands)
-        self._tabs.addTab(dash_tab, icon("car"), t("app.dashboard"))
+        self._dashboard = DashboardWidget(actions={
+            "on_lock": self._cmd_lock,
+            "on_unlock": self._cmd_unlock,
+            "on_horn_lights": self._cmd_horn_lights,
+            "on_charge_start": self._cmd_charge_start,
+            "on_charge_stop": self._cmd_charge_stop,
+            "on_charge_limit": self._cmd_charge_limit,
+            "on_charge_schedule": self._cmd_charge_schedule,
+            "on_climate_start": self._cmd_climate_start,
+            "on_climate_stop": self._cmd_climate_stop,
+            "on_climate_settings": self._cmd_climate_settings,
+            "on_climate_schedule": self._cmd_climate_schedule,
+            "on_locate": self._cmd_locate,
+        })
+        self._tabs.addTab(self._dashboard, icon("car"), t("app.dashboard"))
 
         # Trips tab
         self._trips = TripsWidget(
@@ -324,9 +324,155 @@ class MainScreen(QWidget):
             f'{t("app.download")}</a>')
         self._update_banner.setVisible(True)
 
+    def _refresh_current_tab(self, fresh: bool = False):
+        index = self._tabs.currentIndex()
+        if index == 0:
+            self._load_dashboard(fresh=fresh)
+        elif index == 1:
+            self._trips.load_trips()
+
     def _on_tab_changed(self, index: int):
         if index == 1:  # Trips tab
             self._trips.load_trips()
+
+    # -- Command helpers --
+
+    def _run_command(self, label: str, func, *args, **kwargs):
+        self._cmd_worker = CommandWorker(self._api, label, func, *args, **kwargs)
+        self._cmd_worker.progress.connect(self._status_bar_set_status)
+        self._cmd_worker.finished.connect(
+            lambda lbl: (self._status_bar_set_success(t("commands.done", label=lbl)),
+                         self._load_dashboard()))
+        self._cmd_worker.error.connect(self._status_bar_set_error)
+        self._cmd_worker.start()
+
+    def _cmd_lock(self):
+        self._run_command(t("commands.lock"), self._api.remote_lock, self._current_vin())
+
+    def _cmd_unlock(self):
+        self._run_command(t("commands.unlock"), self._api.remote_unlock, self._current_vin())
+
+    def _cmd_horn_lights(self):
+        self._run_command(t("commands.horn_lights"), self._api.remote_horn_lights, self._current_vin())
+
+    def _cmd_charge_start(self):
+        self._run_command(t("commands.charge_on"), self._api.remote_charge_start, self._current_vin())
+
+    def _cmd_charge_stop(self):
+        self._run_command(t("commands.charge_off"), self._api.remote_charge_stop, self._current_vin())
+
+    def _cmd_charge_limit(self):
+        dlg = ChargeLimitDialog(self)
+        if dlg.exec() != QDialog.DialogCode.Accepted:
+            return
+        self._run_command(
+            t("commands.charge_limit"),
+            self._api.set_charge_limit, self._current_vin(),
+            home=dlg.home_spin.value(), away=dlg.away_spin.value())
+
+    def _cmd_climate_start(self):
+        self._run_command(t("commands.climate_on"), self._api.remote_climate_start, self._current_vin())
+
+    def _cmd_climate_stop(self):
+        self._run_command(t("commands.climate_off"), self._api.remote_climate_stop, self._current_vin())
+
+    def _cmd_climate_settings(self):
+        status = self._dashboard._status
+        dlg = ClimateSettingsDialog(
+            self,
+            temp=status.get("climate_temp", "normal"),
+            duration=status.get("climate_duration", 30),
+            defrost=status.get("climate_defrost", True),
+        )
+        if dlg.exec() != QDialog.DialogCode.Accepted:
+            return
+        self._run_command(
+            t("commands.climate_settings"),
+            self._api.remote_climate_on, self._current_vin(),
+            temp=dlg.temp, duration=dlg.duration, defrost=dlg.defrost)
+
+    def _cmd_locate(self):
+        self._run_command(t("commands.locate"), self._api.request_car_location, self._current_vin())
+
+    def _cmd_climate_schedule(self):
+        vin = self._current_vin()
+        if not vin:
+            return
+        self._status_bar_set_status(t("schedules.loading"))
+        self._sched_worker = ScheduleLoadWorker(self._api, vin)
+        self._sched_worker.finished.connect(self._show_climate_schedule)
+        self._sched_worker.error.connect(self._status_bar_set_error)
+        self._sched_worker.start()
+
+    def _show_climate_schedule(self, data: dict):
+        self._status_bar_set_success(t("schedules.loaded"))
+        vin = self._current_vin()
+
+        def on_save(rules):
+            w = ScheduleSaveWorker(self._api, t("schedules.climate"),
+                                   self._api.set_climate_schedule, vin, rules)
+            w.progress.connect(self._status_bar_set_status)
+            w.finished.connect(lambda _: self._status_bar_set_success(t("schedules.saved")))
+            w.error.connect(self._status_bar_set_error)
+            w.start()
+            self._sched_save_worker = w
+
+        def on_clear():
+            w = ScheduleSaveWorker(self._api, t("schedules.climate"),
+                                   self._api.set_climate_schedule, vin, [])
+            w.progress.connect(self._status_bar_set_status)
+            w.finished.connect(lambda _: self._status_bar_set_success(t("schedules.cleared")))
+            w.error.connect(self._status_bar_set_error)
+            w.start()
+            self._sched_save_worker = w
+
+        dlg = ClimateScheduleDialog(
+            self,
+            schedule=data["climate_schedule"],
+            on_save=on_save,
+            on_clear=on_clear,
+        )
+        dlg.exec()
+
+    def _cmd_charge_schedule(self):
+        vin = self._current_vin()
+        if not vin:
+            return
+        self._status_bar_set_status(t("schedules.loading"))
+        self._sched_worker = ScheduleLoadWorker(self._api, vin)
+        self._sched_worker.finished.connect(self._show_charge_schedule)
+        self._sched_worker.error.connect(self._status_bar_set_error)
+        self._sched_worker.start()
+
+    def _show_charge_schedule(self, data: dict):
+        self._status_bar_set_success(t("schedules.loaded"))
+        vin = self._current_vin()
+
+        def on_save(rules):
+            w = ScheduleSaveWorker(self._api, t("schedules.charge"),
+                                   self._api.set_charge_schedule, vin, rules)
+            w.progress.connect(self._status_bar_set_status)
+            w.finished.connect(lambda _: self._status_bar_set_success(t("schedules.saved")))
+            w.error.connect(self._status_bar_set_error)
+            w.start()
+            self._sched_save_worker = w
+
+        def on_clear():
+            w = ScheduleSaveWorker(self._api, t("schedules.charge"),
+                                   self._api.set_charge_schedule, vin, [])
+            w.progress.connect(self._status_bar_set_status)
+            w.finished.connect(lambda _: self._status_bar_set_success(t("schedules.cleared")))
+            w.error.connect(self._status_bar_set_error)
+            w.start()
+            self._sched_save_worker = w
+
+        dlg = ChargeScheduleDialog(
+            self,
+            schedule=data["charge_schedule"],
+            on_save=on_save,
+            on_clear=on_clear,
+        )
+        dlg.exec()
 
     def _status_bar_set_status(self, text: str):
         self._status_bar.set_status(text)
@@ -434,6 +580,8 @@ def _force_palette(app: QApplication, mode: str):
 
 def main():
     import os
+    import signal
+    signal.signal(signal.SIGINT, signal.SIG_DFL)
     logging.basicConfig(level=logging.INFO)
     settings = Settings.load()
     load_language(settings.language)
