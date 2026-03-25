@@ -277,18 +277,31 @@ class DashboardWidget(QWidget):
         else:
             self._location_link.setText(t("dashboard.unknown"))
 
+        def _tv(v):
+            """Translate an API value string, fall back to raw value."""
+            key = f"dashboard.val.{str(v).lower()}"
+            result = t(key)
+            return result if result != key else str(v)
+
         formatters = {
             "range_km": lambda v: f"{v} km",
             "total_range_km": lambda v: f"{v} km",
+            "charge_status": _tv,
+            "plug_status": _tv,
+            "charge_mode": _tv,
+            "home_away": _tv,
+            "ignition": _tv,
             "time_to_charge": lambda v: f"{v} min" if v else "\u2014",
             "charge_limit_home": lambda v: f"{v}%",
             "charge_limit_away": lambda v: f"{v}%",
             "doors_locked": lambda v: t("dashboard.locked") if v else t("dashboard.unlocked"),
-            "all_doors_closed": lambda v: t("dashboard.yes") if v else t("dashboard.no"),
-            "all_windows_closed": lambda v: t("dashboard.yes") if v else t("dashboard.no"),
+            "all_doors_closed": lambda v: t("dashboard.closed") if v else t("dashboard.open"),
+            "all_windows_closed": lambda v: t("dashboard.closed") if v else t("dashboard.open"),
             "hood_open": lambda v: t("dashboard.open") if v else t("dashboard.closed"),
             "trunk_open": lambda v: t("dashboard.open") if v else t("dashboard.closed"),
             "lights_on": lambda v: t("dashboard.on") if v else t("dashboard.off"),
+            "headlights": lambda v: t("dashboard.on") if str(v).lower() == "on" else t("dashboard.off"),
+            "parking_lights": lambda v: t("dashboard.on") if str(v).lower() == "on" else t("dashboard.off"),
             "climate_active": lambda v: t("dashboard.climate_on") if v else t("dashboard.climate_off"),
             "cabin_temp_c": lambda v: f"{v}\u00b0C",
             "interior_temp_c": lambda v: f"{v}\u00b0C",
