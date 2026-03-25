@@ -54,6 +54,7 @@
   "dashboard.lights": "Luci",
   "dashboard.headlights": "Fari",
   "dashboard.parking_lights": "Luci di posizione",
+  "dashboard.coordinates": "Coordinate",
   "dashboard.home_away": "Casa/Fuori",
   "dashboard.speed": "Velocità",
   "dashboard.status": "Stato",

@@ -54,6 +54,7 @@
   "dashboard.lights": "Lights",
   "dashboard.headlights": "Headlights",
   "dashboard.parking_lights": "Parking Lights",
+  "dashboard.coordinates": "Coordinates",
   "dashboard.home_away": "Home/Away",
   "dashboard.speed": "Speed",
   "dashboard.status": "Status",

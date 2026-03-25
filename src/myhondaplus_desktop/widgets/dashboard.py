@@ -155,12 +155,22 @@ class DashboardWidget(QWidget):
 
         # Location card
         loc_box, loc_layout = _card(t("dashboard.location"), "map-pin")
+        loc_row = QHBoxLayout()
+        loc_icon = QLabel()
+        loc_icon.setPixmap(pixmap("map-pin", 14))
+        loc_icon.setFixedWidth(20)
+        loc_lbl = QLabel(t("dashboard.coordinates"))
+        loc_lbl.setStyleSheet("color: gray;")
         self._location_link = QLabel("")
         self._location_link.setOpenExternalLinks(True)
         self._location_link.setTextFormat(Qt.TextFormat.RichText)
         self._location_link.setTextInteractionFlags(
             Qt.TextInteractionFlag.TextBrowserInteraction)
-        loc_layout.addWidget(self._location_link)
+        loc_row.addWidget(loc_icon)
+        loc_row.addWidget(loc_lbl)
+        loc_row.addStretch()
+        loc_row.addWidget(self._location_link)
+        loc_layout.addLayout(loc_row)
         for key in ("home_away", "speed"):
             icon_name, i18n_key = _FIELDS[key]
             h, val = _row(icon_name, t(i18n_key))
