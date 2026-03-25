@@ -9,7 +9,7 @@ description = "Desktop GUI for Honda Connect Europe (My Honda+)"
 requires-python = ">=3.11"
 license = "GPL-3.0-or-later"
 dependencies = [
-    "pymyhondaplus>=2.0.0",
+    "pymyhondaplus>=2.0.1",
     "PyQt6>=6.6",
 ]
 

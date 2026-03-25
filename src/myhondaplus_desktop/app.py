@@ -138,6 +138,8 @@ class MainScreen(QWidget):
         self._settings = settings
         self._vehicles = []  # list of {"vin", "name", "plate"}
         self._update_info = None  # (new_version, release_url) or None
+        self._cached_climate_schedule = None  # cached after successful save
+        self._cached_charge_schedule = None
         self._worker = None
         self._vehicles_worker = None
 
@@ -260,6 +262,8 @@ class MainScreen(QWidget):
         if vin:
             self._settings.vin = vin
             self._settings.save()
+            self._cached_climate_schedule = None
+            self._cached_charge_schedule = None
             self._dashboard.set_vin(vin)
             self._load_dashboard()
 
@@ -384,12 +388,28 @@ class MainScreen(QWidget):
             duration=status.get("climate_duration", 30),
             defrost=status.get("climate_defrost", True),
         )
-        if dlg.exec() != QDialog.DialogCode.Accepted:
-            return
-        self._run_command(
-            t("commands.climate_settings"),
-            self._api.remote_climate_on, self._current_vin(),
-            temp=dlg.temp, duration=dlg.duration, defrost=dlg.defrost)
+
+        def on_accept():
+            dlg.set_saving(True, t("workers.sending", label=t("commands.climate_settings")))
+            w = CommandWorker(
+                self._api, t("commands.climate_settings"),
+                self._api.remote_climate_on, self._current_vin(),
+                temp=dlg.temp, duration=dlg.duration, defrost=dlg.defrost)
+            w.progress.connect(lambda msg: dlg.set_saving(True, msg))
+            w.finished.connect(lambda lbl: (
+                dlg.set_saving(False),
+                dlg.accept(),
+                self._status_bar_set_success(t("commands.done", label=lbl)),
+                self._load_dashboard()))
+            w.error.connect(lambda msg: (
+                dlg.set_saving(False, ""),
+                self._status_bar_set_error(msg)))
+            w.start()
+            self._cmd_worker = w
+
+        dlg._buttons.accepted.disconnect()
+        dlg._buttons.accepted.connect(on_accept)
+        dlg.exec()
 
     def _cmd_locate(self):
         self._run_command(t("commands.locate"), self._api.request_car_location, self._current_vin())
@@ -398,80 +418,116 @@ class MainScreen(QWidget):
         vin = self._current_vin()
         if not vin:
             return
-        self._status_bar_set_status(t("schedules.loading"))
-        self._sched_worker = ScheduleLoadWorker(self._api, vin)
-        self._sched_worker.finished.connect(self._show_climate_schedule)
-        self._sched_worker.error.connect(self._status_bar_set_error)
-        self._sched_worker.start()
+        if self._cached_climate_schedule is not None:
+            self._show_climate_schedule_dialog(self._cached_climate_schedule)
+        else:
+            self._status_bar_set_status(t("schedules.loading"))
+            self._sched_worker = ScheduleLoadWorker(self._api, vin)
+            self._sched_worker.finished.connect(
+                lambda data: self._show_climate_schedule_dialog(data["climate_schedule"]))
+            self._sched_worker.error.connect(self._status_bar_set_error)
+            self._sched_worker.start()
 
-    def _show_climate_schedule(self, data: dict):
+    def _show_climate_schedule_dialog(self, schedule: list):
         self._status_bar_set_success(t("schedules.loaded"))
         vin = self._current_vin()
 
+        dlg = ClimateScheduleDialog(self, schedule=schedule)
+
         def on_save(rules):
+            dlg.set_saving(True, t("workers.sending", label=t("schedules.climate")))
+            def on_success(_):
+                self._cached_climate_schedule = rules
+                dlg.set_saving(False)
+                self._status_bar_set_success(t("schedules.saved"))
+            def on_error(msg):
+                dlg.set_saving(False, "")
+                self._status_bar_set_error(msg)
             w = ScheduleSaveWorker(self._api, t("schedules.climate"),
                                    self._api.set_climate_schedule, vin, rules)
-            w.progress.connect(self._status_bar_set_status)
-            w.finished.connect(lambda _: self._status_bar_set_success(t("schedules.saved")))
-            w.error.connect(self._status_bar_set_error)
+            w.progress.connect(lambda msg: dlg.set_saving(True, msg))
+            w.finished.connect(on_success)
+            w.error.connect(on_error)
             w.start()
             self._sched_save_worker = w
 
         def on_clear():
+            dlg.set_saving(True, t("workers.sending", label=t("schedules.climate")))
+            def on_success(_):
+                self._cached_climate_schedule = [{"enabled": False} for _ in range(7)]
+                dlg.set_saving(False)
+                self._status_bar_set_success(t("schedules.cleared"))
+            def on_error(msg):
+                dlg.set_saving(False, "")
+                self._status_bar_set_error(msg)
             w = ScheduleSaveWorker(self._api, t("schedules.climate"),
                                    self._api.set_climate_schedule, vin, [])
-            w.progress.connect(self._status_bar_set_status)
-            w.finished.connect(lambda _: self._status_bar_set_success(t("schedules.cleared")))
-            w.error.connect(self._status_bar_set_error)
+            w.progress.connect(lambda msg: dlg.set_saving(True, msg))
+            w.finished.connect(on_success)
+            w.error.connect(on_error)
             w.start()
             self._sched_save_worker = w
 
-        dlg = ClimateScheduleDialog(
-            self,
-            schedule=data["climate_schedule"],
-            on_save=on_save,
-            on_clear=on_clear,
-        )
+        dlg._on_save = on_save
+        dlg._on_clear = on_clear
         dlg.exec()
 
     def _cmd_charge_schedule(self):
         vin = self._current_vin()
         if not vin:
             return
-        self._status_bar_set_status(t("schedules.loading"))
-        self._sched_worker = ScheduleLoadWorker(self._api, vin)
-        self._sched_worker.finished.connect(self._show_charge_schedule)
-        self._sched_worker.error.connect(self._status_bar_set_error)
-        self._sched_worker.start()
+        if self._cached_charge_schedule is not None:
+            self._show_charge_schedule_dialog(self._cached_charge_schedule)
+        else:
+            self._status_bar_set_status(t("schedules.loading"))
+            self._sched_worker = ScheduleLoadWorker(self._api, vin)
+            self._sched_worker.finished.connect(
+                lambda data: self._show_charge_schedule_dialog(data["charge_schedule"]))
+            self._sched_worker.error.connect(self._status_bar_set_error)
+            self._sched_worker.start()
 
-    def _show_charge_schedule(self, data: dict):
+    def _show_charge_schedule_dialog(self, schedule: list):
         self._status_bar_set_success(t("schedules.loaded"))
         vin = self._current_vin()
 
+        dlg = ChargeScheduleDialog(self, schedule=schedule)
+
         def on_save(rules):
+            dlg.set_saving(True, t("workers.sending", label=t("schedules.charge")))
+            def on_success(_):
+                self._cached_charge_schedule = rules
+                dlg.set_saving(False)
+                self._status_bar_set_success(t("schedules.saved"))
+            def on_error(msg):
+                dlg.set_saving(False, "")
+                self._status_bar_set_error(msg)
             w = ScheduleSaveWorker(self._api, t("schedules.charge"),
                                    self._api.set_charge_schedule, vin, rules)
-            w.progress.connect(self._status_bar_set_status)
-            w.finished.connect(lambda _: self._status_bar_set_success(t("schedules.saved")))
-            w.error.connect(self._status_bar_set_error)
+            w.progress.connect(lambda msg: dlg.set_saving(True, msg))
+            w.finished.connect(on_success)
+            w.error.connect(on_error)
             w.start()
             self._sched_save_worker = w
 
         def on_clear():
+            dlg.set_saving(True, t("workers.sending", label=t("schedules.charge")))
+            def on_success(_):
+                self._cached_charge_schedule = [{"enabled": False} for _ in range(2)]
+                dlg.set_saving(False)
+                self._status_bar_set_success(t("schedules.cleared"))
+            def on_error(msg):
+                dlg.set_saving(False, "")
+                self._status_bar_set_error(msg)
             w = ScheduleSaveWorker(self._api, t("schedules.charge"),
                                    self._api.set_charge_schedule, vin, [])
-            w.progress.connect(self._status_bar_set_status)
-            w.finished.connect(lambda _: self._status_bar_set_success(t("schedules.cleared")))
-            w.error.connect(self._status_bar_set_error)
+            w.progress.connect(lambda msg: dlg.set_saving(True, msg))
+            w.finished.connect(on_success)
+            w.error.connect(on_error)
             w.start()
             self._sched_save_worker = w
 
-        dlg = ChargeScheduleDialog(
-            self,
-            schedule=data["charge_schedule"],
-            on_save=on_save,
-            on_clear=on_clear,
-        )
+        dlg._on_save = on_save
+        dlg._on_clear = on_clear
         dlg.exec()
 
     def _status_bar_set_status(self, text: str):

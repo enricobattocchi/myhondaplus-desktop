@@ -133,7 +133,8 @@ class ClimateSettingsDialog(QDialog):
     def __init__(self, parent=None, temp="normal", duration=30, defrost=True):
         super().__init__(parent)
         self.setWindowTitle(t("schedules.climate_settings"))
-        layout = QFormLayout(self)
+        self._saving = False
+        self._layout = QFormLayout(self)
 
         self._temp = QComboBox()
         for val, key in [("cooler", "commands.cooler"), ("normal", "commands.normal"),
@@ -142,7 +143,7 @@ class ClimateSettingsDialog(QDialog):
         idx = self._temp.findData(temp)
         if idx >= 0:
             self._temp.setCurrentIndex(idx)
-        layout.addRow(t("commands.temperature"), self._temp)
+        self._layout.addRow(t("commands.temperature"), self._temp)
 
         self._duration = QComboBox()
         for d in [10, 20, 30]:
@@ -150,18 +151,37 @@ class ClimateSettingsDialog(QDialog):
         idx = self._duration.findData(duration)
         if idx >= 0:
             self._duration.setCurrentIndex(idx)
-        layout.addRow(t("commands.duration"), self._duration)
+        self._layout.addRow(t("commands.duration"), self._duration)
 
         self._defrost = QCheckBox(t("schedules.defrost"))
         self._defrost.setChecked(defrost)
-        layout.addRow(self._defrost)
+        self._layout.addRow(self._defrost)
 
-        buttons = QDialogButtonBox(
+        self._status_label = QLabel("")
+        self._status_label.setStyleSheet("color: gray; font-style: italic;")
+        self._status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._status_label.setVisible(False)
+        self._layout.addRow(self._status_label)
+
+        self._buttons = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Ok |
             QDialogButtonBox.StandardButton.Cancel)
-        buttons.accepted.connect(self.accept)
-        buttons.rejected.connect(self.reject)
-        layout.addRow(buttons)
+        self._buttons.accepted.connect(self.accept)
+        self._buttons.rejected.connect(self.reject)
+        self._layout.addRow(self._buttons)
+
+    def set_saving(self, saving: bool, message: str = ""):
+        self._saving = saving
+        self._buttons.setEnabled(not saving)
+        self._temp.setEnabled(not saving)
+        self._duration.setEnabled(not saving)
+        self._defrost.setEnabled(not saving)
+        self._status_label.setText(message)
+        self._status_label.setVisible(bool(message))
+
+    def reject(self):
+        if not self._saving:
+            super().reject()
 
     @property
     def temp(self) -> str:
@@ -213,15 +233,20 @@ class ClimateScheduleDialog(QDialog):
         self.setWindowTitle(t("schedules.climate"))
         self.setMinimumWidth(450)
         self._schedule = list(schedule or [])
-        # Pad to 7 slots
         while len(self._schedule) < 7:
             self._schedule.append({"enabled": False})
         self._on_save = on_save
         self._on_clear = on_clear
+        self._saving = False
 
         self._layout = QVBoxLayout(self)
 
-        # Slot rows
+        self._status_label = QLabel("")
+        self._status_label.setStyleSheet("color: gray; font-style: italic;")
+        self._status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._status_label.setVisible(False)
+        self._layout.addWidget(self._status_label)
+
         self._rows = []
         for i in range(7):
             row = self._make_row(i)
@@ -230,17 +255,29 @@ class ClimateScheduleDialog(QDialog):
 
         self._update_rows()
 
-        # Clear all button
         btns = QHBoxLayout()
         btns.addStretch()
-        clear_btn = QPushButton(t("schedules.clear_all"))
-        clear_btn.clicked.connect(self._clear_all)
-        btns.addWidget(clear_btn)
+        self._clear_btn = QPushButton(t("schedules.clear_all"))
+        self._clear_btn.clicked.connect(self._clear_all)
+        btns.addWidget(self._clear_btn)
         self._layout.addLayout(btns)
 
-        close_btn = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
-        close_btn.rejected.connect(self.accept)
-        self._layout.addWidget(close_btn)
+        self._close_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+        self._close_box.rejected.connect(self.accept)
+        self._layout.addWidget(self._close_box)
+
+    def set_saving(self, saving: bool, message: str = ""):
+        self._saving = saving
+        self._close_box.setEnabled(not saving)
+        self._clear_btn.setEnabled(not saving)
+        for row in self._rows:
+            row["button"].setEnabled(not saving)
+        self._status_label.setText(message)
+        self._status_label.setVisible(bool(message))
+
+    def reject(self):
+        if not self._saving:
+            super().reject()
 
     def _make_row(self, index: int) -> dict:
         h = QHBoxLayout()
@@ -308,6 +345,7 @@ class ChargeScheduleDialog(QDialog):
             self._schedule.append({"enabled": False})
         self._on_save = on_save
         self._on_clear = on_clear
+        self._saving = False
 
         self._layout = QVBoxLayout(self)
 
@@ -316,7 +354,12 @@ class ChargeScheduleDialog(QDialog):
         note.setWordWrap(True)
         self._layout.addWidget(note)
 
-        # Rule rows
+        self._status_label = QLabel("")
+        self._status_label.setStyleSheet("color: gray; font-style: italic;")
+        self._status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._status_label.setVisible(False)
+        self._layout.addWidget(self._status_label)
+
         self._rows = []
         for i in range(2):
             row = self._make_row(i)
@@ -327,14 +370,27 @@ class ChargeScheduleDialog(QDialog):
 
         btns = QHBoxLayout()
         btns.addStretch()
-        clear_btn = QPushButton(t("schedules.clear_all"))
-        clear_btn.clicked.connect(self._clear_all)
-        btns.addWidget(clear_btn)
+        self._clear_btn = QPushButton(t("schedules.clear_all"))
+        self._clear_btn.clicked.connect(self._clear_all)
+        btns.addWidget(self._clear_btn)
         self._layout.addLayout(btns)
 
-        close_btn = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
-        close_btn.rejected.connect(self.accept)
-        self._layout.addWidget(close_btn)
+        self._close_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+        self._close_box.rejected.connect(self.accept)
+        self._layout.addWidget(self._close_box)
+
+    def set_saving(self, saving: bool, message: str = ""):
+        self._saving = saving
+        self._close_box.setEnabled(not saving)
+        self._clear_btn.setEnabled(not saving)
+        for row in self._rows:
+            row["button"].setEnabled(not saving)
+        self._status_label.setText(message)
+        self._status_label.setVisible(bool(message))
+
+    def reject(self):
+        if not self._saving:
+            super().reject()
 
     def _make_row(self, index: int) -> dict:
         h = QHBoxLayout()
