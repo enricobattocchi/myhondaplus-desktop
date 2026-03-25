@@ -13,6 +13,9 @@ dependencies = [
     "PyQt6>=6.6",
 ]
 
+[project.optional-dependencies]
+dev = ["pytest"]
+
 [project.gui-scripts]
 myhondaplus-desktop = "myhondaplus_desktop.app:main"
 
