@@ -277,12 +277,18 @@ class TripsWorker(QThread):
                             trip.update(locs)
                         except Exception:
                             pass
-            # Get fuel type for consumption unit
+            # Get fuel type and distance unit
             vehicle = next(
                 (v for v in self.api.tokens.vehicles if v["vin"] == self.vin),
                 None)
             fuel_type = (vehicle or {}).get("fuel_type", "")
-            stats = compute_trip_stats(trips, fuel_type=fuel_type) if trips else None
+            # Fetch dashboard for unit info
+            dashboard = self.api.get_dashboard(self.vin)
+            ev_status = parse_ev_status(dashboard)
+            distance_unit = ev_status.get("distance_unit", "km")
+            stats = compute_trip_stats(
+                trips, fuel_type=fuel_type,
+                distance_unit=distance_unit) if trips else None
             self.finished.emit({"trips": trips, "stats": stats})
         except requests.HTTPError:
             # Check if user role is non-primary (e.g. secondary driver)

@@ -63,8 +63,8 @@ def _row(icon_name: str, label: str, value: str = "") -> tuple[QHBoxLayout, QLab
 
 # Maps field keys to (icon_name, i18n_key)
 _FIELDS = {
-    "range_km": ("ruler", "dashboard.range"),
-    "total_range_km": ("ruler", "dashboard.total_range"),
+    "range": ("ruler", "dashboard.range"),
+    "total_range": ("ruler", "dashboard.total_range"),
     "charge_status": ("zap", "dashboard.charge_status"),
     "plug_status": ("plug", "dashboard.plug"),
     "charge_mode": ("zap", "dashboard.charge_mode"),
@@ -80,11 +80,11 @@ _FIELDS = {
     "headlights": ("flashlight", "dashboard.headlights"),
     "parking_lights": ("siren", "dashboard.parking_lights"),
     "home_away": ("house", "dashboard.home_away"),
-    "speed_kmh": ("gauge", "dashboard.speed"),
+    "speed": ("gauge", "dashboard.speed"),
     "climate_active": ("snowflake", "dashboard.status"),
-    "cabin_temp_c": ("thermometer", "dashboard.cabin"),
-    "interior_temp_c": ("thermometer", "dashboard.interior"),
-    "odometer_km": ("milestone", "dashboard.odometer"),
+    "cabin_temp": ("thermometer", "dashboard.cabin"),
+    "interior_temp": ("thermometer", "dashboard.interior"),
+    "odometer": ("milestone", "dashboard.odometer"),
     "ignition": ("key-round", "dashboard.ignition"),
 }
 
@@ -112,7 +112,7 @@ class DashboardWidget(QWidget):
         self._battery_bar.setRange(0, 100)
         self._battery_bar.setTextVisible(True)
         bat_layout.addWidget(self._battery_bar)
-        for key in ("range_km", "total_range_km", "charge_status",
+        for key in ("range", "total_range", "charge_status",
                      "plug_status", "charge_mode", "time_to_charge",
                      "charge_limit_home", "charge_limit_away"):
             icon_name, i18n_key = _FIELDS[key]
@@ -161,7 +161,7 @@ class DashboardWidget(QWidget):
         self._location_link.setTextInteractionFlags(
             Qt.TextInteractionFlag.TextBrowserInteraction)
         loc_layout.addWidget(self._location_link)
-        for key in ("home_away", "speed_kmh"):
+        for key in ("home_away", "speed"):
             icon_name, i18n_key = _FIELDS[key]
             h, val = _row(icon_name, t(i18n_key))
             loc_layout.addLayout(h)
@@ -177,7 +177,7 @@ class DashboardWidget(QWidget):
 
         # Climate card
         clim_box, clim_layout = _card(t("dashboard.climate"), "snowflake")
-        for key in ("climate_active", "cabin_temp_c", "interior_temp_c"):
+        for key in ("climate_active", "cabin_temp", "interior_temp"):
             icon_name, i18n_key = _FIELDS[key]
             h, val = _row(icon_name, t(i18n_key))
             clim_layout.addLayout(h)
@@ -201,7 +201,7 @@ class DashboardWidget(QWidget):
         h, val = _row("clipboard", t("dashboard.vin"))
         veh_layout.addLayout(h)
         self._vin_label = val
-        for key in ("odometer_km", "ignition"):
+        for key in ("odometer", "ignition"):
             icon_name, i18n_key = _FIELDS[key]
             h, val = _row(icon_name, t(i18n_key))
             veh_layout.addLayout(h)
@@ -283,9 +283,14 @@ class DashboardWidget(QWidget):
             result = t(key)
             return result if result != key else str(v)
 
+        dist = status.get("distance_unit", "km")
+        spd = status.get("speed_unit", f"{dist}/h")
+        temp = status.get("temp_unit", "c")
+        temp_sym = "\u00b0F" if temp.lower() == "f" else "\u00b0C"
+
         formatters = {
-            "range_km": lambda v: f"{v} km",
-            "total_range_km": lambda v: f"{v} km",
+            "range": lambda v: f"{v} {dist}",
+            "total_range": lambda v: f"{v} {dist}",
             "charge_status": _tv,
             "plug_status": _tv,
             "charge_mode": _tv,
@@ -303,10 +308,10 @@ class DashboardWidget(QWidget):
             "headlights": lambda v: t("dashboard.on") if str(v).lower() == "on" else t("dashboard.off"),
             "parking_lights": lambda v: t("dashboard.on") if str(v).lower() == "on" else t("dashboard.off"),
             "climate_active": lambda v: t("dashboard.climate_on") if v else t("dashboard.climate_off"),
-            "cabin_temp_c": lambda v: f"{v}\u00b0C",
-            "interior_temp_c": lambda v: f"{v}\u00b0C",
-            "odometer_km": lambda v: f"{v:,} km",
-            "speed_kmh": lambda v: f"{v} km/h",
+            "cabin_temp": lambda v: f"{v}{temp_sym}",
+            "interior_temp": lambda v: f"{v}{temp_sym}",
+            "odometer": lambda v: f"{v:,} {dist}",
+            "speed": lambda v: f"{v} {spd}",
         }
 
         for key, label in self._labels.items():

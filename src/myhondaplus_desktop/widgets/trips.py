@@ -48,6 +48,8 @@ class TripsWidget(QWidget):
         self._current_month = date.today().replace(day=1)
         self._trips_data = []
         self._last_consumption_unit = ""
+        self._last_distance_unit = "km"
+        self._last_speed_unit = "km/h"
 
         layout = QVBoxLayout(self)
 
@@ -187,8 +189,11 @@ class TripsWidget(QWidget):
         with open(path, "w", newline="") as f:
             writer = csv.writer(f)
             header = [
-                "Date", "Start", "End", "Distance (km)", "Duration (min)",
-                "Avg Speed (km/h)", "Max Speed (km/h)", f"Consumption ({unit})",
+                "Date", "Start", "End",
+                f"Distance ({self._last_distance_unit})", "Duration (min)",
+                f"Avg Speed ({self._last_speed_unit})",
+                f"Max Speed ({self._last_speed_unit})",
+                f"Consumption ({unit})",
             ]
             if has_locs:
                 header.extend([
@@ -221,16 +226,20 @@ class TripsWidget(QWidget):
         self._trips_data = trips
         if stats:
             self._last_consumption_unit = stats.get("consumption_unit", self._consumption_unit())
+            self._last_distance_unit = stats.get("distance_unit", "km")
+            self._last_speed_unit = stats.get("speed_unit", "km/h")
 
         # Update stats
         if stats:
-            self._stat_labels["trips"].setText(f"{stats['total_km']} km")
+            dist = stats.get("distance_unit", "km")
+            spd = stats.get("speed_unit", f"{dist}/h")
+            self._stat_labels["trips"].setText(f"{stats['total_distance']} {dist}")
             self._stat_labels["count"].setText(str(stats["trips"]))
             hours = int(stats["total_minutes"]) // 60
             mins = int(stats["total_minutes"]) % 60
             self._stat_labels["time"].setText(f"{hours}h {mins}min")
-            self._stat_labels["avg_speed"].setText(f"{stats['avg_speed_kmh']} km/h")
-            self._stat_labels["max_speed"].setText(f"{stats['max_speed_kmh']} km/h")
+            self._stat_labels["avg_speed"].setText(f"{stats['avg_speed']} {spd}")
+            self._stat_labels["max_speed"].setText(f"{stats['max_speed']} {spd}")
             self._stat_labels["consumption"].setText(
                 f"{stats['avg_consumption']} {stats['consumption_unit']}")
             self._period_label.setText(
@@ -266,9 +275,9 @@ class TripsWidget(QWidget):
                 trip.get("OneTripDate", "")[:10],
                 start_time,
                 end_time,
-                f"{trip.get('Mileage', '?')} km",
+                f"{trip.get('Mileage', '?')} {self._last_distance_unit}",
                 f"{trip.get('DriveTime', '?')} min",
-                f"{trip.get('AveSpeed', '?')} km/h",
+                f"{trip.get('AveSpeed', '?')} {self._last_speed_unit}",
                 f"{trip.get('AveFuelEconomy', '?')} {unit}",
             ]
             for col, text in enumerate(items):

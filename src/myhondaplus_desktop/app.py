@@ -584,10 +584,16 @@ class MainWindow(QMainWindow):
             self._api, self._settings, on_logout=self._logout)
         self._stack.addWidget(self._main)
 
-        # Check if already logged in
-        if self._api.tokens.access_token and not self._api.tokens.is_expired:
-            self._stack.setCurrentWidget(self._main)
-            self._main.activate()
+        # Check if already logged in (try refresh if expired but has refresh token)
+        if self._api.tokens.access_token:
+            if self._api.tokens.is_expired and self._api.tokens.refresh_token:
+                try:
+                    self._api.refresh_auth()
+                except Exception:
+                    pass  # Will show login screen
+            if not self._api.tokens.is_expired:
+                self._stack.setCurrentWidget(self._main)
+                self._main.activate()
 
     def _on_login_success(self, tokens: dict, email: str, password: str):
         user_id = HondaAuth.extract_user_id(tokens["access_token"])
