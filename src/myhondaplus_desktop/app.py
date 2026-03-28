@@ -414,7 +414,7 @@ class MainScreen(QWidget):
             dlg.set_saving(True, t("workers.sending", label=t("commands.climate_settings")))
             w = CommandWorker(
                 self._api, t("commands.climate_settings"),
-                self._api.remote_climate_on, self._current_vin(),
+                self._api.set_climate_settings, self._current_vin(),
                 temp=dlg.temp, duration=dlg.duration, defrost=dlg.defrost)
             w.progress.connect(lambda msg: dlg.set_saving(True, msg))
             w.finished.connect(lambda lbl: (
