@@ -1,13 +1,20 @@
 """Dashboard widget showing vehicle status with integrated actions."""
 
-from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
-    QGroupBox, QLabel, QProgressBar, QPushButton, QMessageBox,
-)
 from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import (
+    QGridLayout,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QMessageBox,
+    QProgressBar,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
 
-from ..icons import icon, pixmap
 from ..i18n import t
+from ..icons import icon, pixmap
 
 
 def _dms_to_decimal(dms: str) -> float | None:
@@ -124,12 +131,12 @@ class DashboardWidget(QWidget):
         self._charge_btn = QPushButton(icon("zap"), t("commands.charge_on"))
         self._charge_btn.clicked.connect(self._on_charge_toggle)
         bat_actions.addWidget(self._charge_btn)
-        limit_btn = QPushButton(icon("battery-charging"), t("commands.charge_limit"))
-        limit_btn.clicked.connect(lambda: self._call("on_charge_limit"))
-        bat_actions.addWidget(limit_btn)
-        schedule_btn = QPushButton(icon("calendar-clock"), t("schedules.charge"))
-        schedule_btn.clicked.connect(lambda: self._call("on_charge_schedule"))
-        bat_actions.addWidget(schedule_btn)
+        self._limit_btn = QPushButton(icon("battery-charging"), t("commands.charge_limit"))
+        self._limit_btn.clicked.connect(lambda: self._call("on_charge_limit"))
+        bat_actions.addWidget(self._limit_btn)
+        self._charge_sched_btn = QPushButton(icon("calendar-clock"), t("schedules.charge"))
+        self._charge_sched_btn.clicked.connect(lambda: self._call("on_charge_schedule"))
+        bat_actions.addWidget(self._charge_sched_btn)
         bat_layout.addLayout(bat_actions)
         grid.addWidget(bat_box, 0, 0)
 
@@ -147,9 +154,9 @@ class DashboardWidget(QWidget):
         self._lock_btn = QPushButton(icon("lock"), t("commands.lock"))
         self._lock_btn.clicked.connect(self._on_lock_toggle)
         sec_actions.addWidget(self._lock_btn)
-        horn_btn = QPushButton(icon("megaphone"), t("commands.horn_lights"))
-        horn_btn.clicked.connect(self._on_horn_lights)
-        sec_actions.addWidget(horn_btn)
+        self._horn_btn = QPushButton(icon("megaphone"), t("commands.horn_lights"))
+        self._horn_btn.clicked.connect(self._on_horn_lights)
+        sec_actions.addWidget(self._horn_btn)
         sec_layout.addLayout(sec_actions)
         grid.addWidget(sec_box, 0, 1)
 
@@ -178,9 +185,9 @@ class DashboardWidget(QWidget):
             self._labels[key] = val
         # Location action
         loc_actions = QHBoxLayout()
-        locate_btn = QPushButton(icon("map-pin"), t("commands.locate"))
-        locate_btn.clicked.connect(lambda: self._call("on_locate"))
-        loc_actions.addWidget(locate_btn)
+        self._locate_btn = QPushButton(icon("map-pin"), t("commands.locate"))
+        self._locate_btn.clicked.connect(lambda: self._call("on_locate"))
+        loc_actions.addWidget(self._locate_btn)
         loc_actions.addStretch()
         loc_layout.addLayout(loc_actions)
         grid.addWidget(loc_box, 1, 0)
@@ -197,12 +204,12 @@ class DashboardWidget(QWidget):
         self._climate_btn = QPushButton(icon("snowflake"), t("commands.climate_on"))
         self._climate_btn.clicked.connect(self._on_climate_toggle)
         clim_actions.addWidget(self._climate_btn)
-        settings_btn = QPushButton(icon("settings"), t("commands.climate_settings"))
-        settings_btn.clicked.connect(lambda: self._call("on_climate_settings"))
-        clim_actions.addWidget(settings_btn)
-        clim_sched_btn = QPushButton(icon("calendar-clock"), t("schedules.climate"))
-        clim_sched_btn.clicked.connect(lambda: self._call("on_climate_schedule"))
-        clim_actions.addWidget(clim_sched_btn)
+        self._settings_btn = QPushButton(icon("settings"), t("commands.climate_settings"))
+        self._settings_btn.clicked.connect(lambda: self._call("on_climate_settings"))
+        clim_actions.addWidget(self._settings_btn)
+        self._clim_sched_btn = QPushButton(icon("calendar-clock"), t("schedules.climate"))
+        self._clim_sched_btn.clicked.connect(lambda: self._call("on_climate_schedule"))
+        clim_actions.addWidget(self._clim_sched_btn)
         clim_layout.addLayout(clim_actions)
         grid.addWidget(clim_box, 1, 1)
 
@@ -224,6 +231,14 @@ class DashboardWidget(QWidget):
         warn_layout.addWidget(self._warnings_label)
         grid.addWidget(warn_box, 2, 1)
 
+        # All action buttons (for enabling/disabling during commands)
+        self._action_buttons = [
+            self._charge_btn, self._limit_btn, self._charge_sched_btn,
+            self._lock_btn, self._horn_btn,
+            self._locate_btn,
+            self._climate_btn, self._settings_btn, self._clim_sched_btn,
+        ]
+
         # Timestamp
         self._timestamp = _selectable(QLabel(""))
         self._timestamp.setAlignment(Qt.AlignmentFlag.AlignRight)
@@ -234,6 +249,10 @@ class DashboardWidget(QWidget):
         cb = self._actions.get(action_name)
         if cb:
             cb()
+
+    def set_actions_enabled(self, enabled: bool):
+        for btn in self._action_buttons:
+            btn.setEnabled(enabled)
 
     def _on_lock_toggle(self):
         if self._status.get("doors_locked", False):

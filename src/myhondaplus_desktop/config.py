@@ -1,11 +1,8 @@
 """Configuration and settings persistence."""
 
 import json
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass
 from pathlib import Path
-
-from pymyhondaplus.api import DEFAULT_TOKEN_FILE
-from pymyhondaplus.auth import DEFAULT_DEVICE_KEY_FILE
 
 SETTINGS_DIR = Path.home() / ".config" / "myhondaplus-desktop"
 SETTINGS_FILE = SETTINGS_DIR / "settings.json"

@@ -1,15 +1,20 @@
 """Background workers for API calls (run off the GUI thread)."""
 
-import time
 import logging
-
-from PyQt6.QtCore import QThread, pyqtSignal
+import time
 
 from pymyhondaplus import (
-    HondaAPI, HondaAuth, DeviceKey, HondaAPIError,
-    parse_ev_status, parse_climate_schedule, parse_charge_schedule, SecretStorage,
+    DeviceKey,
+    HondaAPI,
+    HondaAuth,
+    HondaAuthError,
+    SecretStorage,
+    parse_charge_schedule,
+    parse_climate_schedule,
+    parse_ev_status,
 )
 from pymyhondaplus.api import compute_trip_stats
+from PyQt6.QtCore import QThread, pyqtSignal
 
 from .i18n import t
 
@@ -70,7 +75,7 @@ class LoginWorker(QThread):
                 locale=self.locale,
             )
             self.finished.emit(tokens)
-        except RuntimeError as e:
+        except HondaAuthError as e:
             if "device-authenticator-not-registered" in str(e):
                 self.device_registration_needed.emit()
             else:
@@ -85,7 +90,7 @@ class LoginWorker(QThread):
             self.progress.emit(t("workers.device_verification"))
             try:
                 self.auth.reset_device_authenticator(self.email, self.password)
-            except RuntimeError as e:
+            except HondaAuthError as e:
                 if "currently blocked" not in str(e):
                     raise
             self.progress.emit(t("workers.device_verification"))
@@ -132,7 +137,7 @@ class DeviceRegistrationWorker(QThread):
             self.progress.emit(t("workers.device_verification"))
             try:
                 self.auth.reset_device_authenticator(self.email, self.password)
-            except RuntimeError as e:
+            except HondaAuthError as e:
                 if "currently blocked" not in str(e):
                     raise
             self.finished.emit()
@@ -321,8 +326,8 @@ class UpdateCheckWorker(QThread):
 
     def run(self):
         try:
-            import urllib.request
             import json
+            import urllib.request
             req = urllib.request.Request(
                 self.RELEASES_URL,
                 headers={"Accept": "application/vnd.github+json"})

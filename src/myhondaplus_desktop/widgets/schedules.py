@@ -1,13 +1,20 @@
 """Schedule management dialogs for climate and charge prohibition."""
 
-from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout,
-    QLabel, QPushButton, QDialog, QFormLayout, QCheckBox, QComboBox,
-    QTimeEdit, QDialogButtonBox, QMessageBox, QSpinBox,
-)
 from PyQt6.QtCore import Qt, QTime
+from PyQt6.QtWidgets import (
+    QCheckBox,
+    QComboBox,
+    QDialog,
+    QDialogButtonBox,
+    QFormLayout,
+    QHBoxLayout,
+    QLabel,
+    QMessageBox,
+    QPushButton,
+    QTimeEdit,
+    QVBoxLayout,
+)
 
-from ..icons import icon
 from ..i18n import t
 
 DAY_KEYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]

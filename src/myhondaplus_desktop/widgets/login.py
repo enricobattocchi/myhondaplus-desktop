@@ -1,16 +1,23 @@
 """Login screen widget."""
 
-from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QFormLayout,
-    QLineEdit, QPushButton, QLabel, QInputDialog, QMessageBox,
-)
-from PyQt6.QtCore import Qt
-
-from ..workers import (
-    LoginWorker, DeviceRegistrationWorker, VerifyAndLoginWorker,
-)
-from ..i18n import t
 from pymyhondaplus import SecretStorage
+from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import (
+    QFormLayout,
+    QInputDialog,
+    QLabel,
+    QLineEdit,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
+
+from ..i18n import t
+from ..workers import (
+    DeviceRegistrationWorker,
+    LoginWorker,
+    VerifyAndLoginWorker,
+)
 
 
 class LoginWidget(QWidget):

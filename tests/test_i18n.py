@@ -1,6 +1,6 @@
 """Tests for the i18n module."""
 
-from myhondaplus_desktop.i18n import load_language, t, available_languages, active_language
+from myhondaplus_desktop.i18n import active_language, available_languages, load_language, t
 
 
 def test_available_languages():

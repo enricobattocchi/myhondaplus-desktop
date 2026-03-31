@@ -6,11 +6,10 @@ are visible in both light and dark themes.
 
 from importlib.resources import files
 
-from PyQt6.QtCore import QSize, QByteArray, Qt
-from PyQt6.QtGui import QIcon, QPixmap, QPalette, QPainter
+from PyQt6.QtCore import QByteArray, QSize, Qt
+from PyQt6.QtGui import QIcon, QPainter, QPalette, QPixmap
 from PyQt6.QtSvg import QSvgRenderer
 from PyQt6.QtWidgets import QApplication
-
 
 _ICONS_PKG = files("myhondaplus_desktop") / "icons"
 _raw_cache: dict[str, bytes] = {}

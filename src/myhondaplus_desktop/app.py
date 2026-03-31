@@ -1,33 +1,50 @@
 """Main application window."""
 
-import sys
 import logging
-
-from PyQt6.QtWidgets import (
-    QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-    QStackedWidget, QComboBox, QPushButton, QLabel, QFrame, QTabWidget,
-    QDialog, QDialogButtonBox,
-)
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QDesktopServices
+import sys
 
 from pymyhondaplus import HondaAPI, HondaAuth, get_storage
 from pymyhondaplus.api import DEFAULT_TOKEN_FILE
 from pymyhondaplus.auth import DEFAULT_DEVICE_KEY_FILE
+from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import (
+    QApplication,
+    QComboBox,
+    QDialog,
+    QDialogButtonBox,
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QMainWindow,
+    QPushButton,
+    QStackedWidget,
+    QTabWidget,
+    QVBoxLayout,
+    QWidget,
+)
 
 from . import __version__
 from .config import Settings
-from .i18n import t, load_language, available_languages, active_language
+from .i18n import active_language, available_languages, load_language, t
 from .icons import icon, pixmap
-from .workers import DashboardWorker, VehiclesWorker, UpdateCheckWorker, CommandWorker, ScheduleLoadWorker, ScheduleSaveWorker
-from .widgets.login import LoginWidget
 from .widgets.dashboard import DashboardWidget
-from .widgets.trips import TripsWidget
+from .widgets.login import LoginWidget
 from .widgets.schedules import (
-    ClimateScheduleDialog, ChargeScheduleDialog,
-    ClimateSettingsDialog, ChargeLimitDialog,
+    ChargeLimitDialog,
+    ChargeScheduleDialog,
+    ClimateScheduleDialog,
+    ClimateSettingsDialog,
 )
 from .widgets.status_bar import StatusBarWidget
+from .widgets.trips import TripsWidget
+from .workers import (
+    CommandWorker,
+    DashboardWorker,
+    ScheduleLoadWorker,
+    ScheduleSaveWorker,
+    UpdateCheckWorker,
+    VehiclesWorker,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -313,6 +330,7 @@ class MainScreen(QWidget):
 
     def _on_dashboard(self, status: dict):
         self._dashboard.update_status(status)
+        self._dashboard.set_actions_enabled(True)
         self._status_bar.set_success(t("app.status_loaded"))
 
     def _check_update(self):
@@ -342,12 +360,16 @@ class MainScreen(QWidget):
     # -- Command helpers --
 
     def _run_command(self, label: str, func, *args, **kwargs):
+        self._dashboard.set_actions_enabled(False)
         self._cmd_worker = CommandWorker(self._api, label, func, *args, **kwargs)
         self._cmd_worker.progress.connect(self._status_bar_set_status)
         self._cmd_worker.finished.connect(
-            lambda lbl: (self._status_bar_set_success(t("commands.done", label=lbl)),
+            lambda lbl: (self._dashboard.set_actions_enabled(True),
+                         self._status_bar_set_success(t("commands.done", label=lbl)),
                          self._load_dashboard()))
-        self._cmd_worker.error.connect(self._status_bar_set_error)
+        self._cmd_worker.error.connect(
+            lambda msg: (self._dashboard.set_actions_enabled(True),
+                         self._status_bar_set_error(msg)))
         self._cmd_worker.start()
 
     def _cmd_lock(self):
@@ -625,7 +647,7 @@ class MainWindow(QMainWindow):
 
 def _force_palette(app: QApplication, mode: str):
     """Force a light or dark palette regardless of system theme."""
-    from PyQt6.QtGui import QPalette, QColor
+    from PyQt6.QtGui import QColor, QPalette
     app.setStyle("Fusion")
     p = QPalette()
     if mode == "light":

@@ -1,7 +1,7 @@
 """Status bar widget for command feedback."""
 
-from PyQt6.QtWidgets import QWidget, QHBoxLayout, QLabel
-from PyQt6.QtCore import Qt, QTimer
+from PyQt6.QtCore import QTimer
+from PyQt6.QtWidgets import QHBoxLayout, QLabel, QWidget
 
 from ..i18n import t
 

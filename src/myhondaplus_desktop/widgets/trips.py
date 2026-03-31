@@ -2,19 +2,25 @@
 
 import csv
 from datetime import date
-from io import StringIO
 
-from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QGroupBox,
-    QLabel, QTableWidget, QTableWidgetItem, QHeaderView,
-    QPushButton, QFileDialog, QCheckBox,
-)
 from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import (
+    QCheckBox,
+    QFileDialog,
+    QGroupBox,
+    QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QPushButton,
+    QTableWidget,
+    QTableWidgetItem,
+    QVBoxLayout,
+    QWidget,
+)
 
-from ..icons import icon, pixmap
 from ..i18n import t
+from ..icons import icon, pixmap
 from ..workers import TripsWorker
-from pymyhondaplus import HondaAPI
 
 
 def _stat_card(icon_name: str, label: str, value: str = "") -> tuple[QVBoxLayout, QLabel]:
@@ -145,8 +151,8 @@ class TripsWidget(QWidget):
         if item:
             url = item.data(Qt.ItemDataRole.UserRole)
             if url:
-                from PyQt6.QtGui import QDesktopServices
                 from PyQt6.QtCore import QUrl
+                from PyQt6.QtGui import QDesktopServices
                 QDesktopServices.openUrl(QUrl(url))
 
     def _on_locations_toggled(self, state):
