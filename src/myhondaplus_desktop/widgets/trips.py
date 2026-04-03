@@ -1,7 +1,7 @@
 """Trip history and statistics widget."""
 
 import csv
-from datetime import date
+from datetime import date, datetime, timezone
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
@@ -21,6 +21,17 @@ from PyQt6.QtWidgets import (
 from ..i18n import t
 from ..icons import icon, pixmap
 from ..workers import TripsWorker
+
+
+def _to_local_time(iso_str: str) -> str:
+    """Convert an ISO 8601 timestamp to local time (HH:MM)."""
+    try:
+        dt = datetime.fromisoformat(iso_str.replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone().strftime("%H:%M")
+    except (ValueError, AttributeError):
+        return iso_str.split("T")[1][:5] if "T" in iso_str else iso_str
 
 
 def _stat_card(icon_name: str, label: str, value: str = "") -> tuple[QVBoxLayout, QLabel]:
@@ -208,8 +219,8 @@ class TripsWidget(QWidget):
             for trip in self._trips_data:
                 row = [
                     trip.get("OneTripDate", "")[:10],
-                    trip.get("StartTime", ""),
-                    trip.get("EndTime", ""),
+                    _to_local_time(trip.get("StartTime", "")),
+                    _to_local_time(trip.get("EndTime", "")),
                     trip.get("Mileage", ""),
                     trip.get("DriveTime", ""),
                     trip.get("AveSpeed", ""),
@@ -274,8 +285,8 @@ class TripsWidget(QWidget):
         for i, trip in enumerate(trips):
             start = trip.get("StartTime", "")
             end = trip.get("EndTime", "")
-            start_time = start.split("T")[1][:5] if "T" in start else start
-            end_time = end.split("T")[1][:5] if "T" in end else end
+            start_time = _to_local_time(start)
+            end_time = _to_local_time(end)
 
             items = [
                 trip.get("OneTripDate", "")[:10],
