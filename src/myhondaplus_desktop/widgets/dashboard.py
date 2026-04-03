@@ -1,5 +1,7 @@
 """Dashboard widget showing vehicle status with integrated actions."""
 
+from datetime import datetime, timezone
+
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QGridLayout,
@@ -382,5 +384,13 @@ class DashboardWidget(QWidget):
         self._warnings_label.setText(
             ", ".join(warnings) if warnings else t("dashboard.no_warnings"))
 
+        ts_raw = status.get("timestamp", "")
+        try:
+            dt = datetime.fromisoformat(ts_raw.replace("Z", "+00:00"))
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            ts_local = dt.astimezone().strftime("%Y-%m-%d %H:%M:%S")
+        except (ValueError, AttributeError):
+            ts_local = ts_raw
         self._timestamp.setText(
-            t("dashboard.last_updated", timestamp=status.get("timestamp", "")))
+            t("dashboard.last_updated", timestamp=ts_local))
