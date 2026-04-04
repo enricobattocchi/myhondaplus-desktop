@@ -173,13 +173,13 @@ class MainScreen(QWidget):
         top.addWidget(self._vin_combo)
         top.addStretch()
 
-        refresh_btn = QPushButton(icon("refresh-cw"), t("app.refresh"))
-        refresh_btn.clicked.connect(lambda: self._refresh_current_tab(fresh=False))
-        top.addWidget(refresh_btn)
+        self._refresh_btn = QPushButton(icon("refresh-cw"), t("app.refresh"))
+        self._refresh_btn.clicked.connect(lambda: self._refresh_current_tab(fresh=False))
+        top.addWidget(self._refresh_btn)
 
-        refresh_car_btn = QPushButton(icon("car"), t("app.refresh_car"))
-        refresh_car_btn.clicked.connect(lambda: self._refresh_current_tab(fresh=True))
-        top.addWidget(refresh_car_btn)
+        self._refresh_car_btn = QPushButton(icon("car"), t("app.refresh_car"))
+        self._refresh_car_btn.clicked.connect(lambda: self._refresh_current_tab(fresh=True))
+        top.addWidget(self._refresh_car_btn)
 
         logout_btn = QPushButton(icon("log-out"), t("app.logout"))
         logout_btn.clicked.connect(on_logout)
@@ -322,13 +322,20 @@ class MainScreen(QWidget):
             self._status_bar.set_error(t("app.no_vin"))
             return
 
+        self._refresh_btn.setEnabled(False)
+        self._refresh_car_btn.setEnabled(False)
         self._worker = DashboardWorker(self._api, vin, fresh=fresh)
         self._worker.finished.connect(self._on_dashboard)
-        self._worker.error.connect(self._status_bar.set_error)
+        self._worker.error.connect(lambda msg: (
+            self._refresh_btn.setEnabled(True),
+            self._refresh_car_btn.setEnabled(True),
+            self._status_bar.set_error(msg)))
         self._worker.progress.connect(self._status_bar.set_status)
         self._worker.start()
 
     def _on_dashboard(self, status: dict):
+        self._refresh_btn.setEnabled(True)
+        self._refresh_car_btn.setEnabled(True)
         self._dashboard.update_status(status)
         self._dashboard.set_actions_enabled(True)
         self._status_bar.set_success(t("app.status_loaded"))

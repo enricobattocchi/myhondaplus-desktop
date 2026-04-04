@@ -1,6 +1,6 @@
 """Tests for worker threads."""
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 from pymyhondaplus import HondaAPIError
@@ -36,7 +36,9 @@ def test_trips_api_error_secondary_driver(mock_api):
     results = _run_worker(worker)
 
     assert results["finished"] is None
-    assert "not_available" in results["error"]
+    assert results["error"] is not None
+    # Should mention non-primary role (translation key or resolved text)
+    assert "not_available" in results["error"] or "secondary" in results["error"]
 
 
 def test_trips_api_error_primary_driver(mock_api):
@@ -47,4 +49,5 @@ def test_trips_api_error_primary_driver(mock_api):
 
     assert results["finished"] is None
     assert results["error"] is not None
-    assert "secondary" not in results["error"]
+    # Should get the generic failure message, not the role-specific one
+    assert "not_available" not in results["error"] and "secondary" not in results["error"]
