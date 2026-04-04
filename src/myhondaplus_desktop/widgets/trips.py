@@ -54,13 +54,15 @@ def _stat_card(icon_name: str, label: str, value: str = "") -> tuple[QVBoxLayout
 
 
 class TripsWidget(QWidget):
-    def __init__(self, get_api, get_vin, get_vehicles, on_status, on_error):
+    def __init__(self, get_api, get_vin, get_vehicles, on_status, on_error,
+                 on_auth_error=None):
         super().__init__()
         self._get_api = get_api
         self._get_vin = get_vin
         self._get_vehicles = get_vehicles
         self._on_status = on_status
         self._on_error = on_error
+        self._on_auth_error = on_auth_error
         self._worker = None
         self._current_month = date.today().replace(day=1)
         self._trips_data = []
@@ -188,6 +190,8 @@ class TripsWidget(QWidget):
             include_locations=self._locations_cb.isChecked())
         self._worker.finished.connect(self._on_trips_loaded)
         self._worker.error.connect(self._on_error)
+        if self._on_auth_error:
+            self._worker.auth_error.connect(self._on_auth_error)
         self._worker.progress.connect(self._on_status)
         self._worker.start()
 

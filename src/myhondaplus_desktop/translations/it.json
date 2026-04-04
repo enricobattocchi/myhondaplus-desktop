@@ -16,6 +16,7 @@
   "app.disclaimer": "Non ufficiale — non affiliato con Honda Motor Co., Ltd.",
   "app.language": "Lingua:",
   "app.restart_language": "La lingua cambierà al prossimo riavvio.",
+  "app.session_expired": "La sessione è scaduta. Effettua nuovamente l'accesso.",
 
   "login.email": "Email:",
   "login.email_placeholder": "utente@esempio.com",

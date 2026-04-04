@@ -16,6 +16,7 @@
   "app.disclaimer": "Unofficial — not affiliated with Honda Motor Co., Ltd.",
   "app.language": "Language:",
   "app.restart_language": "Language will change on next restart.",
+  "app.session_expired": "Your session has expired. Please log in again.",
 
   "login.email": "Email:",
   "login.email_placeholder": "user@example.com",

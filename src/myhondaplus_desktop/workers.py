@@ -185,6 +185,7 @@ class DashboardWorker(QThread):
     """Fetches dashboard data."""
     finished = pyqtSignal(object)
     error = pyqtSignal(str)
+    auth_error = pyqtSignal()
     progress = pyqtSignal(str)
 
     def __init__(self, api: HondaAPI, vin: str, fresh: bool = False):
@@ -202,6 +203,8 @@ class DashboardWorker(QThread):
             dashboard = self.api.get_dashboard(self.vin, fresh=self.fresh)
             status = parse_ev_status(dashboard)
             self.finished.emit(status)
+        except HondaAuthError:
+            self.auth_error.emit()
         except Exception as e:
             logger.exception("Dashboard error")
             self.error.emit(str(e))
@@ -211,6 +214,7 @@ class CommandWorker(QThread):
     """Executes a remote command and waits for completion."""
     finished = pyqtSignal(str)
     error = pyqtSignal(str)
+    auth_error = pyqtSignal()
     progress = pyqtSignal(str)
 
     def __init__(self, api: HondaAPI, label: str, func, *args, **kwargs):
@@ -237,6 +241,8 @@ class CommandWorker(QThread):
             else:
                 self.error.emit(
                     f"{self.label}: {result.reason or result.status}")
+        except HondaAuthError:
+            self.auth_error.emit()
         except Exception as e:
             logger.exception("Command error")
             self.error.emit(f"{self.label}: {e}")
@@ -246,6 +252,7 @@ class TripsWorker(QThread):
     """Fetches trip history and statistics."""
     finished = pyqtSignal(object)
     error = pyqtSignal(str)
+    auth_error = pyqtSignal()
     progress = pyqtSignal(str)
 
     def __init__(self, api: HondaAPI, vin: str, month_start: str = "",
@@ -287,6 +294,8 @@ class TripsWorker(QThread):
                 trips, fuel_type=fuel_type,
                 distance_unit=distance_unit) if trips else None
             self.finished.emit({"trips": trips, "stats": stats})
+        except HondaAuthError:
+            self.auth_error.emit()
         except HondaAPIError:
             # Check if user role is non-primary (e.g. secondary driver)
             vehicle = next(
@@ -337,6 +346,7 @@ class ScheduleLoadWorker(QThread):
     """Fetches schedules and climate settings from dashboard."""
     finished = pyqtSignal(object)
     error = pyqtSignal(str)
+    auth_error = pyqtSignal()
     progress = pyqtSignal(str)
 
     def __init__(self, api: HondaAPI, vin: str):
@@ -358,6 +368,8 @@ class ScheduleLoadWorker(QThread):
                 "climate_duration": ev.get("climate_duration", 30),
                 "climate_defrost": ev.get("climate_defrost", True),
             })
+        except HondaAuthError:
+            self.auth_error.emit()
         except Exception as e:
             logger.exception("Schedule load error")
             self.error.emit(str(e))
@@ -367,6 +379,7 @@ class ScheduleSaveWorker(QThread):
     """Saves a schedule and waits for completion."""
     finished = pyqtSignal(str)
     error = pyqtSignal(str)
+    auth_error = pyqtSignal()
     progress = pyqtSignal(str)
 
     def __init__(self, api: HondaAPI, label: str, func, *args, **kwargs):
@@ -393,6 +406,8 @@ class ScheduleSaveWorker(QThread):
             else:
                 self.error.emit(
                     f"{self.label}: {result.reason or result.status}")
+        except HondaAuthError:
+            self.auth_error.emit()
         except Exception as e:
             logger.exception("Schedule save error")
             self.error.emit(f"{self.label}: {e}")

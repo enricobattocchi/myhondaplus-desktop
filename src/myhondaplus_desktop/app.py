@@ -153,6 +153,7 @@ class MainScreen(QWidget):
         super().__init__()
         self._api = api
         self._settings = settings
+        self._on_logout = on_logout
         self._vehicles = []  # list of {"vin", "name", "plate"}
         self._update_info = None  # (new_version, release_url) or None
         self._cached_climate_schedule = None  # cached after successful save
@@ -247,6 +248,7 @@ class MainScreen(QWidget):
             get_vehicles=lambda: self._vehicles,
             on_status=self._status_bar_set_status,
             on_error=self._status_bar_set_error,
+            on_auth_error=self._on_auth_error,
         )
         self._tabs.addTab(self._trips, icon("route"), t("app.trips"))
         self._tabs.currentChanged.connect(self._on_tab_changed)
@@ -326,6 +328,7 @@ class MainScreen(QWidget):
         self._refresh_car_btn.setEnabled(False)
         self._worker = DashboardWorker(self._api, vin, fresh=fresh)
         self._worker.finished.connect(self._on_dashboard)
+        self._worker.auth_error.connect(self._on_auth_error)
         self._worker.error.connect(lambda msg: (
             self._refresh_btn.setEnabled(True),
             self._refresh_car_btn.setEnabled(True),
@@ -364,11 +367,16 @@ class MainScreen(QWidget):
         if index == 1:  # Trips tab
             self._trips.load_trips()
 
+    def _on_auth_error(self):
+        self._status_bar.set_error(t("app.session_expired"))
+        self._on_logout()
+
     # -- Command helpers --
 
     def _run_command(self, label: str, func, *args, **kwargs):
         self._dashboard.set_actions_enabled(False)
         self._cmd_worker = CommandWorker(self._api, label, func, *args, **kwargs)
+        self._cmd_worker.auth_error.connect(self._on_auth_error)
         self._cmd_worker.progress.connect(self._status_bar_set_status)
         self._cmd_worker.finished.connect(
             lambda lbl: (self._dashboard.set_actions_enabled(True),
@@ -408,6 +416,7 @@ class MainScreen(QWidget):
                 self._api, t("commands.charge_limit"),
                 self._api.set_charge_limit, self._current_vin(),
                 home=dlg.home, away=dlg.away)
+            w.auth_error.connect(self._on_auth_error)
             w.progress.connect(lambda msg: dlg.set_saving(True, msg))
             w.finished.connect(lambda lbl: (
                 dlg.set_saving(False),
@@ -445,6 +454,7 @@ class MainScreen(QWidget):
                 self._api, t("commands.climate_settings"),
                 self._api.set_climate_settings, self._current_vin(),
                 temp=dlg.temp, duration=dlg.duration, defrost=dlg.defrost)
+            w.auth_error.connect(self._on_auth_error)
             w.progress.connect(lambda msg: dlg.set_saving(True, msg))
             w.finished.connect(lambda lbl: (
                 dlg.set_saving(False),
@@ -473,6 +483,7 @@ class MainScreen(QWidget):
         else:
             self._status_bar_set_status(t("schedules.loading"))
             self._sched_worker = ScheduleLoadWorker(self._api, vin)
+            self._sched_worker.auth_error.connect(self._on_auth_error)
             self._sched_worker.finished.connect(
                 lambda data: self._show_climate_schedule_dialog(data["climate_schedule"]))
             self._sched_worker.error.connect(self._status_bar_set_error)
@@ -495,6 +506,7 @@ class MainScreen(QWidget):
                 self._status_bar_set_error(msg)
             w = ScheduleSaveWorker(self._api, t("schedules.climate"),
                                    self._api.set_climate_schedule, vin, rules)
+            w.auth_error.connect(self._on_auth_error)
             w.progress.connect(lambda msg: dlg.set_saving(True, msg))
             w.finished.connect(on_success)
             w.error.connect(on_error)
@@ -512,6 +524,7 @@ class MainScreen(QWidget):
                 self._status_bar_set_error(msg)
             w = ScheduleSaveWorker(self._api, t("schedules.climate"),
                                    self._api.set_climate_schedule, vin, [])
+            w.auth_error.connect(self._on_auth_error)
             w.progress.connect(lambda msg: dlg.set_saving(True, msg))
             w.finished.connect(on_success)
             w.error.connect(on_error)
@@ -531,6 +544,7 @@ class MainScreen(QWidget):
         else:
             self._status_bar_set_status(t("schedules.loading"))
             self._sched_worker = ScheduleLoadWorker(self._api, vin)
+            self._sched_worker.auth_error.connect(self._on_auth_error)
             self._sched_worker.finished.connect(
                 lambda data: self._show_charge_schedule_dialog(data["charge_schedule"]))
             self._sched_worker.error.connect(self._status_bar_set_error)
@@ -553,6 +567,7 @@ class MainScreen(QWidget):
                 self._status_bar_set_error(msg)
             w = ScheduleSaveWorker(self._api, t("schedules.charge"),
                                    self._api.set_charge_schedule, vin, rules)
+            w.auth_error.connect(self._on_auth_error)
             w.progress.connect(lambda msg: dlg.set_saving(True, msg))
             w.finished.connect(on_success)
             w.error.connect(on_error)
@@ -570,6 +585,7 @@ class MainScreen(QWidget):
                 self._status_bar_set_error(msg)
             w = ScheduleSaveWorker(self._api, t("schedules.charge"),
                                    self._api.set_charge_schedule, vin, [])
+            w.auth_error.connect(self._on_auth_error)
             w.progress.connect(lambda msg: dlg.set_saving(True, msg))
             w.finished.connect(on_success)
             w.error.connect(on_error)
