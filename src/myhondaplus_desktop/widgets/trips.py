@@ -1,7 +1,7 @@
 """Trip history and statistics widget."""
 
 import csv
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
@@ -28,7 +28,7 @@ def _to_local_time(iso_str: str) -> str:
     try:
         dt = datetime.fromisoformat(iso_str.replace("Z", "+00:00"))
         if dt.tzinfo is None:
-            dt = dt.replace(tzinfo=timezone.utc)
+            dt = dt.replace(tzinfo=UTC)
         return dt.astimezone().strftime("%H:%M")
     except (ValueError, AttributeError):
         return iso_str.split("T")[1][:5] if "T" in iso_str else iso_str

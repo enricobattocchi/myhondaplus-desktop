@@ -1,11 +1,11 @@
 """Background workers for API calls (run off the GUI thread)."""
 
 import logging
-import time
 
 from pymyhondaplus import (
     DeviceKey,
     HondaAPI,
+    HondaAPIError,
     HondaAuth,
     HondaAuthError,
     SecretStorage,
@@ -208,13 +208,10 @@ class DashboardWorker(QThread):
 
 
 class CommandWorker(QThread):
-    """Executes a remote command and polls for completion."""
+    """Executes a remote command and waits for completion."""
     finished = pyqtSignal(str)
     error = pyqtSignal(str)
     progress = pyqtSignal(str)
-
-    POLL_INTERVAL = 2
-    TIMEOUT = 60
 
     def __init__(self, api: HondaAPI, label: str, func, *args, **kwargs):
         super().__init__()
@@ -232,18 +229,14 @@ class CommandWorker(QThread):
                 self.error.emit(t("workers.no_command_id", label=self.label))
                 return
 
-            start = time.time()
-            while time.time() - start < self.TIMEOUT:
-                self.progress.emit(
-                    t("workers.polling", label=self.label,
-                      seconds=int(time.time() - start)))
-                result = self.api.poll_command(command_id)
-                if result["status_code"] == 200:
-                    self.finished.emit(self.label)
-                    return
-                time.sleep(self.POLL_INTERVAL)
-
-            self.error.emit(t("workers.timed_out", label=self.label))
+            result = self.api.wait_for_command(command_id)
+            if result.success:
+                self.finished.emit(self.label)
+            elif result.timed_out:
+                self.error.emit(t("workers.timed_out", label=self.label))
+            else:
+                self.error.emit(
+                    f"{self.label}: {result.reason or result.status}")
         except Exception as e:
             logger.exception("Command error")
             self.error.emit(f"{self.label}: {e}")
@@ -264,7 +257,6 @@ class TripsWorker(QThread):
         self.include_locations = include_locations
 
     def run(self):
-        import requests
         try:
             self.progress.emit(t("trips.loading"))
             trips = self.api.get_all_trips(self.vin, month_start=self.month_start)
@@ -295,7 +287,7 @@ class TripsWorker(QThread):
                 trips, fuel_type=fuel_type,
                 distance_unit=distance_unit) if trips else None
             self.finished.emit({"trips": trips, "stats": stats})
-        except requests.HTTPError:
+        except HondaAPIError:
             # Check if user role is non-primary (e.g. secondary driver)
             vehicle = next(
                 (v for v in self.api.tokens.vehicles if v["vin"] == self.vin),
@@ -372,13 +364,10 @@ class ScheduleLoadWorker(QThread):
 
 
 class ScheduleSaveWorker(QThread):
-    """Saves a schedule and polls for completion."""
+    """Saves a schedule and waits for completion."""
     finished = pyqtSignal(str)
     error = pyqtSignal(str)
     progress = pyqtSignal(str)
-
-    POLL_INTERVAL = 2
-    TIMEOUT = 60
 
     def __init__(self, api: HondaAPI, label: str, func, *args, **kwargs):
         super().__init__()
@@ -396,18 +385,14 @@ class ScheduleSaveWorker(QThread):
                 self.finished.emit(self.label)
                 return
 
-            start = time.time()
-            while time.time() - start < self.TIMEOUT:
-                self.progress.emit(
-                    t("workers.polling", label=self.label,
-                      seconds=int(time.time() - start)))
-                result = self.api.poll_command(command_id)
-                if result["status_code"] == 200:
-                    self.finished.emit(self.label)
-                    return
-                time.sleep(self.POLL_INTERVAL)
-
-            self.error.emit(t("workers.timed_out", label=self.label))
+            result = self.api.wait_for_command(command_id)
+            if result.success:
+                self.finished.emit(self.label)
+            elif result.timed_out:
+                self.error.emit(t("workers.timed_out", label=self.label))
+            else:
+                self.error.emit(
+                    f"{self.label}: {result.reason or result.status}")
         except Exception as e:
             logger.exception("Schedule save error")
             self.error.emit(f"{self.label}: {e}")

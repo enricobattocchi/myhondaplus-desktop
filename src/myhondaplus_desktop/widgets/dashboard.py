@@ -1,6 +1,6 @@
 """Dashboard widget showing vehicle status with integrated actions."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
@@ -388,7 +388,7 @@ class DashboardWidget(QWidget):
         try:
             dt = datetime.fromisoformat(ts_raw.replace("Z", "+00:00"))
             if dt.tzinfo is None:
-                dt = dt.replace(tzinfo=timezone.utc)
+                dt = dt.replace(tzinfo=UTC)
             ts_local = dt.astimezone().strftime("%Y-%m-%d %H:%M:%S")
         except (ValueError, AttributeError):
             ts_local = ts_raw
