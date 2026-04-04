@@ -88,7 +88,7 @@ Available: English, Italian. See [TRANSLATING.md](TRANSLATING.md) to contribute 
 
 - Python 3.11+
 - PyQt6 >= 6.6
-- [pymyhondaplus](https://pypi.org/project/pymyhondaplus/) >= 4.2.0
+- [pymyhondaplus](https://pypi.org/project/pymyhondaplus/) >= 5.0.0
 
 ### Optional
 
