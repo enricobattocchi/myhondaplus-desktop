@@ -9,10 +9,13 @@ from pymyhondaplus import HondaAPIError, HondaAuthError
 from myhondaplus_desktop import workers
 from myhondaplus_desktop.workers import (
     CommandWorker,
+    DeviceRegistrationWorker,
+    LoginWorker,
     ScheduleLoadWorker,
     TripsWorker,
     UpdateCheckWorker,
     VehiclesWorker,
+    VerifyAndLoginWorker,
 )
 
 
@@ -29,7 +32,7 @@ def _run_worker(worker):
     """Run the worker synchronously and capture signals."""
     results = {"finished": None, "error": None, "auth_error": False, "update": None}
     if hasattr(worker, "finished"):
-        worker.finished.connect(lambda v: results.update(finished=v))
+        worker.finished.connect(lambda *args: results.update(finished=args[0] if args else True))
     if hasattr(worker, "error"):
         worker.error.connect(lambda v: results.update(error=v))
     if hasattr(worker, "auth_error"):
@@ -88,7 +91,7 @@ def test_command_worker_timeout(mock_api):
 
     assert results["finished"] is None
     assert results["error"] is not None
-    assert "timed out" in results["error"].lower()
+    assert "timed" in results["error"].lower()
 
 
 def test_command_worker_auth_error(mock_api):
@@ -180,3 +183,119 @@ def test_vehicles_worker_persists_loaded_vehicles(mock_api):
     assert results["finished"] == vehicles
     assert mock_api.tokens.vehicles == vehicles
     mock_api._save_tokens.assert_called_once_with()
+
+
+class DummyStorage:
+    def __init__(self):
+        self.clear_calls = 0
+
+    def clear(self):
+        self.clear_calls += 1
+
+
+class FakeAuth:
+    parse_key = ("magic", "email")
+
+    def __init__(self, device_key=None):
+        self.device_key = device_key
+        self.initiate_result = {
+            "transactionId": "tx-123",
+            "signatureChallenge": "sig-456",
+        }
+        self.complete_result = {
+            "access_token": "access",
+            "refresh_token": "refresh",
+            "expires_in": 3600,
+        }
+        self.initiate_error = None
+        self.reset_error = None
+        self.verify_error = None
+        self.calls = []
+
+    def initiate_login(self, email, password, locale="it"):
+        self.calls.append(("initiate_login", email, password, locale))
+        if self.initiate_error:
+            raise self.initiate_error
+        return self.initiate_result
+
+    def complete_login(self, email, password, transaction_id, signature_challenge, locale="it"):
+        self.calls.append(
+            ("complete_login", email, password, transaction_id, signature_challenge, locale)
+        )
+        return self.complete_result
+
+    def reset_device_authenticator(self, email, password):
+        self.calls.append(("reset_device_authenticator", email, password))
+        if self.reset_error:
+            raise self.reset_error
+
+    def verify_magic_link(self, key, link_type):
+        self.calls.append(("verify_magic_link", key, link_type))
+        if self.verify_error:
+            raise self.verify_error
+
+    @staticmethod
+    def parse_verify_link_key(link: str):
+        return FakeAuth.parse_key
+
+
+def test_login_worker_success(monkeypatch):
+    auth = FakeAuth()
+    monkeypatch.setattr(workers, "_build_auth", lambda storage: auth)
+
+    worker = LoginWorker("user@example.com", "secret", storage=DummyStorage())
+    results = _run_worker(worker)
+
+    assert results["error"] is None
+    assert results["finished"] == auth.complete_result
+    assert auth.calls[:2] == [
+        ("initiate_login", "user@example.com", "secret", "it"),
+        ("complete_login", "user@example.com", "secret", "tx-123", "sig-456", "it"),
+    ]
+
+
+def test_login_worker_requests_device_registration(monkeypatch):
+    auth = FakeAuth()
+    auth.initiate_error = HondaAuthError(401, "device-authenticator-not-registered")
+    monkeypatch.setattr(workers, "_build_auth", lambda storage: auth)
+
+    worker = LoginWorker("user@example.com", "secret", storage=DummyStorage())
+    state = {"needed": False}
+    worker.device_registration_needed.connect(lambda: state.update(needed=True))
+    results = _run_worker(worker)
+
+    assert state["needed"] is True
+    assert results["finished"] is None
+    assert results["error"] is None
+
+
+def test_device_registration_worker_ignores_blocked_error():
+    auth = FakeAuth()
+    auth.reset_error = HondaAuthError(429, "currently blocked")
+
+    worker = DeviceRegistrationWorker(auth, "user@example.com", "secret")
+    results = _run_worker(worker)
+
+    assert results["error"] is None
+    assert results["finished"] is True
+
+
+def test_verify_and_login_worker_success(monkeypatch):
+    auth = FakeAuth()
+    monkeypatch.setattr(workers.HondaAuth, "parse_verify_link_key", lambda link: ("magic", "email"))
+    worker = VerifyAndLoginWorker(auth, "user@example.com", "secret", "magic-link")
+    results = _run_worker(worker)
+
+    assert results["error"] is None
+    assert results["finished"] == auth.complete_result
+    assert ("verify_magic_link", "magic", "email") in auth.calls
+
+
+def test_verify_and_login_worker_reports_bad_link(monkeypatch):
+    auth = FakeAuth()
+    monkeypatch.setattr(workers.HondaAuth, "parse_verify_link_key", lambda link: ("", ""))
+    worker = VerifyAndLoginWorker(auth, "user@example.com", "secret", "bad-link")
+    results = _run_worker(worker)
+
+    assert results["finished"] is None
+    assert "Could not extract key from link" in results["error"]

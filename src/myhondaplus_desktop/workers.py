@@ -21,6 +21,48 @@ from .i18n import t
 logger = logging.getLogger(__name__)
 
 
+def _build_auth(storage: SecretStorage) -> HondaAuth:
+    """Create a HondaAuth instance, recovering from corrupted device keys."""
+    try:
+        device_key = DeviceKey(storage=storage)
+    except (ValueError, Exception):
+        storage.clear()
+        device_key = DeviceKey(storage=storage)
+    return HondaAuth(device_key=device_key)
+
+
+def _complete_login(auth: HondaAuth, email: str, password: str, locale: str, progress) -> dict:
+    """Run the standard initiate/complete login sequence."""
+    progress(t("workers.logging_in"))
+    result = auth.initiate_login(email, password, locale=locale)
+    progress(t("workers.completing_login"))
+    return auth.complete_login(
+        email,
+        password,
+        result["transactionId"],
+        result["signatureChallenge"],
+        locale=locale,
+    )
+
+
+def _reset_device_authenticator(auth: HondaAuth, email: str, password: str, progress):
+    """Trigger Honda's device registration flow, ignoring temporary blocks."""
+    progress(t("workers.device_verification"))
+    try:
+        auth.reset_device_authenticator(email, password)
+    except HondaAuthError as e:
+        if "currently blocked" not in str(e):
+            raise
+
+
+def _verify_magic_link(auth: HondaAuth, link: str):
+    """Verify a Honda magic link and return the parsed key info."""
+    key, link_type = HondaAuth.parse_verify_link_key(link)
+    if not key:
+        raise ValueError(f"Could not extract key from link: {link}")
+    auth.verify_magic_link(key, link_type)
+
+
 class ApiWorker(QThread):
     """Base worker that runs a callable in a thread."""
     finished = pyqtSignal(object)
@@ -55,24 +97,12 @@ class LoginWorker(QThread):
         self.email = email
         self.password = password
         self.locale = locale
-        try:
-            self.device_key = DeviceKey(storage=storage)
-        except (ValueError, Exception):
-            # Corrupted key — clear and generate fresh
-            storage.clear()
-            self.device_key = DeviceKey(storage=storage)
-        self.auth = HondaAuth(device_key=self.device_key)
+        self.auth = _build_auth(storage)
 
     def run(self):
         try:
-            self.progress.emit(t("workers.logging_in"))
-            result = self.auth.initiate_login(
-                self.email, self.password, locale=self.locale)
-            self.progress.emit(t("workers.completing_login"))
-            tokens = self.auth.complete_login(
-                self.email, self.password,
-                result["transactionId"], result["signatureChallenge"],
-                locale=self.locale,
+            tokens = _complete_login(
+                self.auth, self.email, self.password, self.locale, self.progress.emit
             )
             self.finished.emit(tokens)
         except HondaAuthError as e:
@@ -87,12 +117,9 @@ class LoginWorker(QThread):
     def do_device_registration(self):
         """Called after user provides verification link (runs in thread)."""
         try:
-            self.progress.emit(t("workers.device_verification"))
-            try:
-                self.auth.reset_device_authenticator(self.email, self.password)
-            except HondaAuthError as e:
-                if "currently blocked" not in str(e):
-                    raise
+            _reset_device_authenticator(
+                self.auth, self.email, self.password, self.progress.emit
+            )
             self.progress.emit(t("workers.device_verification"))
             self.device_registration_needed.emit()
         except Exception as e:
@@ -101,19 +128,10 @@ class LoginWorker(QThread):
     def verify_and_login(self, link: str):
         """Called with the verification link. Runs in a new thread."""
         try:
-            key, link_type = HondaAuth.parse_verify_link_key(link)
-            if not key:
-                self.error.emit(f"Could not extract key from link: {link}")
-                return
             self.progress.emit(t("workers.verifying_link"))
-            self.auth.verify_magic_link(key, link_type)
-            self.progress.emit(t("workers.logging_in"))
-            result = self.auth.initiate_login(
-                self.email, self.password, locale=self.locale)
-            tokens = self.auth.complete_login(
-                self.email, self.password,
-                result["transactionId"], result["signatureChallenge"],
-                locale=self.locale,
+            _verify_magic_link(self.auth, link)
+            tokens = _complete_login(
+                self.auth, self.email, self.password, self.locale, self.progress.emit
             )
             self.finished.emit(tokens)
         except Exception as e:
@@ -134,12 +152,9 @@ class DeviceRegistrationWorker(QThread):
 
     def run(self):
         try:
-            self.progress.emit(t("workers.device_verification"))
-            try:
-                self.auth.reset_device_authenticator(self.email, self.password)
-            except HondaAuthError as e:
-                if "currently blocked" not in str(e):
-                    raise
+            _reset_device_authenticator(
+                self.auth, self.email, self.password, self.progress.emit
+            )
             self.finished.emit()
         except Exception as e:
             self.error.emit(str(e))
@@ -162,19 +177,10 @@ class VerifyAndLoginWorker(QThread):
 
     def run(self):
         try:
-            key, link_type = HondaAuth.parse_verify_link_key(self.link)
-            if not key:
-                self.error.emit(f"Could not extract key from link: {self.link}")
-                return
             self.progress.emit(t("workers.verifying_link"))
-            self.auth.verify_magic_link(key, link_type)
-            self.progress.emit(t("workers.logging_in"))
-            result = self.auth.initiate_login(
-                self.email, self.password, locale=self.locale)
-            tokens = self.auth.complete_login(
-                self.email, self.password,
-                result["transactionId"], result["signatureChallenge"],
-                locale=self.locale,
+            _verify_magic_link(self.auth, self.link)
+            tokens = _complete_login(
+                self.auth, self.email, self.password, self.locale, self.progress.emit
             )
             self.finished.emit(tokens)
         except Exception as e:
