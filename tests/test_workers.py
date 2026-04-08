@@ -149,6 +149,19 @@ def test_update_check_worker_ignores_older_or_equal_release(monkeypatch):
     assert results["update"] is None
 
 
+def test_update_check_worker_logs_debug_on_failure(monkeypatch, caplog):
+    monkeypatch.setattr("urllib.request.urlopen", lambda *args, **kwargs: (_ for _ in ()).throw(
+        RuntimeError("network down")
+    ))
+
+    worker = UpdateCheckWorker("2.1.1")
+    with caplog.at_level("DEBUG"):
+        results = _run_worker(worker)
+
+    assert results["update"] is None
+    assert "Update check failed" in caplog.text
+
+
 def test_schedule_load_worker_returns_parsed_schedule_data(monkeypatch, mock_api):
     monkeypatch.setattr(workers, "parse_ev_status", lambda dashboard: {
         "climate_temp": "hotter",

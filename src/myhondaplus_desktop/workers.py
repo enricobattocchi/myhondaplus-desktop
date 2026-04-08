@@ -345,7 +345,7 @@ class UpdateCheckWorker(QThread):
             if tag and self._parse_version(tag) > self._parse_version(self._current):
                 self.update_available.emit(tag.lstrip("v"), url)
         except Exception:
-            pass  # Fail silently
+            logger.debug("Update check failed", exc_info=True)
 
 
 class ScheduleLoadWorker(QThread):

@@ -1,6 +1,13 @@
 """Tests for the i18n module."""
 
-from myhondaplus_desktop.i18n import active_language, available_languages, load_language, t
+from myhondaplus_desktop import i18n
+from myhondaplus_desktop.i18n import (
+    _detect_language,
+    active_language,
+    available_languages,
+    load_language,
+    t,
+)
 
 
 def test_available_languages():
@@ -48,3 +55,13 @@ def test_bad_placeholder_no_crash():
     # Missing placeholder should not crash
     result = t("app.version")  # expects {version} but none given
     assert "version" in result.lower()
+
+
+def test_detect_language_from_locale(monkeypatch):
+    monkeypatch.setattr(i18n.locale, "getlocale", lambda: ("it_IT", "UTF-8"))
+    assert _detect_language() == "it"
+
+
+def test_detect_language_falls_back_to_english(monkeypatch):
+    monkeypatch.setattr(i18n.locale, "getlocale", lambda: (None, None))
+    assert _detect_language() == "en"

@@ -14,6 +14,15 @@ _fallback: dict[str, str] = {}
 _active_lang: str = "en"
 
 
+def _detect_language() -> str:
+    """Auto-detect a language code from the current locale."""
+    try:
+        sys_locale = locale.getlocale()[0] or ""
+    except Exception:
+        return "en"
+    return sys_locale.split("_")[0] if sys_locale else "en"
+
+
 def available_languages() -> list[str]:
     """Return list of available language codes (e.g. ['en', 'it'])."""
     langs = []
@@ -45,11 +54,7 @@ def load_language(lang: str = ""):
     _fallback = _load_json("en")
 
     if not lang:
-        try:
-            sys_locale = locale.getdefaultlocale()[0] or ""
-            lang = sys_locale.split("_")[0]  # e.g. "it_IT" -> "it"
-        except Exception:
-            lang = "en"
+        lang = _detect_language()
 
     if lang and lang != "en":
         _strings = _load_json(lang)
