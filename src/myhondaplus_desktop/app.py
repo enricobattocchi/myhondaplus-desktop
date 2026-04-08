@@ -3,7 +3,7 @@
 import logging
 import sys
 
-from pymyhondaplus import HondaAPI, HondaAuth, get_storage
+from pymyhondaplus import HondaAPI
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QApplication,
@@ -22,9 +22,10 @@ from PyQt6.QtWidgets import (
 )
 
 from . import __version__
-from .config import Settings, device_key_file, token_file
+from .config import Settings
 from .i18n import active_language, available_languages, load_language, t
 from .icons import icon, pixmap
+from .session import AppSession
 from .widgets.dashboard import DashboardWidget
 from .widgets.login import LoginWidget
 from .widgets.schedules import (
@@ -608,14 +609,8 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle(t("app.name"))
-        self._settings = Settings.load()
-
-        token_path = token_file()
-        device_key_path = device_key_file()
-        token_path.parent.mkdir(parents=True, exist_ok=True)
-        device_key_path.parent.mkdir(parents=True, exist_ok=True)
-        self._storage = get_storage(token_path, device_key_path)
-        self._api = HondaAPI(storage=self._storage)
+        self._session = AppSession()
+        self._sync_session_refs()
 
         self._stack = QStackedWidget()
         self.setCentralWidget(self._stack)
@@ -631,31 +626,26 @@ class MainWindow(QMainWindow):
             self._api, self._settings, on_logout=self._logout)
         self._stack.addWidget(self._main)
 
-        # Check if already logged in (try refresh if expired but has refresh token)
-        if self._api.tokens.access_token:
-            if self._api.tokens.is_expired and self._api.tokens.refresh_token:
-                try:
-                    self._api.refresh_auth()
-                except Exception:
-                    pass  # Will show login screen
-            if not self._api.tokens.is_expired:
-                self._stack.setCurrentWidget(self._main)
-                self._main.activate()
+        if self._session.restore_authenticated_session():
+            self._show_main_screen()
+
+    def _sync_session_refs(self):
+        self._settings = self._session.settings
+        self._storage = self._session.storage
+        self._api = self._session.api
+
+    def _show_main_screen(self):
+        self._stack.setCurrentWidget(self._main)
+        self._main.activate()
 
     def _on_login_success(self, tokens: dict, email: str, password: str):
-        user_id = HondaAuth.extract_user_id(tokens["access_token"])
-        self._api.set_tokens(
-            access_token=tokens["access_token"],
-            refresh_token=tokens["refresh_token"],
-            expires_in=tokens.get("expires_in", 3599),
-            user_id=user_id,
-        )
-        self._stack.setCurrentWidget(self._main)
-        self._main.activate()  # will fetch vehicles and populate dropdown
+        self._session.apply_login_tokens(tokens)
+        self._sync_session_refs()
+        self._show_main_screen()
 
     def _logout(self):
-        self._storage.clear()
-        self._api = HondaAPI(storage=self._storage)
+        self._session.reset()
+        self._sync_session_refs()
         self._main._api = self._api
         self._stack.setCurrentWidget(self._login)
 
@@ -666,7 +656,7 @@ class MainWindow(QMainWindow):
         self.setFixedSize(self.size())
 
     def closeEvent(self, event):
-        self._settings.save()
+        self._session.save_settings()
         super().closeEvent(event)
 
 
