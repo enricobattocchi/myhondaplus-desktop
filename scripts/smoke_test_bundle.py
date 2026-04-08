@@ -27,15 +27,27 @@ def smoke_run_executable(executable: Path, *, timeout_seconds: float = 3.0) -> N
     process = subprocess.Popen(
         [str(executable)],
         env=env,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
     )
 
     try:
         time.sleep(timeout_seconds)
         return_code = process.poll()
         if return_code is not None and return_code != 0:
-            raise RuntimeError(f"Packaged app exited early with code {return_code}")
+            stdout, stderr = process.communicate(timeout=1)
+            details = []
+            if stdout.strip():
+                details.append(f"stdout:\n{stdout.strip()}")
+            if stderr.strip():
+                details.append(f"stderr:\n{stderr.strip()}")
+            detail_text = ""
+            if details:
+                detail_text = "\n\n" + "\n\n".join(details)
+            raise RuntimeError(
+                f"Packaged app exited early with code {return_code}{detail_text}"
+            )
     finally:
         if process.poll() is None:
             process.terminate()

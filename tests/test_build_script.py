@@ -55,6 +55,9 @@ def test_smoke_run_executable_accepts_running_process(monkeypatch):
         def poll(self):
             return None
 
+        def communicate(self, timeout):
+            raise AssertionError("communicate should not be called")
+
         def terminate(self):
             events.append("terminate")
 
@@ -74,6 +77,10 @@ def test_smoke_run_executable_rejects_early_failure(monkeypatch):
         def poll(self):
             return 1
 
+        def communicate(self, timeout):
+            assert timeout == 1
+            return ("boot log", "missing library")
+
         def terminate(self):
             raise AssertionError("terminate should not be called")
 
@@ -83,5 +90,8 @@ def test_smoke_run_executable_rejects_early_failure(monkeypatch):
     monkeypatch.setattr("scripts.smoke_test_bundle.subprocess.Popen", lambda *args, **kwargs: FakeProcess())
     monkeypatch.setattr("scripts.smoke_test_bundle.time.sleep", lambda _: None)
 
-    with pytest.raises(RuntimeError, match="exited early"):
+    with pytest.raises(RuntimeError, match="exited early with code 1") as exc_info:
         smoke_run_executable(Path("/tmp/fake-app"))
+
+    assert "stdout:\nboot log" in str(exc_info.value)
+    assert "stderr:\nmissing library" in str(exc_info.value)
