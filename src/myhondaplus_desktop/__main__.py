@@ -1,4 +1,17 @@
-"""Allow running as: python -m myhondaplus_desktop"""
-from .app import main
+"""Entrypoint for module and packaged execution."""
 
-main()
+
+def _load_main():
+    try:
+        from .app import main as app_main
+    except ImportError:
+        from myhondaplus_desktop.app import main as app_main
+    return app_main
+
+
+def run():
+    _load_main()()
+
+
+if __name__ == "__main__":
+    run()

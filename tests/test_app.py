@@ -1,5 +1,10 @@
 """Tests for app helpers."""
 
+import builtins
+import sys
+from types import ModuleType
+
+from myhondaplus_desktop.__main__ import _load_main
 from myhondaplus_desktop.app import MainScreen, _vehicle_label
 
 
@@ -183,3 +188,21 @@ def test_open_charge_schedule_dialog_passes_callbacks_via_constructor(monkeypatc
     assert saved["dialog"] is state["dialog"]
     assert saved["rules"] == [{"enabled": False}]
     assert cleared["dialog"] is state["dialog"]
+
+
+def test_entrypoint_falls_back_to_absolute_import(monkeypatch):
+    fake_app = ModuleType("myhondaplus_desktop.app")
+    marker = object()
+    fake_app.main = marker
+
+    original_import = builtins.__import__
+
+    def fake_import(name, globals=None, locals=None, fromlist=(), level=0):
+        if name == "app" and level == 1:
+            raise ImportError("relative import failed")
+        return original_import(name, globals, locals, fromlist, level)
+
+    monkeypatch.setitem(sys.modules, "myhondaplus_desktop.app", fake_app)
+    monkeypatch.setattr(builtins, "__import__", fake_import)
+
+    assert _load_main() is marker
