@@ -33,34 +33,8 @@ jobs:
       - name: Install app
         run: pip install -e .
 
-      - name: Create launcher script
-        run: |
-          cat > launcher.py << 'PYEOF'
-          from myhondaplus_desktop.app import main
-          main()
-          PYEOF
-
       - name: Build with PyInstaller
-        run: |
-          pyinstaller \
-            --name "My Honda+ for desktop" \
-            --windowed \
-            --add-data "src/myhondaplus_desktop/icons:myhondaplus_desktop/icons" \
-            --add-data "src/myhondaplus_desktop/translations:myhondaplus_desktop/translations" \
-            --hidden-import myhondaplus_desktop \
-            --hidden-import myhondaplus_desktop.icons \
-            --hidden-import myhondaplus_desktop.config \
-            --hidden-import myhondaplus_desktop.workers \
-            --hidden-import myhondaplus_desktop.widgets \
-            --hidden-import myhondaplus_desktop.widgets.login \
-            --hidden-import myhondaplus_desktop.widgets.dashboard \
-            --hidden-import myhondaplus_desktop.widgets.commands \
-            --hidden-import myhondaplus_desktop.widgets.status_bar \
-            --hidden-import pymyhondaplus \
-            --hidden-import pymyhondaplus.api \
-            --hidden-import pymyhondaplus.auth \
-            --hidden-import pymyhondaplus.storage \
-            launcher.py
+        run: python scripts/build_pyinstaller.py --name "My Honda+ for desktop"
 
       - name: Create AppImage
         run: |
