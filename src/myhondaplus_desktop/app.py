@@ -25,6 +25,7 @@ from . import __version__
 from .config import Settings
 from .i18n import active_language, available_languages, load_language, t
 from .icons import icon, pixmap
+from .main_screen_controller import MainScreenController
 from .session import AppSession
 from .widgets.dashboard import DashboardWidget
 from .widgets.login import LoginWidget
@@ -36,14 +37,6 @@ from .widgets.schedules import (
 )
 from .widgets.status_bar import StatusBarWidget
 from .widgets.trips import TripsWidget
-from .workers import (
-    CommandWorker,
-    DashboardWorker,
-    ScheduleLoadWorker,
-    ScheduleSaveWorker,
-    UpdateCheckWorker,
-    VehiclesWorker,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -152,13 +145,7 @@ class MainScreen(QWidget):
         super().__init__()
         self._api = api
         self._settings = settings
-        self._on_logout = on_logout
-        self._vehicles = []  # list of {"vin", "name", "plate"}
         self._update_info = None  # (new_version, release_url) or None
-        self._cached_climate_schedule = None  # cached after successful save
-        self._cached_charge_schedule = None
-        self._worker = None
-        self._vehicles_worker = None
 
         layout = QVBoxLayout(self)
 
@@ -169,16 +156,13 @@ class MainScreen(QWidget):
         top.addWidget(car_lbl)
         self._vin_combo = QComboBox()
         self._vin_combo.setMinimumWidth(250)
-        self._vin_combo.currentIndexChanged.connect(self._on_vin_changed)
         top.addWidget(self._vin_combo)
         top.addStretch()
 
         self._refresh_btn = QPushButton(icon("refresh-cw"), t("app.refresh"))
-        self._refresh_btn.clicked.connect(lambda: self._refresh_current_tab(fresh=False))
         top.addWidget(self._refresh_btn)
 
         self._refresh_car_btn = QPushButton(icon("car"), t("app.refresh_car"))
-        self._refresh_car_btn.clicked.connect(lambda: self._refresh_current_tab(fresh=True))
         top.addWidget(self._refresh_car_btn)
 
         logout_btn = QPushButton(icon("log-out"), t("app.logout"))
@@ -225,70 +209,75 @@ class MainScreen(QWidget):
 
         # Dashboard tab
         self._dashboard = DashboardWidget(actions={
-            "on_lock": self._cmd_lock,
-            "on_unlock": self._cmd_unlock,
-            "on_horn_lights": self._cmd_horn_lights,
-            "on_charge_start": self._cmd_charge_start,
-            "on_charge_stop": self._cmd_charge_stop,
-            "on_charge_limit": self._cmd_charge_limit,
-            "on_charge_schedule": self._cmd_charge_schedule,
-            "on_climate_start": self._cmd_climate_start,
-            "on_climate_stop": self._cmd_climate_stop,
-            "on_climate_settings": self._cmd_climate_settings,
-            "on_climate_schedule": self._cmd_climate_schedule,
-            "on_locate": self._cmd_locate,
+            "on_lock": lambda: self._controller.run_lock(),
+            "on_unlock": lambda: self._controller.run_unlock(),
+            "on_horn_lights": lambda: self._controller.run_horn_lights(),
+            "on_charge_start": lambda: self._controller.run_charge_start(),
+            "on_charge_stop": lambda: self._controller.run_charge_stop(),
+            "on_charge_limit": lambda: self._controller.run_charge_limit(),
+            "on_charge_schedule": lambda: self._controller.run_charge_schedule(),
+            "on_climate_start": lambda: self._controller.run_climate_start(),
+            "on_climate_stop": lambda: self._controller.run_climate_stop(),
+            "on_climate_settings": lambda: self._controller.run_climate_settings(),
+            "on_climate_schedule": lambda: self._controller.run_climate_schedule(),
+            "on_locate": lambda: self._controller.run_locate(),
         })
         self._tabs.addTab(self._dashboard, icon("car"), t("app.dashboard"))
 
         # Trips tab
         self._trips = TripsWidget(
             get_api=lambda: self._api,
-            get_vin=self._current_vin,
-            get_vehicles=lambda: self._vehicles,
-            on_status=self._status_bar_set_status,
-            on_error=self._status_bar_set_error,
-            on_auth_error=self._on_auth_error,
+            get_vin=self.current_vin,
+            get_vehicles=self.vehicles,
+            on_status=self.show_status,
+            on_error=self.show_error,
+            on_auth_error=lambda: self._controller.handle_auth_error(),
         )
         self._tabs.addTab(self._trips, icon("route"), t("app.trips"))
-        self._tabs.currentChanged.connect(self._on_tab_changed)
 
         layout.addWidget(self._tabs)
 
         # Status bar
         self._status_bar = StatusBarWidget()
         layout.addWidget(self._status_bar)
+        self._vehicles = []
+        self._controller = MainScreenController(self, api, settings, on_logout)
+
+        self._vin_combo.currentIndexChanged.connect(
+            lambda _: self._controller.handle_vin_changed(self.current_vin())
+        )
+        self._refresh_btn.clicked.connect(
+            lambda: self._controller.handle_refresh_current_tab(fresh=False)
+        )
+        self._refresh_car_btn.clicked.connect(
+            lambda: self._controller.handle_refresh_current_tab(fresh=True)
+        )
+        self._tabs.currentChanged.connect(self._controller.handle_tab_changed)
 
     def activate(self):
-        """Called when this screen becomes visible."""
-        # First populate from cached vehicles in tokens (instant, no API call)
-        if self._api.tokens.vehicles:
-            self._populate_vehicles(self._api.tokens.vehicles)
-        # Then refresh from API in background
-        self._fetch_vehicles()
-        # Check for updates
-        self._check_update()
+        self._controller.activate()
 
-    def _current_vin(self) -> str:
-        """Get the VIN for the currently selected vehicle."""
+    def set_api(self, api: HondaAPI):
+        self._api = api
+        self._controller.set_api(api)
+
+    def vehicles(self) -> list[dict]:
+        return self._vehicles
+
+    def current_vin(self) -> str:
         idx = self._vin_combo.currentIndex()
         if idx >= 0 and idx < len(self._vehicles):
             return self._vehicles[idx]["vin"]
         return ""
 
-    def _on_vin_changed(self, index: int):
-        vin = self._current_vin()
-        if vin:
-            self._settings.vin = vin
-            self._settings.save()
-            self._cached_climate_schedule = None
-            self._cached_charge_schedule = None
-            self._dashboard.set_vin(vin)
-            self._load_dashboard()
+    def current_tab_index(self) -> int:
+        return self._tabs.currentIndex()
 
-    def _populate_vehicles(self, vehicles: list[dict]):
-        """Populate the combo box with vehicles."""
+    def current_dashboard_status(self) -> dict:
+        return self._dashboard.current_status()
+
+    def populate_vehicles(self, vehicles: list[dict], saved_vin: str) -> str:
         self._vehicles = vehicles
-        saved_vin = self._settings.vin
 
         self._vin_combo.blockSignals(True)
         self._vin_combo.clear()
@@ -302,52 +291,22 @@ class MainScreen(QWidget):
             select_idx = 0
         self._vin_combo.setCurrentIndex(select_idx)
         self._vin_combo.blockSignals(False)
+        return self.current_vin()
 
-        if self._current_vin():
-            self._dashboard.set_vin(self._current_vin())
-            self._load_dashboard()
+    def update_dashboard_vin(self, vin: str):
+        self._dashboard.set_vin(vin)
 
-    def _fetch_vehicles(self):
-        self._vehicles_worker = VehiclesWorker(self._api)
-        self._vehicles_worker.finished.connect(self._on_vehicles)
-        self._vehicles_worker.error.connect(
-            lambda e: logger.warning("Failed to fetch vehicles: %s", e))
-        self._vehicles_worker.start()
+    def set_refresh_enabled(self, enabled: bool):
+        self._refresh_btn.setEnabled(enabled)
+        self._refresh_car_btn.setEnabled(enabled)
 
-    def _on_vehicles(self, vehicles: list[dict]):
-        self._populate_vehicles(vehicles)
+    def set_dashboard_actions_enabled(self, enabled: bool):
+        self._dashboard.set_actions_enabled(enabled)
 
-    def _load_dashboard(self, fresh: bool = False):
-        vin = self._current_vin()
-        if not vin:
-            self._status_bar.set_error(t("app.no_vin"))
-            return
-
-        self._refresh_btn.setEnabled(False)
-        self._refresh_car_btn.setEnabled(False)
-        self._worker = DashboardWorker(self._api, vin, fresh=fresh)
-        self._worker.finished.connect(self._on_dashboard)
-        self._worker.auth_error.connect(self._on_auth_error)
-        self._worker.error.connect(lambda msg: (
-            self._refresh_btn.setEnabled(True),
-            self._refresh_car_btn.setEnabled(True),
-            self._status_bar.set_error(msg)))
-        self._worker.progress.connect(self._status_bar.set_status)
-        self._worker.start()
-
-    def _on_dashboard(self, status: dict):
-        self._refresh_btn.setEnabled(True)
-        self._refresh_car_btn.setEnabled(True)
+    def update_dashboard_status(self, status: dict):
         self._dashboard.update_status(status)
-        self._dashboard.set_actions_enabled(True)
-        self._status_bar.set_success(t("app.status_loaded"))
 
-    def _check_update(self):
-        self._update_worker = UpdateCheckWorker(__version__)
-        self._update_worker.update_available.connect(self._on_update_available)
-        self._update_worker.start()
-
-    def _on_update_available(self, new_version: str, release_url: str):
+    def show_update_available(self, new_version: str, release_url: str):
         self._update_info = (new_version, release_url)
         self._update_label.setText(
             f'{t("app.update_available", version=new_version)} — '
@@ -355,254 +314,50 @@ class MainScreen(QWidget):
             f'{t("app.download")}</a>')
         self._update_banner.setVisible(True)
 
-    def _refresh_current_tab(self, fresh: bool = False):
-        index = self._tabs.currentIndex()
-        if index == 0:
-            self._load_dashboard(fresh=fresh)
-        elif index == 1:
-            self._trips.load_trips()
+    def show_status(self, text: str):
+        self._status_bar.set_status(text)
 
-    def _on_tab_changed(self, index: int):
-        if index == 1:  # Trips tab
-            self._trips.load_trips()
+    def show_success(self, text: str):
+        self._status_bar.set_success(text)
 
-    def _on_auth_error(self):
-        self._status_bar.set_error(t("app.session_expired"))
-        self._on_logout()
+    def show_error(self, text: str):
+        self._status_bar.set_error(text)
 
-    # -- Command helpers --
+    def load_trips(self):
+        self._trips.load_trips()
 
-    def _run_command(self, label: str, func, *args, **kwargs):
-        self._dashboard.set_actions_enabled(False)
-        self._cmd_worker = CommandWorker(self._api, label, func, *args, **kwargs)
-        self._cmd_worker.auth_error.connect(self._on_auth_error)
-        self._cmd_worker.progress.connect(self._status_bar_set_status)
-        self._cmd_worker.finished.connect(
-            lambda lbl: (self._dashboard.set_actions_enabled(True),
-                         self._status_bar_set_success(t("commands.done", label=lbl)),
-                         self._load_dashboard()))
-        self._cmd_worker.error.connect(
-            lambda msg: (self._dashboard.set_actions_enabled(True),
-                         self._status_bar_set_error(msg)))
-        self._cmd_worker.start()
-
-    def _cmd_lock(self):
-        self._run_command(t("commands.lock"), self._api.remote_lock, self._current_vin())
-
-    def _cmd_unlock(self):
-        self._run_command(t("commands.unlock"), self._api.remote_unlock, self._current_vin())
-
-    def _cmd_horn_lights(self):
-        self._run_command(t("commands.horn_lights"), self._api.remote_horn_lights, self._current_vin())
-
-    def _cmd_charge_start(self):
-        self._run_command(t("commands.charge_on"), self._api.remote_charge_start, self._current_vin())
-
-    def _cmd_charge_stop(self):
-        self._run_command(t("commands.charge_off"), self._api.remote_charge_stop, self._current_vin())
-
-    def _cmd_charge_limit(self):
-        status = self._dashboard._status
+    def open_charge_limit_dialog(self, status: dict, on_accept):
         dlg = ChargeLimitDialog(
             self,
             home=status.get("charge_limit_home", 80),
             away=status.get("charge_limit_away", 90),
         )
-
-        def on_accept():
-            dlg.set_saving(True, t("workers.sending", label=t("commands.charge_limit")))
-            w = CommandWorker(
-                self._api, t("commands.charge_limit"),
-                self._api.set_charge_limit, self._current_vin(),
-                home=dlg.home, away=dlg.away)
-            w.auth_error.connect(self._on_auth_error)
-            w.progress.connect(lambda msg: dlg.set_saving(True, msg))
-            w.finished.connect(lambda lbl: (
-                dlg.set_saving(False),
-                dlg.accept(),
-                self._status_bar_set_success(t("commands.done", label=lbl)),
-                self._load_dashboard()))
-            w.error.connect(lambda msg: (
-                dlg.set_saving(False, ""),
-                self._status_bar_set_error(msg)))
-            w.start()
-            self._cmd_worker = w
-
         dlg._buttons.accepted.disconnect()
-        dlg._buttons.accepted.connect(on_accept)
+        dlg._buttons.accepted.connect(lambda: on_accept(dlg))
         dlg.exec()
 
-    def _cmd_climate_start(self):
-        self._run_command(t("commands.climate_on"), self._api.remote_climate_start, self._current_vin())
-
-    def _cmd_climate_stop(self):
-        self._run_command(t("commands.climate_off"), self._api.remote_climate_stop, self._current_vin())
-
-    def _cmd_climate_settings(self):
-        status = self._dashboard._status
+    def open_climate_settings_dialog(self, status: dict, on_accept):
         dlg = ClimateSettingsDialog(
             self,
             temp=status.get("climate_temp", "normal"),
             duration=status.get("climate_duration", 30),
             defrost=status.get("climate_defrost", True),
         )
-
-        def on_accept():
-            dlg.set_saving(True, t("workers.sending", label=t("commands.climate_settings")))
-            w = CommandWorker(
-                self._api, t("commands.climate_settings"),
-                self._api.set_climate_settings, self._current_vin(),
-                temp=dlg.temp, duration=dlg.duration, defrost=dlg.defrost)
-            w.auth_error.connect(self._on_auth_error)
-            w.progress.connect(lambda msg: dlg.set_saving(True, msg))
-            w.finished.connect(lambda lbl: (
-                dlg.set_saving(False),
-                dlg.accept(),
-                self._status_bar_set_success(t("commands.done", label=lbl)),
-                self._load_dashboard()))
-            w.error.connect(lambda msg: (
-                dlg.set_saving(False, ""),
-                self._status_bar_set_error(msg)))
-            w.start()
-            self._cmd_worker = w
-
         dlg._buttons.accepted.disconnect()
-        dlg._buttons.accepted.connect(on_accept)
+        dlg._buttons.accepted.connect(lambda: on_accept(dlg))
         dlg.exec()
 
-    def _cmd_locate(self):
-        self._run_command(t("commands.locate"), self._api.request_car_location, self._current_vin())
-
-    def _cmd_climate_schedule(self):
-        vin = self._current_vin()
-        if not vin:
-            return
-        if self._cached_climate_schedule is not None:
-            self._show_climate_schedule_dialog(self._cached_climate_schedule)
-        else:
-            self._status_bar_set_status(t("schedules.loading"))
-            self._sched_worker = ScheduleLoadWorker(self._api, vin)
-            self._sched_worker.auth_error.connect(self._on_auth_error)
-            self._sched_worker.finished.connect(
-                lambda data: self._show_climate_schedule_dialog(data["climate_schedule"]))
-            self._sched_worker.error.connect(self._status_bar_set_error)
-            self._sched_worker.start()
-
-    def _show_climate_schedule_dialog(self, schedule: list):
-        self._status_bar_set_success(t("schedules.loaded"))
-        vin = self._current_vin()
-
+    def open_climate_schedule_dialog(self, schedule: list, on_save, on_clear):
         dlg = ClimateScheduleDialog(self, schedule=schedule)
-
-        def on_save(rules):
-            dlg.set_saving(True, t("workers.sending", label=t("schedules.climate")))
-            def on_success(_):
-                self._cached_climate_schedule = rules
-                dlg.set_saving(False)
-                self._status_bar_set_success(t("schedules.saved"))
-            def on_error(msg):
-                dlg.set_saving(False, "")
-                self._status_bar_set_error(msg)
-            w = ScheduleSaveWorker(self._api, t("schedules.climate"),
-                                   self._api.set_climate_schedule, vin, rules)
-            w.auth_error.connect(self._on_auth_error)
-            w.progress.connect(lambda msg: dlg.set_saving(True, msg))
-            w.finished.connect(on_success)
-            w.error.connect(on_error)
-            w.start()
-            self._sched_save_worker = w
-
-        def on_clear():
-            dlg.set_saving(True, t("workers.sending", label=t("schedules.climate")))
-            def on_success(_):
-                self._cached_climate_schedule = [{"enabled": False} for _ in range(7)]
-                dlg.set_saving(False)
-                self._status_bar_set_success(t("schedules.cleared"))
-            def on_error(msg):
-                dlg.set_saving(False, "")
-                self._status_bar_set_error(msg)
-            w = ScheduleSaveWorker(self._api, t("schedules.climate"),
-                                   self._api.set_climate_schedule, vin, [])
-            w.auth_error.connect(self._on_auth_error)
-            w.progress.connect(lambda msg: dlg.set_saving(True, msg))
-            w.finished.connect(on_success)
-            w.error.connect(on_error)
-            w.start()
-            self._sched_save_worker = w
-
-        dlg._on_save = on_save
-        dlg._on_clear = on_clear
+        dlg._on_save = lambda rules: on_save(dlg, rules)
+        dlg._on_clear = lambda: on_clear(dlg)
         dlg.exec()
 
-    def _cmd_charge_schedule(self):
-        vin = self._current_vin()
-        if not vin:
-            return
-        if self._cached_charge_schedule is not None:
-            self._show_charge_schedule_dialog(self._cached_charge_schedule)
-        else:
-            self._status_bar_set_status(t("schedules.loading"))
-            self._sched_worker = ScheduleLoadWorker(self._api, vin)
-            self._sched_worker.auth_error.connect(self._on_auth_error)
-            self._sched_worker.finished.connect(
-                lambda data: self._show_charge_schedule_dialog(data["charge_schedule"]))
-            self._sched_worker.error.connect(self._status_bar_set_error)
-            self._sched_worker.start()
-
-    def _show_charge_schedule_dialog(self, schedule: list):
-        self._status_bar_set_success(t("schedules.loaded"))
-        vin = self._current_vin()
-
+    def open_charge_schedule_dialog(self, schedule: list, on_save, on_clear):
         dlg = ChargeScheduleDialog(self, schedule=schedule)
-
-        def on_save(rules):
-            dlg.set_saving(True, t("workers.sending", label=t("schedules.charge")))
-            def on_success(_):
-                self._cached_charge_schedule = rules
-                dlg.set_saving(False)
-                self._status_bar_set_success(t("schedules.saved"))
-            def on_error(msg):
-                dlg.set_saving(False, "")
-                self._status_bar_set_error(msg)
-            w = ScheduleSaveWorker(self._api, t("schedules.charge"),
-                                   self._api.set_charge_schedule, vin, rules)
-            w.auth_error.connect(self._on_auth_error)
-            w.progress.connect(lambda msg: dlg.set_saving(True, msg))
-            w.finished.connect(on_success)
-            w.error.connect(on_error)
-            w.start()
-            self._sched_save_worker = w
-
-        def on_clear():
-            dlg.set_saving(True, t("workers.sending", label=t("schedules.charge")))
-            def on_success(_):
-                self._cached_charge_schedule = [{"enabled": False} for _ in range(2)]
-                dlg.set_saving(False)
-                self._status_bar_set_success(t("schedules.cleared"))
-            def on_error(msg):
-                dlg.set_saving(False, "")
-                self._status_bar_set_error(msg)
-            w = ScheduleSaveWorker(self._api, t("schedules.charge"),
-                                   self._api.set_charge_schedule, vin, [])
-            w.auth_error.connect(self._on_auth_error)
-            w.progress.connect(lambda msg: dlg.set_saving(True, msg))
-            w.finished.connect(on_success)
-            w.error.connect(on_error)
-            w.start()
-            self._sched_save_worker = w
-
-        dlg._on_save = on_save
-        dlg._on_clear = on_clear
+        dlg._on_save = lambda rules: on_save(dlg, rules)
+        dlg._on_clear = lambda: on_clear(dlg)
         dlg.exec()
-
-    def _status_bar_set_status(self, text: str):
-        self._status_bar.set_status(text)
-
-    def _status_bar_set_success(self, text: str):
-        self._status_bar.set_success(text)
-
-    def _status_bar_set_error(self, text: str):
-        self._status_bar.set_error(text)
 
 
 class MainWindow(QMainWindow):
@@ -646,7 +401,7 @@ class MainWindow(QMainWindow):
     def _logout(self):
         self._session.reset()
         self._sync_session_refs()
-        self._main._api = self._api
+        self._main.set_api(self._api)
         self._stack.setCurrentWidget(self._login)
 
     def showEvent(self, event):

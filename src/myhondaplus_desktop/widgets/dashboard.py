@@ -292,6 +292,9 @@ class DashboardWidget(QWidget):
     def set_vin(self, vin: str):
         self._vin_label.setText(vin)
 
+    def current_status(self) -> dict:
+        return self._status
+
     def update_status(self, status: dict):
         self._status = status
         self._battery_bar.setValue(status.get("battery_level", 0))

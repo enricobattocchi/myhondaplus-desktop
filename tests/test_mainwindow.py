@@ -27,6 +27,9 @@ class DummyMainScreen(QWidget):
     def activate(self):
         self.activated += 1
 
+    def set_api(self, api):
+        self._api = api
+
 
 class DummyStorage:
     def __init__(self):
