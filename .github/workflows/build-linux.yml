@@ -18,6 +18,9 @@ jobs:
         with:
           python-version: "3.13"
 
+      - name: Validate release version
+        run: python scripts/check_release_version.py "${{ github.event.release.tag_name }}"
+
       - name: Install system dependencies
         run: |
           sudo apt-get update

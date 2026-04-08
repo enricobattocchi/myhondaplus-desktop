@@ -4,6 +4,10 @@ __pycache__/
 dist/
 build/
 .venv/
+.pytest_cache/
+.ruff_cache/
+.codex
+.claude/
 *.pem
 *.json
 !src/myhondaplus_desktop/translations/*.json
