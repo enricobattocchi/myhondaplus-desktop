@@ -1,7 +1,7 @@
 """Tests for package version configuration."""
 
-from pathlib import Path
 import tomllib
+from pathlib import Path
 
 from myhondaplus_desktop import __version__
 from scripts.check_release_version import release_tag_matches_version

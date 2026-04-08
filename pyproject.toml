@@ -10,6 +10,7 @@ license = "GPL-3.0-or-later"
 dynamic = ["version"]
 dependencies = [
     "pymyhondaplus>=5.1.0",
+    "platformdirs>=4.0",
     "PyQt6>=6.6",
 ]
 

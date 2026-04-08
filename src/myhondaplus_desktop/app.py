@@ -4,8 +4,6 @@ import logging
 import sys
 
 from pymyhondaplus import HondaAPI, HondaAuth, get_storage
-from pymyhondaplus.api import DEFAULT_TOKEN_FILE
-from pymyhondaplus.auth import DEFAULT_DEVICE_KEY_FILE
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QApplication,
@@ -24,7 +22,7 @@ from PyQt6.QtWidgets import (
 )
 
 from . import __version__
-from .config import Settings
+from .config import Settings, device_key_file, token_file
 from .i18n import active_language, available_languages, load_language, t
 from .icons import icon, pixmap
 from .widgets.dashboard import DashboardWidget
@@ -612,7 +610,11 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(t("app.name"))
         self._settings = Settings.load()
 
-        self._storage = get_storage(DEFAULT_TOKEN_FILE, DEFAULT_DEVICE_KEY_FILE)
+        token_path = token_file()
+        device_key_path = device_key_file()
+        token_path.parent.mkdir(parents=True, exist_ok=True)
+        device_key_path.parent.mkdir(parents=True, exist_ok=True)
+        self._storage = get_storage(token_path, device_key_path)
         self._api = HondaAPI(storage=self._storage)
 
         self._stack = QStackedWidget()
