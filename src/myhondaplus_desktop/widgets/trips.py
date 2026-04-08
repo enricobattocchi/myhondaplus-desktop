@@ -84,10 +84,10 @@ class TripsWidget(QWidget):
         self._month_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._month_label.setMinimumWidth(150)
         month_bar.addWidget(self._month_label)
-        next_btn = QPushButton(icon("chevron-right"), "")
-        next_btn.setFixedWidth(32)
-        next_btn.clicked.connect(self._next_month)
-        month_bar.addWidget(next_btn)
+        self._next_btn = QPushButton(icon("chevron-right"), "")
+        self._next_btn.setFixedWidth(32)
+        self._next_btn.clicked.connect(self._next_month)
+        month_bar.addWidget(self._next_btn)
         month_bar.addStretch()
         self._locations_cb = QCheckBox(t("trips.include_locations"))
         self._locations_cb.setToolTip(t("trips.locations_tooltip"))
@@ -97,6 +97,7 @@ class TripsWidget(QWidget):
         export_btn.clicked.connect(self._export_csv)
         month_bar.addWidget(export_btn)
         layout.addLayout(month_bar)
+        self._update_month_controls()
 
         # Stats row
         stats_box = QGroupBox("")
@@ -144,19 +145,29 @@ class TripsWidget(QWidget):
     def _format_month(self) -> str:
         return self._current_month.strftime("%B %Y")
 
+    def _latest_month(self) -> date:
+        return date.today().replace(day=1)
+
+    def _update_month_controls(self):
+        self._month_label.setText(self._format_month())
+        self._next_btn.setEnabled(self._current_month < self._latest_month())
+
     def _prev_month(self):
         m = self._current_month
         self._current_month = (m.replace(day=1) - date.resolution).replace(day=1)
-        self._month_label.setText(self._format_month())
+        self._update_month_controls()
         self.load_trips()
 
     def _next_month(self):
+        if self._current_month >= self._latest_month():
+            self._update_month_controls()
+            return
         m = self._current_month
         if m.month == 12:
             self._current_month = m.replace(year=m.year + 1, month=1)
         else:
             self._current_month = m.replace(month=m.month + 1)
-        self._month_label.setText(self._format_month())
+        self._update_month_controls()
         self.load_trips()
 
     def _on_cell_double_clicked(self, row: int, col: int):
