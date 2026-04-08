@@ -2,9 +2,25 @@
 
 from __future__ import annotations
 
+import ast
 import sys
+from pathlib import Path
 
-from myhondaplus_desktop import __version__
+
+def read_package_version() -> str:
+    init_py = Path("src/myhondaplus_desktop/__init__.py")
+    module = ast.parse(init_py.read_text(encoding="utf-8"), filename=str(init_py))
+    for node in module.body:
+        if isinstance(node, ast.Assign):
+            for target in node.targets:
+                if isinstance(target, ast.Name) and target.id == "__version__":
+                    value = node.value
+                    if isinstance(value, ast.Constant) and isinstance(value.value, str):
+                        return value.value
+    raise RuntimeError(f"Could not read __version__ from {init_py}")
+
+
+__version__ = read_package_version()
 
 
 def release_tag_matches_version(release_tag: str) -> bool:

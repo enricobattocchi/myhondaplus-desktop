@@ -4,7 +4,7 @@ import tomllib
 from pathlib import Path
 
 from myhondaplus_desktop import __version__
-from scripts.check_release_version import release_tag_matches_version
+from scripts.check_release_version import read_package_version, release_tag_matches_version
 
 
 def test_pyproject_uses_dynamic_version_from_package():
@@ -15,6 +15,10 @@ def test_pyproject_uses_dynamic_version_from_package():
     assert pyproject["tool"]["setuptools"]["dynamic"]["version"] == {
         "attr": "myhondaplus_desktop.__version__"
     }
+
+
+def test_release_version_script_reads_version_from_source_tree():
+    assert read_package_version() == __version__
 
 
 def test_release_tag_validation_accepts_supported_tag_formats():
