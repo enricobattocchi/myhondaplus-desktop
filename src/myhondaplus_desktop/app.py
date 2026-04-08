@@ -332,8 +332,7 @@ class MainScreen(QWidget):
             home=status.get("charge_limit_home", 80),
             away=status.get("charge_limit_away", 90),
         )
-        dlg._buttons.accepted.disconnect()
-        dlg._buttons.accepted.connect(lambda: on_accept(dlg))
+        dlg.set_accept_handler(lambda: on_accept(dlg))
         dlg.exec()
 
     def open_climate_settings_dialog(self, status: dict, on_accept):
@@ -343,20 +342,25 @@ class MainScreen(QWidget):
             duration=status.get("climate_duration", 30),
             defrost=status.get("climate_defrost", True),
         )
-        dlg._buttons.accepted.disconnect()
-        dlg._buttons.accepted.connect(lambda: on_accept(dlg))
+        dlg.set_accept_handler(lambda: on_accept(dlg))
         dlg.exec()
 
     def open_climate_schedule_dialog(self, schedule: list, on_save, on_clear):
-        dlg = ClimateScheduleDialog(self, schedule=schedule)
-        dlg._on_save = lambda rules: on_save(dlg, rules)
-        dlg._on_clear = lambda: on_clear(dlg)
+        dlg = ClimateScheduleDialog(
+            self,
+            schedule=schedule,
+            on_save=lambda rules: on_save(dlg, rules),
+            on_clear=lambda: on_clear(dlg),
+        )
         dlg.exec()
 
     def open_charge_schedule_dialog(self, schedule: list, on_save, on_clear):
-        dlg = ChargeScheduleDialog(self, schedule=schedule)
-        dlg._on_save = lambda rules: on_save(dlg, rules)
-        dlg._on_clear = lambda: on_clear(dlg)
+        dlg = ChargeScheduleDialog(
+            self,
+            schedule=schedule,
+            on_save=lambda rules: on_save(dlg, rules),
+            on_clear=lambda: on_clear(dlg),
+        )
         dlg.exec()
 
 

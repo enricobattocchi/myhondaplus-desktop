@@ -177,6 +177,10 @@ class ClimateSettingsDialog(QDialog):
         self._buttons.rejected.connect(self.reject)
         self._layout.addRow(self._buttons)
 
+    def set_accept_handler(self, handler):
+        self._buttons.accepted.disconnect()
+        self._buttons.accepted.connect(handler)
+
     def set_saving(self, saving: bool, message: str = ""):
         self._saving = saving
         self._buttons.setEnabled(not saving)
@@ -242,6 +246,10 @@ class ChargeLimitDialog(QDialog):
         self._buttons.accepted.connect(self.accept)
         self._buttons.rejected.connect(self.reject)
         self._layout.addRow(self._buttons)
+
+    def set_accept_handler(self, handler):
+        self._buttons.accepted.disconnect()
+        self._buttons.accepted.connect(handler)
 
     @property
     def home(self) -> int:
