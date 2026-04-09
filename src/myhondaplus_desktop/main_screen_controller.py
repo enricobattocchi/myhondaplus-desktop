@@ -54,6 +54,7 @@ class MainScreenController:
         self._load_dashboard()
 
     def handle_refresh_current_tab(self, fresh: bool = False):
+        self._reset_schedule_cache()
         index = self._view.current_tab_index()
         if index == 0:
             self._load_dashboard(fresh=fresh)
