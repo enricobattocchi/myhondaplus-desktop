@@ -205,7 +205,10 @@ class MainScreenController:
         self._view.set_refresh_enabled(True)
         self._view.update_dashboard_status(status)
         self._view.set_dashboard_actions_enabled(True)
-        self._view.show_success(t("app.status_loaded"))
+        if status.pop("_refresh_stale", False):
+            self._view.show_warning(t("app.refresh_stale"))
+        else:
+            self._view.show_success(t("app.status_loaded"))
 
     def _on_dashboard_error(self, message: str):
         self._view.set_refresh_enabled(True)

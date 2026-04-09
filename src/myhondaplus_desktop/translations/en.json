@@ -6,6 +6,7 @@
   "app.logout": "Logout",
   "app.no_vin": "No VIN selected",
   "app.status_loaded": "Status loaded",
+  "app.refresh_stale": "Car did not respond — showing cached data",
   "app.dashboard": "Dashboard",
   "app.trips": "Trips",
   "app.schedules": "Schedules",

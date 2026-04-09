@@ -320,6 +320,9 @@ class MainScreen(QWidget):
     def show_success(self, text: str):
         self._status_bar.set_success(text)
 
+    def show_warning(self, text: str):
+        self._status_bar.set_warning(text)
+
     def show_error(self, text: str):
         self._status_bar.set_error(text)
 

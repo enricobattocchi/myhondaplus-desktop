@@ -75,6 +75,7 @@ class FakeView:
         self.dashboard_updates = []
         self.status_messages = []
         self.success_messages = []
+        self.warning_messages = []
         self.error_messages = []
         self.update_banners = []
         self.load_trips_calls = 0
@@ -116,6 +117,9 @@ class FakeView:
 
     def show_success(self, text):
         self.success_messages.append(text)
+
+    def show_warning(self, text):
+        self.warning_messages.append(text)
 
     def show_error(self, text):
         self.error_messages.append(text)
@@ -310,3 +314,43 @@ def test_auth_error_triggers_logout_from_schedule_worker(monkeypatch):
 
     assert state["logout_calls"] == 1
     assert view.error_messages[-1] == "app.session_expired"
+
+
+def test_dashboard_loaded_shows_warning_when_refresh_stale(monkeypatch):
+    dashboard_worker = FakeWorker()
+    api = FakeAPI()
+    view = FakeView()
+    view._current_vin = "VIN123"
+    settings = FakeSettings(vin="VIN123")
+
+    monkeypatch.setattr(
+        "myhondaplus_desktop.main_screen_controller.DashboardWorker",
+        lambda api, vin, fresh=False: dashboard_worker,
+    )
+
+    controller = MainScreenController(view, api, settings, lambda: None)
+    controller.handle_refresh_current_tab(fresh=True)
+    dashboard_worker.finished.emit({"battery": 70, "_refresh_stale": True})
+
+    assert view.warning_messages == ["app.refresh_stale"]
+    assert view.success_messages == []
+
+
+def test_dashboard_loaded_shows_success_when_refresh_ok(monkeypatch):
+    dashboard_worker = FakeWorker()
+    api = FakeAPI()
+    view = FakeView()
+    view._current_vin = "VIN123"
+    settings = FakeSettings(vin="VIN123")
+
+    monkeypatch.setattr(
+        "myhondaplus_desktop.main_screen_controller.DashboardWorker",
+        lambda api, vin, fresh=False: dashboard_worker,
+    )
+
+    controller = MainScreenController(view, api, settings, lambda: None)
+    controller.handle_refresh_current_tab()
+    dashboard_worker.finished.emit({"battery": 90})
+
+    assert view.success_messages == ["app.status_loaded"]
+    assert view.warning_messages == []

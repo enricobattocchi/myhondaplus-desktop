@@ -6,6 +6,7 @@
   "app.logout": "Esci",
   "app.no_vin": "Nessun VIN selezionato",
   "app.status_loaded": "Stato caricato",
+  "app.refresh_stale": "L'auto non ha risposto — dati dalla cache",
   "app.dashboard": "Cruscotto",
   "app.trips": "Viaggi",
   "app.schedules": "Programmazione",

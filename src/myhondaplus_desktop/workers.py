@@ -204,10 +204,14 @@ class DashboardWorker(QThread):
         try:
             if self.fresh:
                 self.progress.emit(t("workers.waking_car"))
+                result = self.api.refresh_dashboard(self.vin)
+                dashboard = self.api.get_dashboard_cached(self.vin)
+                status = parse_ev_status(dashboard)
+                status["_refresh_stale"] = not result.success
             else:
                 self.progress.emit(t("workers.loading_status"))
-            dashboard = self.api.get_dashboard(self.vin, fresh=self.fresh)
-            status = parse_ev_status(dashboard)
+                dashboard = self.api.get_dashboard(self.vin)
+                status = parse_ev_status(dashboard)
             self.finished.emit(status)
         except HondaAuthError:
             self.auth_error.emit()
@@ -239,7 +243,7 @@ class CommandWorker(QThread):
                 self.error.emit(t("workers.no_command_id", label=self.label))
                 return
 
-            result = self.api.wait_for_command(command_id)
+            result = self.api.wait_for_command(command_id, timeout=90)
             if result.success:
                 self.finished.emit(self.label)
             elif result.timed_out:
@@ -404,7 +408,7 @@ class ScheduleSaveWorker(QThread):
                 self.finished.emit(self.label)
                 return
 
-            result = self.api.wait_for_command(command_id)
+            result = self.api.wait_for_command(command_id, timeout=90)
             if result.success:
                 self.finished.emit(self.label)
             elif result.timed_out:

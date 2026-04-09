@@ -9,9 +9,11 @@ from pymyhondaplus import HondaAPIError, HondaAuthError
 from myhondaplus_desktop import workers
 from myhondaplus_desktop.workers import (
     CommandWorker,
+    DashboardWorker,
     DeviceRegistrationWorker,
     LoginWorker,
     ScheduleLoadWorker,
+    ScheduleSaveWorker,
     TripsWorker,
     UpdateCheckWorker,
     VehiclesWorker,
@@ -79,7 +81,7 @@ def test_command_worker_success(mock_api):
 
     assert results["finished"] == "Lock"
     assert results["error"] is None
-    mock_api.wait_for_command.assert_called_once_with("cmd-123")
+    mock_api.wait_for_command.assert_called_once_with("cmd-123", timeout=90)
 
 
 def test_command_worker_timeout(mock_api):
@@ -312,3 +314,54 @@ def test_verify_and_login_worker_reports_bad_link(monkeypatch):
 
     assert results["finished"] is None
     assert "Could not extract key from link" in results["error"]
+
+
+def test_dashboard_worker_fresh_success(monkeypatch, mock_api):
+    mock_api.refresh_dashboard.return_value = MagicMock(success=True)
+    mock_api.get_dashboard_cached.return_value = {"raw": True}
+    monkeypatch.setattr(workers, "parse_ev_status", lambda d: {"battery": 80})
+
+    worker = DashboardWorker(mock_api, "VIN123", fresh=True)
+    results = _run_worker(worker)
+
+    assert results["error"] is None
+    assert results["finished"]["battery"] == 80
+    assert results["finished"]["_refresh_stale"] is False
+    mock_api.refresh_dashboard.assert_called_once_with("VIN123")
+    mock_api.get_dashboard_cached.assert_called_once_with("VIN123")
+
+
+def test_dashboard_worker_fresh_car_not_responding(monkeypatch, mock_api):
+    mock_api.refresh_dashboard.return_value = MagicMock(success=False)
+    mock_api.get_dashboard_cached.return_value = {"raw": True}
+    monkeypatch.setattr(workers, "parse_ev_status", lambda d: {"battery": 70})
+
+    worker = DashboardWorker(mock_api, "VIN123", fresh=True)
+    results = _run_worker(worker)
+
+    assert results["error"] is None
+    assert results["finished"]["battery"] == 70
+    assert results["finished"]["_refresh_stale"] is True
+
+
+def test_dashboard_worker_cached_has_no_stale_flag(monkeypatch, mock_api):
+    mock_api.get_dashboard.return_value = {"raw": True}
+    monkeypatch.setattr(workers, "parse_ev_status", lambda d: {"battery": 90})
+
+    worker = DashboardWorker(mock_api, "VIN123", fresh=False)
+    results = _run_worker(worker)
+
+    assert results["error"] is None
+    assert "_refresh_stale" not in results["finished"]
+    mock_api.refresh_dashboard.assert_not_called()
+
+
+def test_schedule_save_worker_uses_90s_timeout(mock_api):
+    result = MagicMock(success=True)
+    mock_api.wait_for_command.return_value = result
+
+    worker = ScheduleSaveWorker(mock_api, "Climate", lambda vin, rules: "cmd-456", "VIN123", [])
+    results = _run_worker(worker)
+
+    assert results["finished"] == "Climate"
+    mock_api.wait_for_command.assert_called_once_with("cmd-456", timeout=90)
