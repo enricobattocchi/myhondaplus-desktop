@@ -1,0 +1,81 @@
+name: Bug Report
+description: Something crashed or stopped working as expected
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! Please fill in as much detail as you can — it helps a lot.
+
+  - type: input
+    id: vehicle
+    attributes:
+      label: Vehicle model
+      placeholder: e.g. Honda e, Honda HR-V e:HEV, Jazz e:HEV
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      options:
+        - Windows
+        - macOS
+        - Linux
+    validations:
+      required: true
+
+  - type: input
+    id: app-version
+    attributes:
+      label: App Version
+      description: You can find this in the title bar or About dialog.
+      placeholder: e.g. 1.2.0
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Describe the problem. What did you see or experience?
+      placeholder: The app crashed when I tried to...
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: How can we reproduce the issue? Step-by-step is best.
+      placeholder: |
+        1. Open the app
+        2. Click on ...
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+      placeholder: I expected the app to...
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error message or logs (if any)
+      description: Paste any error message or log output here. Not required but very helpful.
+      render: text
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues and this has not been reported yet
+          required: true

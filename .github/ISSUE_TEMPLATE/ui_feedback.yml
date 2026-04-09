@@ -1,0 +1,66 @@
+name: UI Feedback
+description: Something works but feels off, is confusing, or looks wrong
+title: "[UI]: "
+labels: ["ui"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        UI feedback is welcome! This is the right place if something works but doesn't look right, feels confusing, or could be clearer.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which part of the app?
+      options:
+        - Main window / dashboard
+        - Charging status
+        - Climate control
+        - Door locks
+        - Trip history
+        - Settings
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What feels off?
+      description: Describe what you noticed. There's no wrong answer here.
+      placeholder: The charging status panel is hard to read because...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What would you expect instead?
+      placeholder: I'd expect it to show... / It would be clearer if...
+    validations:
+      required: true
+
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: Screenshot (optional)
+      description: A screenshot can be very helpful. You can drag and drop an image here.
+
+  - type: input
+    id: vehicle
+    attributes:
+      label: Vehicle model
+      placeholder: e.g. Honda e, Honda HR-V e:HEV, Jazz e:HEV
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      options:
+        - Windows
+        - macOS
+        - Linux
+    validations:
+      required: true
