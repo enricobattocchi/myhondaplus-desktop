@@ -45,7 +45,7 @@ body:
   - type: dropdown
     id: honda-app
     attributes:
-      label: Does it work in the official Honda Connect app?
+      label: Does it work in the official MyHonda+ app?
       options:
         - "Yes, it works there"
         - "No, it doesn't work there either"
