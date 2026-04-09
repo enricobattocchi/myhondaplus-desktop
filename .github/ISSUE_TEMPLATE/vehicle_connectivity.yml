@@ -1,0 +1,81 @@
+name: Vehicle / Connectivity Issue
+description: Commands not executing, wrong data shown, or connection problems with your vehicle
+title: "[Vehicle]: "
+labels: ["vehicle"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This template is for issues related to your vehicle data or remote commands (e.g. charging not starting, wrong battery level, climate not responding).
+
+        > **Note:** Some of these issues may be caused by the underlying Honda Connect API rather than the app itself. Providing details helps figure out where the problem is.
+
+  - type: input
+    id: vehicle
+    attributes:
+      label: Vehicle model
+      placeholder: e.g. Honda e, Honda HR-V e:HEV, Jazz e:HEV
+    validations:
+      required: true
+
+  - type: input
+    id: country
+    attributes:
+      label: Country / Region
+      placeholder: e.g. Italy, Germany, UK
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What were you trying to do?
+      placeholder: I tried to start the climate control remotely and...
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: What happened instead?
+      placeholder: The app showed an error / nothing happened / the wrong value was displayed...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: honda-app
+    attributes:
+      label: Does it work in the official Honda Connect app?
+      options:
+        - "Yes, it works there"
+        - "No, it doesn't work there either"
+        - "I haven't tested"
+    validations:
+      required: true
+
+  - type: input
+    id: app-version
+    attributes:
+      label: App Version
+      placeholder: e.g. 1.2.0
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      options:
+        - Windows
+        - macOS
+        - Linux
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues and this has not been reported yet
+          required: true

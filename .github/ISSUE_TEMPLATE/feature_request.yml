@@ -1,0 +1,42 @@
+name: Feature Request
+description: Suggest new functionality for the app
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Have an idea? We'd love to hear it. Please describe what you'd like to see and why it would be useful.
+
+  - type: input
+    id: summary
+    attributes:
+      label: Summary
+      description: A short description of what you'd like.
+      placeholder: e.g. Show estimated range on the dashboard
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Describe the situation where you felt something was missing or could be better.
+      placeholder: I often need to check... but currently I have to...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Your proposed solution
+      description: How would you like this to work? Don't worry about being too technical.
+      placeholder: It would be great if the app could...
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you've considered (optional)
+      description: Any other ways you thought about solving this?
