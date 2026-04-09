@@ -46,6 +46,14 @@ body:
       label: Screenshot (optional)
       description: A screenshot can be very helpful. You can drag and drop an image here.
 
+  - type: input
+    id: vehicle
+    attributes:
+      label: Vehicle model
+      placeholder: e.g. Honda e, Honda HR-V e:HEV, Jazz e:HEV
+    validations:
+      required: true
+
   - type: dropdown
     id: os
     attributes:

@@ -8,6 +8,14 @@ body:
       value: |
         Thanks for taking the time to report a bug! Please fill in as much detail as you can — it helps a lot.
 
+  - type: input
+    id: vehicle
+    attributes:
+      label: Vehicle model
+      placeholder: e.g. Honda e, Honda HR-V e:HEV, Jazz e:HEV
+    validations:
+      required: true
+
   - type: dropdown
     id: os
     attributes:

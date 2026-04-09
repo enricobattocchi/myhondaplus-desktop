@@ -35,6 +35,15 @@ body:
     validations:
       required: true
 
+  - type: input
+    id: vehicle
+    attributes:
+      label: Vehicle model
+      description: Some features may only be relevant for certain models.
+      placeholder: e.g. Honda e, Honda HR-V e:HEV, Jazz e:HEV
+    validations:
+      required: true
+
   - type: textarea
     id: alternatives
     attributes:
