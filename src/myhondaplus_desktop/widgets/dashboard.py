@@ -72,7 +72,8 @@ def _row(icon_name: str, label: str, value: str = "") -> tuple[QHBoxLayout, QLab
 
 # Maps field keys to (icon_name, i18n_key)
 _FIELDS = {
-    "range": ("ruler", "dashboard.range"),
+    "range_climate_on": ("ruler", "dashboard.range_climate_on"),
+    "range_climate_off": ("ruler", "dashboard.range_climate_off"),
     "total_range": ("ruler", "dashboard.total_range"),
     "charge_status": ("zap", "dashboard.charge_status"),
     "plug_status": ("plug", "dashboard.plug"),
@@ -121,7 +122,7 @@ class DashboardWidget(QWidget):
         self._battery_bar.setRange(0, 100)
         self._battery_bar.setTextVisible(True)
         bat_layout.addWidget(self._battery_bar)
-        for key in ("range", "total_range", "charge_status",
+        for key in ("range_climate_on", "range_climate_off", "total_range", "charge_status",
                      "plug_status", "charge_mode", "time_to_charge",
                      "charge_limit_home", "charge_limit_away"):
             icon_name, i18n_key = _FIELDS[key]
@@ -323,7 +324,8 @@ class DashboardWidget(QWidget):
         temp_sym = "\u00b0F" if temp.lower() == "f" else "\u00b0C"
 
         formatters = {
-            "range": lambda v: f"{v} {dist}",
+            "range_climate_on": lambda v: f"{v} {dist}",
+            "range_climate_off": lambda v: f"{v} {dist}",
             "total_range": lambda v: f"{v} {dist}",
             "charge_status": _tv,
             "plug_status": _tv,

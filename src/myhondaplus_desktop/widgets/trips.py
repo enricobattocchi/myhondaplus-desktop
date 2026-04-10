@@ -3,7 +3,7 @@
 import csv
 from datetime import UTC, date, datetime
 
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import QDate, QLocale, Qt
 from PyQt6.QtWidgets import (
     QCheckBox,
     QFileDialog,
@@ -18,7 +18,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from ..i18n import t
+from ..i18n import active_language, t
 from ..icons import icon, pixmap
 from ..workers import TripsWorker
 
@@ -74,11 +74,11 @@ class TripsWidget(QWidget):
 
         # Month selector
         month_bar = QHBoxLayout()
-        prev_btn = QPushButton(icon("chevron-left"), "")
-        prev_btn.setFixedWidth(32)
-        prev_btn.clicked.connect(self._prev_month)
+        self._prev_btn = QPushButton(icon("chevron-left"), "")
+        self._prev_btn.setFixedWidth(32)
+        self._prev_btn.clicked.connect(self._prev_month)
         month_bar.addStretch()
-        month_bar.addWidget(prev_btn)
+        month_bar.addWidget(self._prev_btn)
         self._month_label = QLabel(self._format_month())
         self._month_label.setStyleSheet("font-size: 14px; font-weight: bold;")
         self._month_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -143,13 +143,16 @@ class TripsWidget(QWidget):
         layout.addWidget(self._table)
 
     def _format_month(self) -> str:
-        return self._current_month.strftime("%B %Y")
+        loc = QLocale(active_language())
+        qd = QDate(self._current_month.year, self._current_month.month, 1)
+        return loc.toString(qd, "MMMM yyyy").capitalize()
 
     def _latest_month(self) -> date:
         return date.today().replace(day=1)
 
     def _update_month_controls(self):
         self._month_label.setText(self._format_month())
+        self._prev_btn.setEnabled(True)
         self._next_btn.setEnabled(self._current_month < self._latest_month())
 
     def _prev_month(self):
@@ -195,12 +198,17 @@ class TripsWidget(QWidget):
         vin = self._get_vin()
         if not vin:
             return
+        if self._worker is not None and self._worker.isRunning():
+            self._worker.finished.disconnect()
+            self._worker.error.disconnect()
+        self._prev_btn.setEnabled(False)
+        self._next_btn.setEnabled(False)
         month_start = self._current_month.strftime("%Y-%m-%dT00:00:00.000Z")
         self._worker = TripsWorker(
             api, vin, month_start=month_start,
             include_locations=self._locations_cb.isChecked())
         self._worker.finished.connect(self._on_trips_loaded)
-        self._worker.error.connect(self._on_error)
+        self._worker.error.connect(self._on_trips_error)
         if self._on_auth_error:
             self._worker.auth_error.connect(self._on_auth_error)
         self._worker.progress.connect(self._on_status)
@@ -338,4 +346,9 @@ class TripsWidget(QWidget):
                         item.setToolTip(t("trips.location_tooltip"))
                     self._table.setItem(i, base_col + offset, item)
 
+        self._update_month_controls()
         self._on_status(t("trips.loaded"))
+
+    def _on_trips_error(self, message: str):
+        self._update_month_controls()
+        self._on_error(message)
