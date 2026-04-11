@@ -21,6 +21,23 @@ from .i18n import t
 logger = logging.getLogger(__name__)
 
 
+def _friendly_error(e: Exception) -> str:
+    """Map exceptions to user-facing translated messages."""
+    if isinstance(e, HondaAuthError):
+        msg = str(e).lower()
+        if "invalid_credentials" in msg or "invalid_grant" in msg:
+            return t("error.invalid_credentials")
+        if "account_locked" in msg or "currently blocked" in msg:
+            return t("error.account_locked")
+        return t("error.auth_failed", detail=str(e))
+    if isinstance(e, HondaAPIError):
+        status = getattr(e, "status_code", None) or ""
+        return t("error.api_error", status=status)
+    if isinstance(e, (ConnectionError, TimeoutError, OSError)):
+        return t("error.network")
+    return t("error.unexpected", detail=str(e))
+
+
 def _build_auth(storage: SecretStorage) -> HondaAuth:
     """Create a HondaAuth instance, recovering from corrupted device keys."""
     try:
@@ -81,7 +98,7 @@ class ApiWorker(QThread):
             self.finished.emit(result)
         except Exception as e:
             logger.exception("Worker error")
-            self.error.emit(str(e))
+            self.error.emit(_friendly_error(e))
 
 
 class LoginWorker(QThread):
@@ -109,10 +126,10 @@ class LoginWorker(QThread):
             if "device-authenticator-not-registered" in str(e):
                 self.device_registration_needed.emit()
             else:
-                self.error.emit(str(e))
+                self.error.emit(_friendly_error(e))
         except Exception as e:
             logger.exception("Login error")
-            self.error.emit(str(e))
+            self.error.emit(_friendly_error(e))
 
     def do_device_registration(self):
         """Called after user provides verification link (runs in thread)."""
@@ -123,7 +140,7 @@ class LoginWorker(QThread):
             self.progress.emit(t("workers.device_verification"))
             self.device_registration_needed.emit()
         except Exception as e:
-            self.error.emit(str(e))
+            self.error.emit(_friendly_error(e))
 
     def verify_and_login(self, link: str):
         """Called with the verification link. Runs in a new thread."""
@@ -135,7 +152,7 @@ class LoginWorker(QThread):
             )
             self.finished.emit(tokens)
         except Exception as e:
-            self.error.emit(str(e))
+            self.error.emit(_friendly_error(e))
 
 
 class DeviceRegistrationWorker(QThread):
@@ -157,7 +174,7 @@ class DeviceRegistrationWorker(QThread):
             )
             self.finished.emit()
         except Exception as e:
-            self.error.emit(str(e))
+            self.error.emit(_friendly_error(e))
 
 
 class VerifyAndLoginWorker(QThread):
@@ -184,7 +201,7 @@ class VerifyAndLoginWorker(QThread):
             )
             self.finished.emit(tokens)
         except Exception as e:
-            self.error.emit(str(e))
+            self.error.emit(_friendly_error(e))
 
 
 class DashboardWorker(QThread):
@@ -217,7 +234,7 @@ class DashboardWorker(QThread):
             self.auth_error.emit()
         except Exception as e:
             logger.exception("Dashboard error")
-            self.error.emit(str(e))
+            self.error.emit(_friendly_error(e))
 
 
 class CommandWorker(QThread):
@@ -255,7 +272,7 @@ class CommandWorker(QThread):
             self.auth_error.emit()
         except Exception as e:
             logger.exception("Command error")
-            self.error.emit(f"{self.label}: {e}")
+            self.error.emit(f"{self.label}: {_friendly_error(e)}")
 
 
 class TripsWorker(QThread):
@@ -318,7 +335,7 @@ class TripsWorker(QThread):
                 self.error.emit(t("trips.failed"))
         except Exception as e:
             logger.exception("Trips error")
-            self.error.emit(str(e))
+            self.error.emit(_friendly_error(e))
 
 
 class UpdateCheckWorker(QThread):
@@ -382,7 +399,7 @@ class ScheduleLoadWorker(QThread):
             self.auth_error.emit()
         except Exception as e:
             logger.exception("Schedule load error")
-            self.error.emit(str(e))
+            self.error.emit(_friendly_error(e))
 
 
 class ScheduleSaveWorker(QThread):
@@ -420,7 +437,7 @@ class ScheduleSaveWorker(QThread):
             self.auth_error.emit()
         except Exception as e:
             logger.exception("Schedule save error")
-            self.error.emit(f"{self.label}: {e}")
+            self.error.emit(f"{self.label}: {_friendly_error(e)}")
 
 
 class VehiclesWorker(QThread):
@@ -441,4 +458,4 @@ class VehiclesWorker(QThread):
             self.finished.emit(vehicles)
         except Exception as e:
             logger.exception("Vehicles error")
-            self.error.emit(str(e))
+            self.error.emit(_friendly_error(e))

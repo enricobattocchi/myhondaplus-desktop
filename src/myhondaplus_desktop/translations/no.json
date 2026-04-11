@@ -31,7 +31,8 @@
   "login.device_not_registered": "Enheten er ikke registrert. Ber om bekreftelses-e-post...",
   "login.check_email": "Sjekk e-posten din!",
   "login.verification_title": "E-postbekreftelse",
-  "login.verification_text": "Sjekk e-posten din fra Honda.\nIKKE klikk på lenken — kopier URL-en og lim den inn her:",
+  "login.help_text": "Bruk samme e-post og passord som i My Honda+-appen.",
+  "login.verification_text": "Honda har sendt en bekreftelses-e-post til din adresse.\n\n1. Åpne e-posten fra Honda\n2. Høyreklikk på bekreftelseslenken\n3. Kopier lenke-URL-en — IKKE klikk på den\n4. Lim inn den fullstendige URL-en nedenfor:",
   "login.verification_cancelled": "Bekreftelse avbrutt",
 
   "dashboard.battery": "Batteri",
@@ -158,6 +159,13 @@
   "workers.no_command_id": "{label}: ingen kommando-ID returnert",
   "workers.device_verification": "Ber om bekreftelses-e-post for enhet...",
   "workers.verifying_link": "Bekrefter lenke...",
+
+  "error.network": "Kunne ikke koble til Hondas servere. Sjekk internettforbindelsen din.",
+  "error.invalid_credentials": "Ugyldig e-post eller passord. Prøv igjen.",
+  "error.account_locked": "Kontoen er midlertidig låst. Prøv igjen senere.",
+  "error.auth_failed": "Autentisering mislyktes: {detail}",
+  "error.api_error": "Hondas servere returnerte en feil (HTTP {status}). Prøv igjen senere.",
+  "error.unexpected": "Det oppstod en uventet feil: {detail}",
 
   "schedules.climate": "Klimatidsplan",
   "schedules.charge": "Ladeforbud",

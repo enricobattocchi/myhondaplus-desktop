@@ -31,7 +31,8 @@
   "login.device_not_registered": "Zařízení není registrováno. Žádost o ověřovací e-mail...",
   "login.check_email": "Zkontrolujte svůj e-mail!",
   "login.verification_title": "Ověření e-mailu",
-  "login.verification_text": "Zkontrolujte svůj e-mail od Hondy.\nNEKLIKEJTE na odkaz — zkopírujte URL a vložte ji sem:",
+  "login.help_text": "Použijte stejný e-mail a heslo jako v aplikaci My Honda+.",
+  "login.verification_text": "Honda odeslala ověřovací e-mail na vaši adresu.\n\n1. Otevřete e-mail od Hondy\n2. Klikněte pravým tlačítkem na ověřovací odkaz\n3. Zkopírujte URL odkazu — NEKLIKEJTE na něj\n4. Vložte celou URL níže:",
   "login.verification_cancelled": "Ověření zrušeno",
 
   "dashboard.battery": "Baterie",
@@ -158,6 +159,13 @@
   "workers.no_command_id": "{label}: nebylo vráceno ID příkazu",
   "workers.device_verification": "Žádost o ověřovací e-mail zařízení...",
   "workers.verifying_link": "Ověřování odkazu...",
+
+  "error.network": "Nelze se připojit k serverům Honda. Zkontrolujte připojení k internetu.",
+  "error.invalid_credentials": "Neplatný e-mail nebo heslo. Zkuste to znovu.",
+  "error.account_locked": "Účet je dočasně uzamčen. Zkuste to později.",
+  "error.auth_failed": "Ověření selhalo: {detail}",
+  "error.api_error": "Servery Honda vrátily chybu (HTTP {status}). Zkuste to později.",
+  "error.unexpected": "Došlo k neočekávané chybě: {detail}",
 
   "schedules.climate": "Plán klimatizace",
   "schedules.charge": "Zákaz nabíjení",

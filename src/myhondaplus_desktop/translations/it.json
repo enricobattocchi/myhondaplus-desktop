@@ -31,7 +31,8 @@
   "login.device_not_registered": "Dispositivo non registrato. Richiesta email di verifica...",
   "login.check_email": "Controlla la tua email!",
   "login.verification_title": "Verifica email",
-  "login.verification_text": "Controlla l'email da Honda.\nNON cliccare il link — copia l'URL e incollalo qui:",
+  "login.help_text": "Usa le stesse credenziali dell'app My Honda+.",
+  "login.verification_text": "Honda ha inviato un'email di verifica al tuo indirizzo.\n\n1. Apri l'email da Honda\n2. Clicca col tasto destro sul link di verifica\n3. Copia l'URL — NON cliccare il link\n4. Incolla l'URL completo qui sotto:",
   "login.verification_cancelled": "Verifica annullata",
 
   "dashboard.battery": "Batteria",
@@ -158,6 +159,13 @@
   "workers.no_command_id": "{label}: nessun ID comando ricevuto",
   "workers.device_verification": "Richiesta email di verifica dispositivo...",
   "workers.verifying_link": "Verifica link...",
+
+  "error.network": "Impossibile connettersi ai server Honda. Controlla la connessione internet.",
+  "error.invalid_credentials": "Email o password non validi. Riprova.",
+  "error.account_locked": "Account temporaneamente bloccato. Riprova più tardi.",
+  "error.auth_failed": "Autenticazione fallita: {detail}",
+  "error.api_error": "I server Honda hanno restituito un errore (HTTP {status}). Riprova più tardi.",
+  "error.unexpected": "Si è verificato un errore imprevisto: {detail}",
 
   "schedules.climate": "Programmazione clima",
   "schedules.charge": "Blocco ricarica",

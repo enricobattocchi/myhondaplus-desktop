@@ -31,7 +31,8 @@
   "login.device_not_registered": "Apparaat niet geregistreerd. Verificatie-e-mail wordt aangevraagd...",
   "login.check_email": "Controleer uw e-mail!",
   "login.verification_title": "E-mailverificatie",
-  "login.verification_text": "Controleer uw e-mail van Honda.\nKlik NIET op de link — kopieer de URL en plak deze hier:",
+  "login.help_text": "Gebruik hetzelfde e-mailadres en wachtwoord als de My Honda+ app.",
+  "login.verification_text": "Honda heeft een verificatie-e-mail naar uw adres gestuurd.\n\n1. Open de e-mail van Honda\n2. Klik met de rechtermuisknop op de verificatielink\n3. Kopieer de link-URL — klik er NIET op\n4. Plak de volledige URL hieronder:",
   "login.verification_cancelled": "Verificatie geannuleerd",
 
   "dashboard.battery": "Batterij",
@@ -158,6 +159,13 @@
   "workers.no_command_id": "{label}: geen commando-ID ontvangen",
   "workers.device_verification": "Verificatie-e-mail voor apparaat wordt aangevraagd...",
   "workers.verifying_link": "Link verifiëren...",
+
+  "error.network": "Kan geen verbinding maken met de Honda-servers. Controleer uw internetverbinding.",
+  "error.invalid_credentials": "Ongeldig e-mailadres of wachtwoord. Probeer het opnieuw.",
+  "error.account_locked": "Account tijdelijk vergrendeld. Probeer het later opnieuw.",
+  "error.auth_failed": "Authenticatie mislukt: {detail}",
+  "error.api_error": "Honda-servers gaven een fout terug (HTTP {status}). Probeer het later opnieuw.",
+  "error.unexpected": "Er is een onverwachte fout opgetreden: {detail}",
 
   "schedules.climate": "Klimaatschema",
   "schedules.charge": "Laadverbod",

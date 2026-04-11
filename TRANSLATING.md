@@ -24,8 +24,18 @@ Translations are simple JSON files — one per language.
 ```
 src/myhondaplus_desktop/translations/
   en.json   ← English (reference)
+  cs.json   ← Czech
+  da.json   ← Danish
+  de.json   ← German
+  es.json   ← Spanish
+  fr.json   ← French
+  hu.json   ← Hungarian
   it.json   ← Italian
-  de.json   ← your new language here
+  nl.json   ← Dutch
+  no.json   ← Norwegian
+  pl.json   ← Polish
+  sk.json   ← Slovak
+  sv.json   ← Swedish
 ```
 
 ## Tips

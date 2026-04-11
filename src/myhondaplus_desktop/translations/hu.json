@@ -31,7 +31,8 @@
   "login.device_not_registered": "Az eszköz nincs regisztrálva. Megerősítő e-mail kérése...",
   "login.check_email": "Ellenőrizze az e-mailjét!",
   "login.verification_title": "E-mail megerősítés",
-  "login.verification_text": "Ellenőrizze a Honda e-mailjét.\nNE kattintson a linkre — másolja ki az URL-t és illessze be ide:",
+  "login.help_text": "Használja ugyanazt az e-mail címet és jelszót, mint a My Honda+ alkalmazásban.",
+  "login.verification_text": "A Honda megerősítő e-mailt küldött az Ön címére.\n\n1. Nyissa meg a Honda e-mailt\n2. Kattintson jobb gombbal a megerősítő linkre\n3. Másolja ki a link URL-jét — NE kattintson rá\n4. Illessze be a teljes URL-t alább:",
   "login.verification_cancelled": "Megerősítés megszakítva",
 
   "dashboard.battery": "Akkumulátor",
@@ -158,6 +159,13 @@
   "workers.no_command_id": "{label}: nem érkezett parancs-azonosító",
   "workers.device_verification": "Eszköz megerősítő e-mail kérése...",
   "workers.verifying_link": "Link ellenőrzése...",
+
+  "error.network": "Nem sikerült csatlakozni a Honda szerverekhez. Ellenőrizze az internetkapcsolatát.",
+  "error.invalid_credentials": "Érvénytelen e-mail vagy jelszó. Kérjük, próbálja újra.",
+  "error.account_locked": "A fiók ideiglenesen zárolva van. Kérjük, próbálja később.",
+  "error.auth_failed": "Hitelesítés sikertelen: {detail}",
+  "error.api_error": "A Honda szerverei hibát adtak vissza (HTTP {status}). Kérjük, próbálja később.",
+  "error.unexpected": "Váratlan hiba történt: {detail}",
 
   "schedules.climate": "Klíma ütemezés",
   "schedules.charge": "Töltési tilalom",

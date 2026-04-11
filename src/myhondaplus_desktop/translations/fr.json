@@ -31,7 +31,8 @@
   "login.device_not_registered": "Appareil non enregistré. Demande d'e-mail de vérification...",
   "login.check_email": "Vérifiez votre e-mail !",
   "login.verification_title": "Vérification par e-mail",
-  "login.verification_text": "Vérifiez votre e-mail de Honda.\nNE cliquez PAS sur le lien — copiez l'URL et collez-la ici :",
+  "login.help_text": "Utilisez les mêmes identifiants que l'application mobile My Honda+.",
+  "login.verification_text": "Honda a envoyé un e-mail de vérification à votre adresse.\n\n1. Ouvrez l'e-mail de Honda\n2. Faites un clic droit sur le lien de vérification\n3. Copiez l'URL du lien — NE cliquez PAS dessus\n4. Collez l'URL complète ci-dessous :",
   "login.verification_cancelled": "Vérification annulée",
 
   "dashboard.battery": "Batterie",
@@ -158,6 +159,13 @@
   "workers.no_command_id": "{label} : aucun ID de commande retourné",
   "workers.device_verification": "Demande d'e-mail de vérification de l'appareil...",
   "workers.verifying_link": "Vérification du lien...",
+
+  "error.network": "Impossible de se connecter aux serveurs Honda. Veuillez vérifier votre connexion internet.",
+  "error.invalid_credentials": "E-mail ou mot de passe invalide. Veuillez réessayer.",
+  "error.account_locked": "Compte temporairement verrouillé. Veuillez réessayer plus tard.",
+  "error.auth_failed": "Échec de l'authentification : {detail}",
+  "error.api_error": "Les serveurs Honda ont renvoyé une erreur (HTTP {status}). Veuillez réessayer plus tard.",
+  "error.unexpected": "Une erreur inattendue s'est produite : {detail}",
 
   "schedules.climate": "Programmation climatisation",
   "schedules.charge": "Interdiction de charge",

@@ -31,7 +31,8 @@
   "login.device_not_registered": "Device not registered. Requesting verification email...",
   "login.check_email": "Check your email!",
   "login.verification_title": "Email Verification",
-  "login.verification_text": "Check your email from Honda.\nDO NOT click the link — copy the URL and paste it here:",
+  "login.help_text": "Use the same email and password as the My Honda+ mobile app.",
+  "login.verification_text": "Honda has sent a verification email to your address.\n\n1. Open the email from Honda\n2. Right-click (or long-press) the verification link\n3. Copy the link URL — do NOT click it\n4. Paste the full URL below:",
   "login.verification_cancelled": "Verification cancelled",
 
   "dashboard.battery": "Battery",
@@ -158,6 +159,13 @@
   "workers.no_command_id": "{label}: no command ID returned",
   "workers.device_verification": "Requesting device verification email...",
   "workers.verifying_link": "Verifying link...",
+
+  "error.network": "Could not connect to Honda servers. Please check your internet connection.",
+  "error.invalid_credentials": "Invalid email or password. Please try again.",
+  "error.account_locked": "Account temporarily locked. Please try again later.",
+  "error.auth_failed": "Authentication failed: {detail}",
+  "error.api_error": "Honda servers returned an error (HTTP {status}). Please try again later.",
+  "error.unexpected": "An unexpected error occurred: {detail}",
 
   "schedules.climate": "Climate Schedule",
   "schedules.charge": "Charge Prohibition",

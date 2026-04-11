@@ -67,6 +67,12 @@ class LoginWidget(QWidget):
         self._login_btn.clicked.connect(self._do_login)
         form_layout.addWidget(self._login_btn)
 
+        help_text = QLabel(t("login.help_text"))
+        help_text.setStyleSheet("color: gray; font-size: 11px; margin-top: 4px;")
+        help_text.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        help_text.setWordWrap(True)
+        form_layout.addWidget(help_text)
+
         self._status = QLabel("")
         self._status.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._status.setWordWrap(True)

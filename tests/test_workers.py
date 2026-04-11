@@ -18,6 +18,7 @@ from myhondaplus_desktop.workers import (
     UpdateCheckWorker,
     VehiclesWorker,
     VerifyAndLoginWorker,
+    _friendly_error,
 )
 
 
@@ -365,3 +366,36 @@ def test_schedule_save_worker_uses_90s_timeout(mock_api):
 
     assert results["finished"] == "Climate"
     mock_api.wait_for_command.assert_called_once_with("cmd-456", timeout=90)
+
+
+# --- _friendly_error tests ---
+
+
+def test_friendly_error_network():
+    assert _friendly_error(ConnectionError("refused")) == "Could not connect to Honda servers. Please check your internet connection."
+
+
+def test_friendly_error_timeout():
+    assert _friendly_error(TimeoutError()) == "Could not connect to Honda servers. Please check your internet connection."
+
+
+def test_friendly_error_invalid_credentials():
+    e = HondaAuthError(401, "invalid_credentials")
+    assert _friendly_error(e) == "Invalid email or password. Please try again."
+
+
+def test_friendly_error_account_locked():
+    e = HondaAuthError(429, "currently blocked")
+    assert _friendly_error(e) == "Account temporarily locked. Please try again later."
+
+
+def test_friendly_error_api_error():
+    e = HondaAPIError(500, "Internal Server Error")
+    result = _friendly_error(e)
+    assert "500" in result
+
+
+def test_friendly_error_generic():
+    e = RuntimeError("something weird")
+    result = _friendly_error(e)
+    assert "something weird" in result

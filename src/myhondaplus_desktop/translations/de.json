@@ -31,7 +31,8 @@
   "login.device_not_registered": "Gerät nicht registriert. Bestätigungs-E-Mail wird angefordert...",
   "login.check_email": "Überprüfen Sie Ihre E-Mail!",
   "login.verification_title": "E-Mail-Bestätigung",
-  "login.verification_text": "Überprüfen Sie Ihre E-Mail von Honda.\nKlicken Sie NICHT auf den Link — kopieren Sie die URL und fügen Sie sie hier ein:",
+  "login.help_text": "Verwenden Sie dieselbe E-Mail und dasselbe Passwort wie in der My Honda+ App.",
+  "login.verification_text": "Honda hat eine Bestätigungs-E-Mail an Ihre Adresse gesendet.\n\n1. Öffnen Sie die E-Mail von Honda\n2. Klicken Sie mit der rechten Maustaste auf den Bestätigungslink\n3. Kopieren Sie die Link-URL — klicken Sie NICHT darauf\n4. Fügen Sie die vollständige URL unten ein:",
   "login.verification_cancelled": "Bestätigung abgebrochen",
 
   "dashboard.battery": "Batterie",
@@ -158,6 +159,13 @@
   "workers.no_command_id": "{label}: keine Befehls-ID zurückgegeben",
   "workers.device_verification": "Gerätebestätigungs-E-Mail wird angefordert...",
   "workers.verifying_link": "Link wird überprüft...",
+
+  "error.network": "Verbindung zu den Honda-Servern nicht möglich. Bitte überprüfen Sie Ihre Internetverbindung.",
+  "error.invalid_credentials": "Ungültige E-Mail oder Passwort. Bitte versuchen Sie es erneut.",
+  "error.account_locked": "Konto vorübergehend gesperrt. Bitte versuchen Sie es später erneut.",
+  "error.auth_failed": "Authentifizierung fehlgeschlagen: {detail}",
+  "error.api_error": "Honda-Server haben einen Fehler zurückgegeben (HTTP {status}). Bitte versuchen Sie es später erneut.",
+  "error.unexpected": "Ein unerwarteter Fehler ist aufgetreten: {detail}",
 
   "schedules.climate": "Klimazeitplan",
   "schedules.charge": "Ladesperre",

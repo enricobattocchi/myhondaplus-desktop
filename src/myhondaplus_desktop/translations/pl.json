@@ -31,7 +31,8 @@
   "login.device_not_registered": "Urządzenie nie jest zarejestrowane. Wysyłanie e-maila weryfikacyjnego...",
   "login.check_email": "Sprawdź swój e-mail!",
   "login.verification_title": "Weryfikacja e-mail",
-  "login.verification_text": "Sprawdź e-mail od Hondy.\nNIE klikaj w link — skopiuj URL i wklej go tutaj:",
+  "login.help_text": "Użyj tego samego adresu e-mail i hasła co w aplikacji My Honda+.",
+  "login.verification_text": "Honda wysłała e-mail weryfikacyjny na Twój adres.\n\n1. Otwórz e-mail od Hondy\n2. Kliknij prawym przyciskiem myszy na link weryfikacyjny\n3. Skopiuj adres URL — NIE klikaj w link\n4. Wklej pełny URL poniżej:",
   "login.verification_cancelled": "Weryfikacja anulowana",
 
   "dashboard.battery": "Akumulator",
@@ -158,6 +159,13 @@
   "workers.no_command_id": "{label}: nie zwrócono ID polecenia",
   "workers.device_verification": "Wysyłanie e-maila weryfikacyjnego urządzenia...",
   "workers.verifying_link": "Weryfikacja linku...",
+
+  "error.network": "Nie można połączyć się z serwerami Honda. Sprawdź połączenie internetowe.",
+  "error.invalid_credentials": "Nieprawidłowy e-mail lub hasło. Spróbuj ponownie.",
+  "error.account_locked": "Konto tymczasowo zablokowane. Spróbuj ponownie później.",
+  "error.auth_failed": "Uwierzytelnianie nie powiodło się: {detail}",
+  "error.api_error": "Serwery Honda zwróciły błąd (HTTP {status}). Spróbuj ponownie później.",
+  "error.unexpected": "Wystąpił nieoczekiwany błąd: {detail}",
 
   "schedules.climate": "Harmonogram klimatyzacji",
   "schedules.charge": "Zakaz ładowania",

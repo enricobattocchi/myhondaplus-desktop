@@ -5,6 +5,7 @@ import sys
 
 from pymyhondaplus import HondaAPI
 from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
     QApplication,
     QComboBox,
@@ -253,6 +254,20 @@ class MainScreen(QWidget):
             lambda: self._controller.handle_refresh_current_tab(fresh=True)
         )
         self._tabs.currentChanged.connect(self._controller.handle_tab_changed)
+
+        # Keyboard shortcuts
+        QShortcut(QKeySequence("F5"), self).activated.connect(
+            lambda: self._controller.handle_refresh_current_tab(fresh=False)
+        )
+        QShortcut(QKeySequence("Ctrl+R"), self).activated.connect(
+            lambda: self._controller.handle_refresh_current_tab(fresh=False)
+        )
+        QShortcut(QKeySequence("Ctrl+Shift+R"), self).activated.connect(
+            lambda: self._controller.handle_refresh_current_tab(fresh=True)
+        )
+        QShortcut(QKeySequence("Ctrl+Q"), self).activated.connect(
+            lambda: self.window().close()
+        )
 
     def activate(self):
         self._controller.activate()

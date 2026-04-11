@@ -18,7 +18,7 @@ Built with PyQt6 and [pymyhondaplus](https://github.com/enricobattocchi/pymyhond
 - **Persistent login** — auto-refresh on expiry, no need to re-enter credentials
 - **Lucide SVG icons** — crisp, theme-aware icons throughout the UI
 - **Light/dark theme** — follows system theme, or force with `--light` / `--dark`
-- **Multi-language** — English and Italian included, [easy to add more](TRANSLATING.md)
+- **Multi-language** — 13 languages included, [easy to add more](TRANSLATING.md)
 
 ## Supported vehicles
 
@@ -82,13 +82,13 @@ Switch to the Trips tab to see trip history for the current month. Use the arrow
 
 The app auto-detects your system language. To change it manually, open the About dialog (info button in the top bar) and select a language. The change takes effect on restart.
 
-Available: English, Italian. See [TRANSLATING.md](TRANSLATING.md) to contribute a new language.
+Available: Czech, Danish, Dutch, English, French, German, Hungarian, Italian, Norwegian, Polish, Slovak, Spanish, Swedish. See [TRANSLATING.md](TRANSLATING.md) to contribute a new language.
 
 ## Requirements
 
 - Python 3.11+
 - PyQt6 >= 6.6
-- [pymyhondaplus](https://pypi.org/project/pymyhondaplus/) >= 5.2.1
+- [pymyhondaplus](https://pypi.org/project/pymyhondaplus/) >= 5.4.0
 
 ### Optional
 
