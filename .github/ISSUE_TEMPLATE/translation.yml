@@ -1,0 +1,67 @@
+name: Translation
+description: Add a new language or fix an existing translation
+title: "Add or fix translation: [language]"
+labels: ["translation"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping translate My Honda+! Please fill in the fields below.
+
+  - type: dropdown
+    id: language
+    attributes:
+      label: Language
+      description: Which language is this for?
+      options:
+        - Czech (cs)
+        - Danish (da)
+        - German (de)
+        - Spanish (es)
+        - French (fr)
+        - Hungarian (hu)
+        - Italian (it)
+        - Dutch (nl)
+        - Norwegian (no)
+        - Polish (pl)
+        - Slovak (sk)
+        - Swedish (sv)
+        - Other (specify in notes)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: contribution-type
+    attributes:
+      label: Contribution type
+      options:
+        - New translation
+        - Fix / improve existing translation
+    validations:
+      required: true
+
+  - type: textarea
+    id: corrections
+    attributes:
+      label: Corrections
+      description: |
+        For fixes only — list the dotted JSON key path and the corrected value.
+      placeholder: |
+        app.refresh: "Aktualisieren" → "Neu laden"
+        login.button: "Einloggen" → "Anmelden"
+
+  - type: textarea
+    id: full-json
+    attributes:
+      label: Full translated JSON
+      description: |
+        For new translations only — copy the reference
+        [en.json](https://github.com/enricobattocchi/myhondaplus-desktop/blob/main/src/myhondaplus_desktop/translations/en.json),
+        translate the values (keep keys and `{placeholders}` unchanged), and paste the full JSON here.
+      render: json
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes (optional)
+      description: Anything else? If you selected "Other" above, specify the language and ISO code here.
