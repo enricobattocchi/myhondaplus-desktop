@@ -9,6 +9,7 @@
   "app.refresh_stale": "El coche no respondió — mostrando datos en caché",
   "app.dashboard": "Panel",
   "app.trips": "Viajes",
+  "app.vehicle": "Vehículo",
   "app.schedules": "Programaciones",
   "app.update_available": "Versión {version} disponible",
   "app.download": "Descargar",
@@ -18,7 +19,6 @@
   "app.language": "Idioma:",
   "app.restart_language": "El idioma cambiará en el próximo reinicio.",
   "app.session_expired": "Su sesión ha expirado. Inicie sesión de nuevo.",
-
   "login.email": "Correo electrónico:",
   "login.email_placeholder": "usuario@ejemplo.com",
   "login.password": "Contraseña:",
@@ -34,7 +34,6 @@
   "login.help_text": "Use el mismo correo y contraseña que en la app My Honda+.",
   "login.verification_text": "Honda ha enviado un correo de verificación a su dirección.\n\n1. Abra el correo de Honda\n2. Haga clic derecho en el enlace de verificación\n3. Copie la URL del enlace — NO haga clic en él\n4. Pegue la URL completa a continuación:",
   "login.verification_cancelled": "Verificación cancelada",
-
   "dashboard.battery": "Batería",
   "dashboard.security": "Seguridad",
   "dashboard.location": "Ubicación",
@@ -67,6 +66,17 @@
   "dashboard.vin": "VIN",
   "dashboard.odometer": "Cuentakilómetros",
   "dashboard.ignition": "Encendido",
+  "dashboard.model": "Modelo",
+  "dashboard.grade": "Nivel",
+  "dashboard.year": "Año",
+  "dashboard.subscription": "Suscripción",
+  "dashboard.package": "Paquete",
+  "dashboard.sub_status": "Estado",
+  "dashboard.sub_price": "Precio",
+  "dashboard.sub_payment": "Pago",
+  "dashboard.sub_renewal": "Renovación automática",
+  "dashboard.sub_period": "Período",
+  "dashboard.sub_next_payment": "Próximo pago",
   "dashboard.no_warnings": "(ninguno)",
   "dashboard.locked": "Cerrado",
   "dashboard.unlocked": "ABIERTO",
@@ -78,7 +88,6 @@
   "dashboard.climate_off": "Apagada",
   "dashboard.unknown": "Desconocido",
   "dashboard.last_updated": "Última actualización: {timestamp}",
-
   "dashboard.val.stopped": "No se está cargando",
   "dashboard.val.running": "Carga",
   "dashboard.val.charging": "Carga",
@@ -94,7 +103,8 @@
   "dashboard.val.200v charging": "Carga 200V",
   "dashboard.val.on": "Encendido",
   "dashboard.val.off": "Apagado",
-
+  "dashboard.val.active": "Activo",
+  "dashboard.val.monthly": "Mensual",
   "commands.lock": "Cerrar",
   "commands.unlock": "Abrir",
   "commands.climate_on": "Clima encendida",
@@ -117,7 +127,6 @@
   "commands.cooler": "más frío",
   "commands.normal": "normal",
   "commands.hotter": "más caliente",
-
   "trips.include_locations": "Incluir ubicaciones",
   "trips.locations_tooltip": "Obtener coordenadas GPS de inicio/fin (más lento, 2 llamadas API por viaje)",
   "trips.export_csv": "Exportar CSV",
@@ -146,9 +155,7 @@
   "trips.location_tooltip": "Doble clic para abrir en OpenStreetMap",
   "trips.not_available": "El historial de viajes no está disponible para esta cuenta ({role})",
   "trips.failed": "No se pudo cargar el historial de viajes",
-
   "status.ready": "Listo",
-
   "workers.logging_in": "Iniciando sesión...",
   "workers.completing_login": "Completando inicio de sesión...",
   "workers.loading_status": "Cargando estado...",
@@ -159,14 +166,12 @@
   "workers.no_command_id": "{label}: no se devolvió ID de comando",
   "workers.device_verification": "Solicitando correo de verificación del dispositivo...",
   "workers.verifying_link": "Verificando enlace...",
-
   "error.network": "No se pudo conectar con los servidores de Honda. Verifique su conexión a internet.",
   "error.invalid_credentials": "Correo o contraseña no válidos. Inténtelo de nuevo.",
   "error.account_locked": "Cuenta bloqueada temporalmente. Inténtelo más tarde.",
   "error.auth_failed": "Error de autenticación: {detail}",
   "error.api_error": "Los servidores de Honda devolvieron un error (HTTP {status}). Inténtelo más tarde.",
   "error.unexpected": "Se produjo un error inesperado: {detail}",
-
   "schedules.climate": "Programación de climatización",
   "schedules.charge": "Prohibición de carga",
   "schedules.climate_settings": "Ajustes de climatización",

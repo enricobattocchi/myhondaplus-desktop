@@ -94,7 +94,6 @@ _FIELDS = {
     "climate_active": ("snowflake", "dashboard.status"),
     "cabin_temp": ("thermometer", "dashboard.cabin"),
     "interior_temp": ("thermometer", "dashboard.interior"),
-    "odometer": ("milestone", "dashboard.odometer"),
     "ignition": ("key-round", "dashboard.ignition"),
 }
 
@@ -124,7 +123,7 @@ class DashboardWidget(QWidget):
         bat_layout.addWidget(self._battery_bar)
         for key in ("range_climate_on", "range_climate_off", "total_range", "charge_status",
                      "plug_status", "charge_mode", "time_to_charge",
-                     "charge_limit_home", "charge_limit_away"):
+                     "charge_limit_home", "charge_limit_away", "ignition"):
             icon_name, i18n_key = _FIELDS[key]
             h, val = _row(icon_name, t(i18n_key))
             bat_layout.addLayout(h)
@@ -216,23 +215,11 @@ class DashboardWidget(QWidget):
         clim_layout.addLayout(clim_actions)
         grid.addWidget(clim_box, 1, 1)
 
-        # Vehicle card
-        veh_box, veh_layout = _card(t("dashboard.vehicle"), "car")
-        h, val = _row("clipboard", t("dashboard.vin"))
-        veh_layout.addLayout(h)
-        self._vin_label = val
-        for key in ("odometer", "ignition"):
-            icon_name, i18n_key = _FIELDS[key]
-            h, val = _row(icon_name, t(i18n_key))
-            veh_layout.addLayout(h)
-            self._labels[key] = val
-        grid.addWidget(veh_box, 2, 0)
-
         # Warnings card
         warn_box, warn_layout = _card(t("dashboard.warnings"), "triangle-alert")
         self._warnings_label = _selectable(QLabel(t("dashboard.no_warnings")))
         warn_layout.addWidget(self._warnings_label)
-        grid.addWidget(warn_box, 2, 1)
+        grid.addWidget(warn_box, 2, 0, 1, 2)
 
         # All action buttons (for enabling/disabling during commands)
         self._action_buttons = [
@@ -290,9 +277,6 @@ class DashboardWidget(QWidget):
         ) == QMessageBox.StandardButton.Yes:
             self._call("on_horn_lights")
 
-    def set_vin(self, vin: str):
-        self._vin_label.setText(vin)
-
     def current_status(self) -> dict:
         return self._status
 
@@ -346,7 +330,6 @@ class DashboardWidget(QWidget):
             "climate_active": lambda v: t("dashboard.climate_on") if v else t("dashboard.climate_off"),
             "cabin_temp": lambda v: f"{v}{temp_sym}",
             "interior_temp": lambda v: f"{v}{temp_sym}",
-            "odometer": lambda v: f"{v:,} {dist}",
             "speed": lambda v: f"{v} {spd}",
         }
 
@@ -399,3 +382,18 @@ class DashboardWidget(QWidget):
             ts_local = ts_raw
         self._timestamp.setText(
             t("dashboard.last_updated", timestamp=ts_local))
+
+    def set_capabilities(self, caps):
+        mapping = {
+            "_charge_btn": "remote_charge",
+            "_limit_btn": "max_charge",
+            "_charge_sched_btn": "charge_schedule",
+            "_lock_btn": "remote_lock",
+            "_horn_btn": "remote_horn",
+            "_locate_btn": "car_finder",
+            "_climate_btn": "remote_climate",
+            "_settings_btn": "remote_climate",
+            "_clim_sched_btn": "climate_schedule",
+        }
+        for attr, field in mapping.items():
+            getattr(self, attr).setVisible(getattr(caps, field, True))

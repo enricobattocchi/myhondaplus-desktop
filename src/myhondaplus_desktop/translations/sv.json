@@ -9,6 +9,7 @@
   "app.refresh_stale": "Bilen svarade inte — visar cachad data",
   "app.dashboard": "Översikt",
   "app.trips": "Resor",
+  "app.vehicle": "Fordon",
   "app.schedules": "Scheman",
   "app.update_available": "Version {version} är tillgänglig",
   "app.download": "Ladda ner",
@@ -18,7 +19,6 @@
   "app.language": "Språk:",
   "app.restart_language": "Språket ändras vid nästa omstart.",
   "app.session_expired": "Din session har gått ut. Logga in igen.",
-
   "login.email": "E-post:",
   "login.email_placeholder": "anvandare@exempel.se",
   "login.password": "Lösenord:",
@@ -34,7 +34,6 @@
   "login.help_text": "Använd samma e-post och lösenord som i My Honda+-appen.",
   "login.verification_text": "Honda har skickat ett verifieringsmeddelande till din adress.\n\n1. Öppna e-postmeddelandet från Honda\n2. Högerklicka på verifieringslänken\n3. Kopiera länk-URL:en — klicka INTE på den\n4. Klistra in den fullständiga URL:en nedan:",
   "login.verification_cancelled": "Verifiering avbruten",
-
   "dashboard.battery": "Batteri",
   "dashboard.security": "Säkerhet",
   "dashboard.location": "Position",
@@ -67,6 +66,17 @@
   "dashboard.vin": "VIN",
   "dashboard.odometer": "Mätarställning",
   "dashboard.ignition": "Tändning",
+  "dashboard.model": "Modell",
+  "dashboard.grade": "Utrustningsnivå",
+  "dashboard.year": "År",
+  "dashboard.subscription": "Abonnemang",
+  "dashboard.package": "Paket",
+  "dashboard.sub_status": "Status",
+  "dashboard.sub_price": "Pris",
+  "dashboard.sub_payment": "Betalning",
+  "dashboard.sub_renewal": "Auto-förnyelse",
+  "dashboard.sub_period": "Period",
+  "dashboard.sub_next_payment": "Nästa betalning",
   "dashboard.no_warnings": "(inga)",
   "dashboard.locked": "Låst",
   "dashboard.unlocked": "UPPLÅST",
@@ -78,7 +88,6 @@
   "dashboard.climate_off": "Av",
   "dashboard.unknown": "Okänd",
   "dashboard.last_updated": "Senast uppdaterad: {timestamp}",
-
   "dashboard.val.stopped": "Laddar inte",
   "dashboard.val.running": "Laddar",
   "dashboard.val.charging": "Laddar",
@@ -94,7 +103,8 @@
   "dashboard.val.200v charging": "200V-laddning",
   "dashboard.val.on": "På",
   "dashboard.val.off": "Av",
-
+  "dashboard.val.active": "Aktiv",
+  "dashboard.val.monthly": "Månadsvis",
   "commands.lock": "Lås",
   "commands.unlock": "Lås upp",
   "commands.climate_on": "Klimat på",
@@ -117,7 +127,6 @@
   "commands.cooler": "kallare",
   "commands.normal": "normalt",
   "commands.hotter": "varmare",
-
   "trips.include_locations": "Inkludera platser",
   "trips.locations_tooltip": "Hämta start-/slut-GPS-koordinater (långsammare, 2 API-anrop per resa)",
   "trips.export_csv": "Exportera CSV",
@@ -146,9 +155,7 @@
   "trips.location_tooltip": "Dubbelklicka för att öppna i OpenStreetMap",
   "trips.not_available": "Resehistorik är inte tillgänglig för detta konto ({role})",
   "trips.failed": "Kunde inte ladda resehistorik",
-
   "status.ready": "Redo",
-
   "workers.logging_in": "Loggar in...",
   "workers.completing_login": "Slutför inloggning...",
   "workers.loading_status": "Laddar status...",
@@ -159,14 +166,12 @@
   "workers.no_command_id": "{label}: inget kommando-ID returnerat",
   "workers.device_verification": "Begär verifieringsmeddelande för enhet...",
   "workers.verifying_link": "Verifierar länk...",
-
   "error.network": "Kunde inte ansluta till Hondas servrar. Kontrollera din internetanslutning.",
   "error.invalid_credentials": "Ogiltig e-post eller lösenord. Försök igen.",
   "error.account_locked": "Kontot är tillfälligt låst. Försök igen senare.",
   "error.auth_failed": "Autentisering misslyckades: {detail}",
   "error.api_error": "Hondas servrar returnerade ett fel (HTTP {status}). Försök igen senare.",
   "error.unexpected": "Ett oväntat fel uppstod: {detail}",
-
   "schedules.climate": "Klimatschema",
   "schedules.charge": "Laddförbud",
   "schedules.climate_settings": "Klimatinställningar",

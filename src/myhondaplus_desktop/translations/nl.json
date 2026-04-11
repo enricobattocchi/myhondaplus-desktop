@@ -9,6 +9,7 @@
   "app.refresh_stale": "Auto heeft niet gereageerd — gecachte gegevens worden getoond",
   "app.dashboard": "Dashboard",
   "app.trips": "Ritten",
+  "app.vehicle": "Voertuig",
   "app.schedules": "Schema's",
   "app.update_available": "Versie {version} is beschikbaar",
   "app.download": "Downloaden",
@@ -18,7 +19,6 @@
   "app.language": "Taal:",
   "app.restart_language": "De taal wordt gewijzigd bij de volgende herstart.",
   "app.session_expired": "Uw sessie is verlopen. Log opnieuw in.",
-
   "login.email": "E-mail:",
   "login.email_placeholder": "gebruiker@voorbeeld.nl",
   "login.password": "Wachtwoord:",
@@ -34,7 +34,6 @@
   "login.help_text": "Gebruik hetzelfde e-mailadres en wachtwoord als de My Honda+ app.",
   "login.verification_text": "Honda heeft een verificatie-e-mail naar uw adres gestuurd.\n\n1. Open de e-mail van Honda\n2. Klik met de rechtermuisknop op de verificatielink\n3. Kopieer de link-URL — klik er NIET op\n4. Plak de volledige URL hieronder:",
   "login.verification_cancelled": "Verificatie geannuleerd",
-
   "dashboard.battery": "Batterij",
   "dashboard.security": "Beveiliging",
   "dashboard.location": "Locatie",
@@ -67,6 +66,17 @@
   "dashboard.vin": "VIN",
   "dashboard.odometer": "Kilometerteller",
   "dashboard.ignition": "Contact",
+  "dashboard.model": "Model",
+  "dashboard.grade": "Uitvoering",
+  "dashboard.year": "Jaar",
+  "dashboard.subscription": "Abonnement",
+  "dashboard.package": "Pakket",
+  "dashboard.sub_status": "Status",
+  "dashboard.sub_price": "Prijs",
+  "dashboard.sub_payment": "Betaling",
+  "dashboard.sub_renewal": "Auto-verlenging",
+  "dashboard.sub_period": "Periode",
+  "dashboard.sub_next_payment": "Volgende betaling",
   "dashboard.no_warnings": "(geen)",
   "dashboard.locked": "Vergrendeld",
   "dashboard.unlocked": "ONTGRENDELD",
@@ -78,7 +88,6 @@
   "dashboard.climate_off": "Uit",
   "dashboard.unknown": "Onbekend",
   "dashboard.last_updated": "Laatst bijgewerkt: {timestamp}",
-
   "dashboard.val.stopped": "Laadt niet op",
   "dashboard.val.running": "Wordt opgeladen",
   "dashboard.val.charging": "Wordt opgeladen",
@@ -94,7 +103,8 @@
   "dashboard.val.200v charging": "200V laden",
   "dashboard.val.on": "Aan",
   "dashboard.val.off": "Uit",
-
+  "dashboard.val.active": "Actief",
+  "dashboard.val.monthly": "Maandelijks",
   "commands.lock": "Vergrendelen",
   "commands.unlock": "Ontgrendelen",
   "commands.climate_on": "Klimaat aan",
@@ -117,7 +127,6 @@
   "commands.cooler": "kouder",
   "commands.normal": "normaal",
   "commands.hotter": "warmer",
-
   "trips.include_locations": "Locaties opnemen",
   "trips.locations_tooltip": "Start-/eind-GPS-coördinaten ophalen (langzamer, 2 API-aanroepen per rit)",
   "trips.export_csv": "CSV exporteren",
@@ -146,9 +155,7 @@
   "trips.location_tooltip": "Dubbelklik om te openen in OpenStreetMap",
   "trips.not_available": "Ritgeschiedenis is niet beschikbaar voor dit account ({role})",
   "trips.failed": "Ritgeschiedenis kon niet worden geladen",
-
   "status.ready": "Gereed",
-
   "workers.logging_in": "Inloggen...",
   "workers.completing_login": "Inloggen voltooien...",
   "workers.loading_status": "Status laden...",
@@ -159,14 +166,12 @@
   "workers.no_command_id": "{label}: geen commando-ID ontvangen",
   "workers.device_verification": "Verificatie-e-mail voor apparaat wordt aangevraagd...",
   "workers.verifying_link": "Link verifiëren...",
-
   "error.network": "Kan geen verbinding maken met de Honda-servers. Controleer uw internetverbinding.",
   "error.invalid_credentials": "Ongeldig e-mailadres of wachtwoord. Probeer het opnieuw.",
   "error.account_locked": "Account tijdelijk vergrendeld. Probeer het later opnieuw.",
   "error.auth_failed": "Authenticatie mislukt: {detail}",
   "error.api_error": "Honda-servers gaven een fout terug (HTTP {status}). Probeer het later opnieuw.",
   "error.unexpected": "Er is een onverwachte fout opgetreden: {detail}",
-
   "schedules.climate": "Klimaatschema",
   "schedules.charge": "Laadverbod",
   "schedules.climate_settings": "Klimaatinstellingen",

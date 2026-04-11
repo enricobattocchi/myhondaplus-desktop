@@ -38,6 +38,7 @@ from .widgets.schedules import (
 )
 from .widgets.status_bar import StatusBarWidget
 from .widgets.trips import TripsWidget
+from .widgets.vehicle import VehicleWidget
 
 logger = logging.getLogger(__name__)
 
@@ -132,11 +133,15 @@ class AboutDialog(QDialog):
             self._restart_label.setVisible(True)
 
 
-def _vehicle_label(v: dict) -> str:
-    """Build a display label for a vehicle: 'Name (PLATE)' or just VIN."""
+def _vehicle_label(v) -> str:
+    """Build a display label for a vehicle: 'Name (PLATE) — Model Grade Year'."""
     name = v.get("name") or v["vin"]
     plate = v.get("plate")
-    return f"{name} ({plate})" if plate else name
+    base = f"{name} ({plate})" if plate else name
+    parts = [p for p in [v.get("model_name", ""), v.get("grade", ""),
+                         v.get("model_year", "")] if p]
+    extra = " ".join(parts)
+    return f"{base} — {extra}" if extra else base
 
 
 class MainScreen(QWidget):
@@ -156,7 +161,7 @@ class MainScreen(QWidget):
         car_lbl.setPixmap(icon("car").pixmap(20, 20))
         top.addWidget(car_lbl)
         self._vin_combo = QComboBox()
-        self._vin_combo.setMinimumWidth(250)
+        self._vin_combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
         top.addWidget(self._vin_combo)
         top.addStretch()
 
@@ -224,6 +229,10 @@ class MainScreen(QWidget):
             "on_locate": lambda: self._controller.run_locate(),
         })
         self._tabs.addTab(self._dashboard, icon("car"), t("app.dashboard"))
+
+        # Vehicle tab
+        self._vehicle_tab = VehicleWidget()
+        self._tabs.addTab(self._vehicle_tab, icon("info"), t("app.vehicle"))
 
         # Trips tab
         self._trips = TripsWidget(
@@ -309,7 +318,7 @@ class MainScreen(QWidget):
         return self.current_vin()
 
     def update_dashboard_vin(self, vin: str):
-        self._dashboard.set_vin(vin)
+        self._vehicle_tab.set_vin(vin)
 
     def set_refresh_enabled(self, enabled: bool):
         self._refresh_btn.setEnabled(enabled)
@@ -320,6 +329,20 @@ class MainScreen(QWidget):
 
     def update_dashboard_status(self, status: dict):
         self._dashboard.update_status(status)
+        self._vehicle_tab.update_odometer(status)
+
+    def set_capabilities(self, caps):
+        self._dashboard.set_capabilities(caps)
+        self._tabs.setTabVisible(2, getattr(caps, "journey_history", True))
+
+    def set_vehicle_info(self, vehicle):
+        self._vehicle_tab.set_vehicle_info(vehicle)
+
+    def set_vehicle_image(self, path: str):
+        self._vehicle_tab.set_vehicle_image(path)
+
+    def set_subscription(self, subscription):
+        self._vehicle_tab.set_subscription(subscription)
 
     def show_update_available(self, new_version: str, release_url: str):
         self._update_info = (new_version, release_url)

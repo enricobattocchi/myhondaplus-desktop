@@ -9,6 +9,7 @@
   "app.refresh_stale": "Car did not respond — showing cached data",
   "app.dashboard": "Dashboard",
   "app.trips": "Trips",
+  "app.vehicle": "Vehicle",
   "app.schedules": "Schedules",
   "app.update_available": "Version {version} is available",
   "app.download": "Download",
@@ -18,7 +19,6 @@
   "app.language": "Language:",
   "app.restart_language": "Language will change on next restart.",
   "app.session_expired": "Your session has expired. Please log in again.",
-
   "login.email": "Email:",
   "login.email_placeholder": "user@example.com",
   "login.password": "Password:",
@@ -34,7 +34,6 @@
   "login.help_text": "Use the same email and password as the My Honda+ mobile app.",
   "login.verification_text": "Honda has sent a verification email to your address.\n\n1. Open the email from Honda\n2. Right-click (or long-press) the verification link\n3. Copy the link URL — do NOT click it\n4. Paste the full URL below:",
   "login.verification_cancelled": "Verification cancelled",
-
   "dashboard.battery": "Battery",
   "dashboard.security": "Security",
   "dashboard.location": "Location",
@@ -67,6 +66,17 @@
   "dashboard.vin": "VIN",
   "dashboard.odometer": "Odometer",
   "dashboard.ignition": "Ignition",
+  "dashboard.model": "Model",
+  "dashboard.grade": "Grade",
+  "dashboard.year": "Year",
+  "dashboard.subscription": "Subscription",
+  "dashboard.package": "Package",
+  "dashboard.sub_status": "Status",
+  "dashboard.sub_price": "Price",
+  "dashboard.sub_payment": "Payment",
+  "dashboard.sub_renewal": "Auto-renewal",
+  "dashboard.sub_period": "Period",
+  "dashboard.sub_next_payment": "Next payment",
   "dashboard.no_warnings": "(none)",
   "dashboard.locked": "Locked",
   "dashboard.unlocked": "UNLOCKED",
@@ -78,7 +88,6 @@
   "dashboard.climate_off": "Off",
   "dashboard.unknown": "Unknown",
   "dashboard.last_updated": "Last updated: {timestamp}",
-
   "dashboard.val.stopped": "Stopped",
   "dashboard.val.running": "Charging",
   "dashboard.val.charging": "Charging",
@@ -94,7 +103,8 @@
   "dashboard.val.200v charging": "200V charging",
   "dashboard.val.on": "On",
   "dashboard.val.off": "Off",
-
+  "dashboard.val.active": "Active",
+  "dashboard.val.monthly": "Monthly",
   "commands.lock": "Lock",
   "commands.unlock": "Unlock",
   "commands.climate_on": "Climate On",
@@ -117,7 +127,6 @@
   "commands.cooler": "cooler",
   "commands.normal": "normal",
   "commands.hotter": "hotter",
-
   "trips.include_locations": "Include locations",
   "trips.locations_tooltip": "Fetch start/end GPS coordinates (slower, 2 API calls per trip)",
   "trips.export_csv": "Export CSV",
@@ -146,9 +155,7 @@
   "trips.location_tooltip": "Double-click to open in OpenStreetMap",
   "trips.not_available": "Trip history is not available for this account ({role})",
   "trips.failed": "Failed to load trip history",
-
   "status.ready": "Ready",
-
   "workers.logging_in": "Logging in...",
   "workers.completing_login": "Completing login...",
   "workers.loading_status": "Loading status...",
@@ -159,14 +166,12 @@
   "workers.no_command_id": "{label}: no command ID returned",
   "workers.device_verification": "Requesting device verification email...",
   "workers.verifying_link": "Verifying link...",
-
   "error.network": "Could not connect to Honda servers. Please check your internet connection.",
   "error.invalid_credentials": "Invalid email or password. Please try again.",
   "error.account_locked": "Account temporarily locked. Please try again later.",
   "error.auth_failed": "Authentication failed: {detail}",
   "error.api_error": "Honda servers returned an error (HTTP {status}). Please try again later.",
   "error.unexpected": "An unexpected error occurred: {detail}",
-
   "schedules.climate": "Climate Schedule",
   "schedules.charge": "Charge Prohibition",
   "schedules.climate_settings": "Climate Settings",

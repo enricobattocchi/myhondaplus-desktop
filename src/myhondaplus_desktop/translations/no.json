@@ -9,6 +9,7 @@
   "app.refresh_stale": "Bilen svarte ikke — viser bufrede data",
   "app.dashboard": "Oversikt",
   "app.trips": "Turer",
+  "app.vehicle": "Kjøretøy",
   "app.schedules": "Tidsplaner",
   "app.update_available": "Versjon {version} er tilgjengelig",
   "app.download": "Last ned",
@@ -18,7 +19,6 @@
   "app.language": "Språk:",
   "app.restart_language": "Språket endres ved neste omstart.",
   "app.session_expired": "Økten din har utløpt. Vennligst logg inn igjen.",
-
   "login.email": "E-post:",
   "login.email_placeholder": "bruker@eksempel.no",
   "login.password": "Passord:",
@@ -34,7 +34,6 @@
   "login.help_text": "Bruk samme e-post og passord som i My Honda+-appen.",
   "login.verification_text": "Honda har sendt en bekreftelses-e-post til din adresse.\n\n1. Åpne e-posten fra Honda\n2. Høyreklikk på bekreftelseslenken\n3. Kopier lenke-URL-en — IKKE klikk på den\n4. Lim inn den fullstendige URL-en nedenfor:",
   "login.verification_cancelled": "Bekreftelse avbrutt",
-
   "dashboard.battery": "Batteri",
   "dashboard.security": "Sikkerhet",
   "dashboard.location": "Posisjon",
@@ -67,6 +66,17 @@
   "dashboard.vin": "VIN",
   "dashboard.odometer": "Kilometerteller",
   "dashboard.ignition": "Tenning",
+  "dashboard.model": "Modell",
+  "dashboard.grade": "Utstyrsnivå",
+  "dashboard.year": "År",
+  "dashboard.subscription": "Abonnement",
+  "dashboard.package": "Pakke",
+  "dashboard.sub_status": "Status",
+  "dashboard.sub_price": "Pris",
+  "dashboard.sub_payment": "Betaling",
+  "dashboard.sub_renewal": "Auto-fornyelse",
+  "dashboard.sub_period": "Periode",
+  "dashboard.sub_next_payment": "Neste betaling",
   "dashboard.no_warnings": "(ingen)",
   "dashboard.locked": "Låst",
   "dashboard.unlocked": "ULÅST",
@@ -78,7 +88,6 @@
   "dashboard.climate_off": "Av",
   "dashboard.unknown": "Ukjent",
   "dashboard.last_updated": "Sist oppdatert: {timestamp}",
-
   "dashboard.val.stopped": "Lader ikke",
   "dashboard.val.running": "Lader",
   "dashboard.val.charging": "Lader",
@@ -94,7 +103,8 @@
   "dashboard.val.200v charging": "200V-lading",
   "dashboard.val.on": "På",
   "dashboard.val.off": "Av",
-
+  "dashboard.val.active": "Aktiv",
+  "dashboard.val.monthly": "Månedlig",
   "commands.lock": "Lås",
   "commands.unlock": "Lås opp",
   "commands.climate_on": "Klima på",
@@ -117,7 +127,6 @@
   "commands.cooler": "kaldere",
   "commands.normal": "normal",
   "commands.hotter": "varmere",
-
   "trips.include_locations": "Inkluder plasseringer",
   "trips.locations_tooltip": "Hent start-/slutt-GPS-koordinater (tregere, 2 API-kall per tur)",
   "trips.export_csv": "Eksporter CSV",
@@ -146,9 +155,7 @@
   "trips.location_tooltip": "Dobbeltklikk for å åpne i OpenStreetMap",
   "trips.not_available": "Turhistorikk er ikke tilgjengelig for denne kontoen ({role})",
   "trips.failed": "Kunne ikke laste turhistorikk",
-
   "status.ready": "Klar",
-
   "workers.logging_in": "Logger inn...",
   "workers.completing_login": "Fullfører innlogging...",
   "workers.loading_status": "Laster status...",
@@ -159,14 +166,12 @@
   "workers.no_command_id": "{label}: ingen kommando-ID returnert",
   "workers.device_verification": "Ber om bekreftelses-e-post for enhet...",
   "workers.verifying_link": "Bekrefter lenke...",
-
   "error.network": "Kunne ikke koble til Hondas servere. Sjekk internettforbindelsen din.",
   "error.invalid_credentials": "Ugyldig e-post eller passord. Prøv igjen.",
   "error.account_locked": "Kontoen er midlertidig låst. Prøv igjen senere.",
   "error.auth_failed": "Autentisering mislyktes: {detail}",
   "error.api_error": "Hondas servere returnerte en feil (HTTP {status}). Prøv igjen senere.",
   "error.unexpected": "Det oppstod en uventet feil: {detail}",
-
   "schedules.climate": "Klimatidsplan",
   "schedules.charge": "Ladeforbud",
   "schedules.climate_settings": "Klimainnstillinger",

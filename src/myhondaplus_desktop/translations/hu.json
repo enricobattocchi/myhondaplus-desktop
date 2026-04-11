@@ -9,6 +9,7 @@
   "app.refresh_stale": "Az autó nem válaszolt — gyorsítótárazott adatok megjelenítése",
   "app.dashboard": "Áttekintés",
   "app.trips": "Utak",
+  "app.vehicle": "Jármű",
   "app.schedules": "Ütemezések",
   "app.update_available": "A(z) {version} verzió elérhető",
   "app.download": "Letöltés",
@@ -18,7 +19,6 @@
   "app.language": "Nyelv:",
   "app.restart_language": "A nyelv a következő újraindításkor változik meg.",
   "app.session_expired": "A munkamenet lejárt. Kérjük, jelentkezzen be újra.",
-
   "login.email": "E-mail:",
   "login.email_placeholder": "felhasznalo@pelda.hu",
   "login.password": "Jelszó:",
@@ -34,7 +34,6 @@
   "login.help_text": "Használja ugyanazt az e-mail címet és jelszót, mint a My Honda+ alkalmazásban.",
   "login.verification_text": "A Honda megerősítő e-mailt küldött az Ön címére.\n\n1. Nyissa meg a Honda e-mailt\n2. Kattintson jobb gombbal a megerősítő linkre\n3. Másolja ki a link URL-jét — NE kattintson rá\n4. Illessze be a teljes URL-t alább:",
   "login.verification_cancelled": "Megerősítés megszakítva",
-
   "dashboard.battery": "Akkumulátor",
   "dashboard.security": "Biztonság",
   "dashboard.location": "Helyzet",
@@ -67,6 +66,17 @@
   "dashboard.vin": "VIN",
   "dashboard.odometer": "Kilométeróra",
   "dashboard.ignition": "Gyújtás",
+  "dashboard.model": "Típus",
+  "dashboard.grade": "Felszereltség",
+  "dashboard.year": "Év",
+  "dashboard.subscription": "Előfizetés",
+  "dashboard.package": "Csomag",
+  "dashboard.sub_status": "Állapot",
+  "dashboard.sub_price": "Ár",
+  "dashboard.sub_payment": "Fizetés",
+  "dashboard.sub_renewal": "Automatikus megújítás",
+  "dashboard.sub_period": "Időszak",
+  "dashboard.sub_next_payment": "Következő fizetés",
   "dashboard.no_warnings": "(nincs)",
   "dashboard.locked": "Zárva",
   "dashboard.unlocked": "NYITVA",
@@ -78,7 +88,6 @@
   "dashboard.climate_off": "Ki",
   "dashboard.unknown": "Ismeretlen",
   "dashboard.last_updated": "Utolsó frissítés: {timestamp}",
-
   "dashboard.val.stopped": "Nem töltődik",
   "dashboard.val.running": "Töltés",
   "dashboard.val.charging": "Töltés",
@@ -94,7 +103,8 @@
   "dashboard.val.200v charging": "200V töltés",
   "dashboard.val.on": "Be",
   "dashboard.val.off": "Ki",
-
+  "dashboard.val.active": "Aktív",
+  "dashboard.val.monthly": "Havonta",
   "commands.lock": "Zárás",
   "commands.unlock": "Nyitás",
   "commands.climate_on": "Klíma be",
@@ -117,7 +127,6 @@
   "commands.cooler": "hidegebb",
   "commands.normal": "normál",
   "commands.hotter": "melegebb",
-
   "trips.include_locations": "Helyszínek megjelenítése",
   "trips.locations_tooltip": "Indulási/érkezési GPS-koordináták lekérése (lassabb, 2 API-hívás utanként)",
   "trips.export_csv": "CSV exportálás",
@@ -146,9 +155,7 @@
   "trips.location_tooltip": "Dupla kattintás az OpenStreetMap megnyitásához",
   "trips.not_available": "Az útelőzmények nem érhetők el ehhez a fiókhoz ({role})",
   "trips.failed": "Nem sikerült betölteni az útelőzményeket",
-
   "status.ready": "Kész",
-
   "workers.logging_in": "Bejelentkezés...",
   "workers.completing_login": "Bejelentkezés befejezése...",
   "workers.loading_status": "Állapot betöltése...",
@@ -159,14 +166,12 @@
   "workers.no_command_id": "{label}: nem érkezett parancs-azonosító",
   "workers.device_verification": "Eszköz megerősítő e-mail kérése...",
   "workers.verifying_link": "Link ellenőrzése...",
-
   "error.network": "Nem sikerült csatlakozni a Honda szerverekhez. Ellenőrizze az internetkapcsolatát.",
   "error.invalid_credentials": "Érvénytelen e-mail vagy jelszó. Kérjük, próbálja újra.",
   "error.account_locked": "A fiók ideiglenesen zárolva van. Kérjük, próbálja később.",
   "error.auth_failed": "Hitelesítés sikertelen: {detail}",
   "error.api_error": "A Honda szerverei hibát adtak vissza (HTTP {status}). Kérjük, próbálja később.",
   "error.unexpected": "Váratlan hiba történt: {detail}",
-
   "schedules.climate": "Klíma ütemezés",
   "schedules.charge": "Töltési tilalom",
   "schedules.climate_settings": "Klímabeállítások",

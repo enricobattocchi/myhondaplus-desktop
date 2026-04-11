@@ -9,6 +9,7 @@
   "app.refresh_stale": "La voiture n'a pas répondu — affichage des données en cache",
   "app.dashboard": "Tableau de bord",
   "app.trips": "Trajets",
+  "app.vehicle": "Véhicule",
   "app.schedules": "Programmations",
   "app.update_available": "Version {version} disponible",
   "app.download": "Télécharger",
@@ -18,7 +19,6 @@
   "app.language": "Langue :",
   "app.restart_language": "La langue changera au prochain redémarrage.",
   "app.session_expired": "Votre session a expiré. Veuillez vous reconnecter.",
-
   "login.email": "E-mail :",
   "login.email_placeholder": "utilisateur@exemple.com",
   "login.password": "Mot de passe :",
@@ -34,7 +34,6 @@
   "login.help_text": "Utilisez les mêmes identifiants que l'application mobile My Honda+.",
   "login.verification_text": "Honda a envoyé un e-mail de vérification à votre adresse.\n\n1. Ouvrez l'e-mail de Honda\n2. Faites un clic droit sur le lien de vérification\n3. Copiez l'URL du lien — NE cliquez PAS dessus\n4. Collez l'URL complète ci-dessous :",
   "login.verification_cancelled": "Vérification annulée",
-
   "dashboard.battery": "Batterie",
   "dashboard.security": "Sécurité",
   "dashboard.location": "Position",
@@ -67,6 +66,17 @@
   "dashboard.vin": "VIN",
   "dashboard.odometer": "Compteur kilométrique",
   "dashboard.ignition": "Contact",
+  "dashboard.model": "Modèle",
+  "dashboard.grade": "Finition",
+  "dashboard.year": "Année",
+  "dashboard.subscription": "Abonnement",
+  "dashboard.package": "Forfait",
+  "dashboard.sub_status": "Statut",
+  "dashboard.sub_price": "Prix",
+  "dashboard.sub_payment": "Paiement",
+  "dashboard.sub_renewal": "Renouvellement auto.",
+  "dashboard.sub_period": "Période",
+  "dashboard.sub_next_payment": "Prochain paiement",
   "dashboard.no_warnings": "(aucune)",
   "dashboard.locked": "Verrouillée",
   "dashboard.unlocked": "DÉVERROUILLÉE",
@@ -78,7 +88,6 @@
   "dashboard.climate_off": "Éteinte",
   "dashboard.unknown": "Inconnu",
   "dashboard.last_updated": "Dernière mise à jour : {timestamp}",
-
   "dashboard.val.stopped": "Pas de charge",
   "dashboard.val.running": "En charge",
   "dashboard.val.charging": "En charge",
@@ -94,7 +103,8 @@
   "dashboard.val.200v charging": "Charge 200V",
   "dashboard.val.on": "Allumé",
   "dashboard.val.off": "Éteint",
-
+  "dashboard.val.active": "Actif",
+  "dashboard.val.monthly": "Mensuel",
   "commands.lock": "Verrouiller",
   "commands.unlock": "Déverrouiller",
   "commands.climate_on": "Clim. allumée",
@@ -117,7 +127,6 @@
   "commands.cooler": "plus frais",
   "commands.normal": "normale",
   "commands.hotter": "plus chaud",
-
   "trips.include_locations": "Inclure les positions",
   "trips.locations_tooltip": "Récupérer les coordonnées GPS de départ/arrivée (plus lent, 2 appels API par trajet)",
   "trips.export_csv": "Exporter CSV",
@@ -146,9 +155,7 @@
   "trips.location_tooltip": "Double-cliquez pour ouvrir dans OpenStreetMap",
   "trips.not_available": "L'historique des trajets n'est pas disponible pour ce compte ({role})",
   "trips.failed": "Impossible de charger l'historique des trajets",
-
   "status.ready": "Prêt",
-
   "workers.logging_in": "Connexion en cours...",
   "workers.completing_login": "Finalisation de la connexion...",
   "workers.loading_status": "Chargement de l'état...",
@@ -159,14 +166,12 @@
   "workers.no_command_id": "{label} : aucun ID de commande retourné",
   "workers.device_verification": "Demande d'e-mail de vérification de l'appareil...",
   "workers.verifying_link": "Vérification du lien...",
-
   "error.network": "Impossible de se connecter aux serveurs Honda. Veuillez vérifier votre connexion internet.",
   "error.invalid_credentials": "E-mail ou mot de passe invalide. Veuillez réessayer.",
   "error.account_locked": "Compte temporairement verrouillé. Veuillez réessayer plus tard.",
   "error.auth_failed": "Échec de l'authentification : {detail}",
   "error.api_error": "Les serveurs Honda ont renvoyé une erreur (HTTP {status}). Veuillez réessayer plus tard.",
   "error.unexpected": "Une erreur inattendue s'est produite : {detail}",
-
   "schedules.climate": "Programmation climatisation",
   "schedules.charge": "Interdiction de charge",
   "schedules.climate_settings": "Paramètres de la climatisation",

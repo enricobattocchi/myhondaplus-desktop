@@ -11,6 +11,7 @@ from myhondaplus_desktop.workers import (
     CommandWorker,
     DashboardWorker,
     DeviceRegistrationWorker,
+    ImageWorker,
     LoginWorker,
     ScheduleLoadWorker,
     ScheduleSaveWorker,
@@ -326,8 +327,9 @@ def test_dashboard_worker_fresh_success(monkeypatch, mock_api):
     results = _run_worker(worker)
 
     assert results["error"] is None
-    assert results["finished"]["battery"] == 80
-    assert results["finished"]["_refresh_stale"] is False
+    status, stale = results["finished"]
+    assert status["battery"] == 80
+    assert stale is False
     mock_api.refresh_dashboard.assert_called_once_with("VIN123")
     mock_api.get_dashboard_cached.assert_called_once_with("VIN123")
 
@@ -341,8 +343,9 @@ def test_dashboard_worker_fresh_car_not_responding(monkeypatch, mock_api):
     results = _run_worker(worker)
 
     assert results["error"] is None
-    assert results["finished"]["battery"] == 70
-    assert results["finished"]["_refresh_stale"] is True
+    status, stale = results["finished"]
+    assert status["battery"] == 70
+    assert stale is True
 
 
 def test_dashboard_worker_cached_has_no_stale_flag(monkeypatch, mock_api):
@@ -353,7 +356,8 @@ def test_dashboard_worker_cached_has_no_stale_flag(monkeypatch, mock_api):
     results = _run_worker(worker)
 
     assert results["error"] is None
-    assert "_refresh_stale" not in results["finished"]
+    status, stale = results["finished"]
+    assert stale is False
     mock_api.refresh_dashboard.assert_not_called()
 
 
@@ -399,3 +403,50 @@ def test_friendly_error_generic():
     e = RuntimeError("something weird")
     result = _friendly_error(e)
     assert "something weird" in result
+
+
+def test_image_worker_cache_hit(tmp_path):
+    """When cached file exists, ImageWorker emits it without downloading."""
+    # Pre-create the cached file
+    import hashlib
+    url = "https://example.com/car.png"
+    key = hashlib.sha256(url.encode()).hexdigest()[:16]
+    cached = tmp_path / f"{key}.png"
+    cached.write_bytes(b"fake-image-data")
+
+    worker = ImageWorker(url, tmp_path)
+    results = {"finished": None, "error": None}
+    worker.finished.connect(lambda v: results.update(finished=v))
+    worker.error.connect(lambda v: results.update(error=v))
+    worker.run()
+
+    assert results["finished"] == str(cached)
+    assert results["error"] is None
+
+
+def test_image_worker_cache_miss(tmp_path, monkeypatch):
+    """ImageWorker downloads and caches the image."""
+    url = "https://example.com/vehicle.jpg"
+    image_data = b"\x89PNG fake image"
+
+    class _Response:
+        def __enter__(self):
+            return self
+        def __exit__(self, *args):
+            return False
+        def read(self):
+            return image_data
+
+    monkeypatch.setattr("urllib.request.urlopen", lambda *a, **kw: _Response())
+
+    worker = ImageWorker(url, tmp_path)
+    results = {"finished": None, "error": None}
+    worker.finished.connect(lambda v: results.update(finished=v))
+    worker.error.connect(lambda v: results.update(error=v))
+    worker.run()
+
+    assert results["error"] is None
+    assert results["finished"] is not None
+    from pathlib import Path
+    assert Path(results["finished"]).exists()
+    assert Path(results["finished"]).read_bytes() == image_data

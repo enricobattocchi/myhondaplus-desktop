@@ -29,6 +29,10 @@ def device_key_file() -> Path:
     return storage_dir() / "honda_device_key.pem"
 
 
+def image_cache_dir() -> Path:
+    return storage_dir() / "image_cache"
+
+
 @dataclass
 class Settings:
     vin: str = ""

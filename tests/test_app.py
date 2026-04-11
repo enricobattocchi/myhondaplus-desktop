@@ -28,6 +28,18 @@ def test_vehicle_label_no_name_no_plate():
     assert _vehicle_label(v) == "JHMZC78"
 
 
+def test_vehicle_label_with_model_info():
+    v = {"vin": "JHMZC78", "name": "Honda e", "plate": "GE395KM",
+         "model_name": "Honda e:Ny1", "grade": "Advance", "model_year": "2024"}
+    assert _vehicle_label(v) == "Honda e (GE395KM) — Honda e:Ny1 Advance 2024"
+
+
+def test_vehicle_label_with_partial_model_info():
+    v = {"vin": "JHMZC78", "name": "Honda e", "plate": "",
+         "model_name": "Honda e:Ny1", "grade": "", "model_year": ""}
+    assert _vehicle_label(v) == "Honda e — Honda e:Ny1"
+
+
 def test_open_charge_limit_dialog_uses_explicit_accept_handler(monkeypatch):
     state = {}
 

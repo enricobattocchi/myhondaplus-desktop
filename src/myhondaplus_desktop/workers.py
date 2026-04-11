@@ -224,12 +224,12 @@ class DashboardWorker(QThread):
                 result = self.api.refresh_dashboard(self.vin)
                 dashboard = self.api.get_dashboard_cached(self.vin)
                 status = parse_ev_status(dashboard)
-                status["_refresh_stale"] = not result.success
+                self.finished.emit((status, not result.success))
             else:
                 self.progress.emit(t("workers.loading_status"))
                 dashboard = self.api.get_dashboard(self.vin)
                 status = parse_ev_status(dashboard)
-            self.finished.emit(status)
+                self.finished.emit((status, False))
         except HondaAuthError:
             self.auth_error.emit()
         except Exception as e:
@@ -438,6 +438,51 @@ class ScheduleSaveWorker(QThread):
         except Exception as e:
             logger.exception("Schedule save error")
             self.error.emit(f"{self.label}: {_friendly_error(e)}")
+
+
+class ImageWorker(QThread):
+    """Downloads and caches a vehicle image."""
+    finished = pyqtSignal(str)
+    error = pyqtSignal(str)
+
+    def __init__(self, url: str, cache_dir):
+        super().__init__()
+        self._url = url
+        self._cache_dir = cache_dir
+
+    def run(self):
+        import hashlib
+        import urllib.request
+        from pathlib import Path
+
+        try:
+            cache_dir = Path(self._cache_dir)
+            cache_dir.mkdir(parents=True, exist_ok=True)
+
+            # Determine extension from URL
+            url_path = self._url.rsplit("?", 1)[0]
+            if "." in url_path.rsplit("/", 1)[-1]:
+                ext = "." + url_path.rsplit(".", 1)[-1].lower()
+                if ext not in (".png", ".jpg", ".jpeg", ".webp", ".gif"):
+                    ext = ".img"
+            else:
+                ext = ".img"
+
+            key = hashlib.sha256(self._url.encode()).hexdigest()[:16]
+            cached = cache_dir / f"{key}{ext}"
+
+            if cached.exists():
+                self.finished.emit(str(cached))
+                return
+
+            req = urllib.request.Request(self._url)
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                data = resp.read()
+            cached.write_bytes(data)
+            self.finished.emit(str(cached))
+        except Exception as e:
+            logger.debug("Image download failed: %s", e)
+            self.error.emit(str(e))
 
 
 class VehiclesWorker(QThread):

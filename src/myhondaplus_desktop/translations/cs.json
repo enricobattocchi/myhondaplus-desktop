@@ -9,6 +9,7 @@
   "app.refresh_stale": "Auto neodpovědělo — zobrazují se data z mezipaměti",
   "app.dashboard": "Přehled",
   "app.trips": "Cesty",
+  "app.vehicle": "Vozidlo",
   "app.schedules": "Plány",
   "app.update_available": "Verze {version} je k dispozici",
   "app.download": "Stáhnout",
@@ -18,7 +19,6 @@
   "app.language": "Jazyk:",
   "app.restart_language": "Jazyk se změní při příštím spuštění.",
   "app.session_expired": "Vaše relace vypršela. Přihlaste se znovu.",
-
   "login.email": "E-mail:",
   "login.email_placeholder": "uzivatel@priklad.cz",
   "login.password": "Heslo:",
@@ -34,7 +34,6 @@
   "login.help_text": "Použijte stejný e-mail a heslo jako v aplikaci My Honda+.",
   "login.verification_text": "Honda odeslala ověřovací e-mail na vaši adresu.\n\n1. Otevřete e-mail od Hondy\n2. Klikněte pravým tlačítkem na ověřovací odkaz\n3. Zkopírujte URL odkazu — NEKLIKEJTE na něj\n4. Vložte celou URL níže:",
   "login.verification_cancelled": "Ověření zrušeno",
-
   "dashboard.battery": "Baterie",
   "dashboard.security": "Zabezpečení",
   "dashboard.location": "Poloha",
@@ -67,6 +66,17 @@
   "dashboard.vin": "VIN",
   "dashboard.odometer": "Počítadlo km",
   "dashboard.ignition": "Zapalování",
+  "dashboard.model": "Model",
+  "dashboard.grade": "Stupeň",
+  "dashboard.year": "Rok",
+  "dashboard.subscription": "Balíček služeb",
+  "dashboard.package": "Balíček",
+  "dashboard.sub_status": "Stav",
+  "dashboard.sub_price": "Cena",
+  "dashboard.sub_payment": "Platba",
+  "dashboard.sub_renewal": "Automatické obnovení",
+  "dashboard.sub_period": "Období",
+  "dashboard.sub_next_payment": "Příští platba",
   "dashboard.no_warnings": "(žádné)",
   "dashboard.locked": "Zamknuto",
   "dashboard.unlocked": "ODEMKNUTO",
@@ -78,7 +88,6 @@
   "dashboard.climate_off": "Vypnuta",
   "dashboard.unknown": "Neznámé",
   "dashboard.last_updated": "Poslední aktualizace: {timestamp}",
-
   "dashboard.val.stopped": "Nenabíjí se",
   "dashboard.val.running": "Nabíjí se",
   "dashboard.val.charging": "Nabíjí se",
@@ -94,7 +103,8 @@
   "dashboard.val.200v charging": "Nabíjení 200V",
   "dashboard.val.on": "Zapnuto",
   "dashboard.val.off": "Vypnuto",
-
+  "dashboard.val.active": "Aktivní",
+  "dashboard.val.monthly": "Měsíčně",
   "commands.lock": "Zamknout",
   "commands.unlock": "Odemknout",
   "commands.climate_on": "Klima zapnout",
@@ -117,7 +127,6 @@
   "commands.cooler": "chladnější",
   "commands.normal": "normální",
   "commands.hotter": "teplejší",
-
   "trips.include_locations": "Zahrnout polohy",
   "trips.locations_tooltip": "Načíst GPS souřadnice začátku/konce (pomalejší, 2 API volání na cestu)",
   "trips.export_csv": "Exportovat CSV",
@@ -146,9 +155,7 @@
   "trips.location_tooltip": "Dvojklik pro otevření v OpenStreetMap",
   "trips.not_available": "Historie cest není k dispozici pro tento účet ({role})",
   "trips.failed": "Nepodařilo se načíst historii cest",
-
   "status.ready": "Připraveno",
-
   "workers.logging_in": "Přihlašování...",
   "workers.completing_login": "Dokončování přihlášení...",
   "workers.loading_status": "Načítání stavu...",
@@ -159,14 +166,12 @@
   "workers.no_command_id": "{label}: nebylo vráceno ID příkazu",
   "workers.device_verification": "Žádost o ověřovací e-mail zařízení...",
   "workers.verifying_link": "Ověřování odkazu...",
-
   "error.network": "Nelze se připojit k serverům Honda. Zkontrolujte připojení k internetu.",
   "error.invalid_credentials": "Neplatný e-mail nebo heslo. Zkuste to znovu.",
   "error.account_locked": "Účet je dočasně uzamčen. Zkuste to později.",
   "error.auth_failed": "Ověření selhalo: {detail}",
   "error.api_error": "Servery Honda vrátily chybu (HTTP {status}). Zkuste to později.",
   "error.unexpected": "Došlo k neočekávané chybě: {detail}",
-
   "schedules.climate": "Plán klimatizace",
   "schedules.charge": "Zákaz nabíjení",
   "schedules.climate_settings": "Nastavení klimatizace",

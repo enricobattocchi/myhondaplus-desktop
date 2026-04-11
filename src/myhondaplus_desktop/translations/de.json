@@ -9,6 +9,7 @@
   "app.refresh_stale": "Auto hat nicht geantwortet — zwischengespeicherte Daten werden angezeigt",
   "app.dashboard": "Übersicht",
   "app.trips": "Fahrten",
+  "app.vehicle": "Fahrzeug",
   "app.schedules": "Zeitpläne",
   "app.update_available": "Version {version} ist verfügbar",
   "app.download": "Herunterladen",
@@ -18,7 +19,6 @@
   "app.language": "Sprache:",
   "app.restart_language": "Die Sprache wird beim nächsten Neustart geändert.",
   "app.session_expired": "Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.",
-
   "login.email": "E-Mail:",
   "login.email_placeholder": "benutzer@beispiel.de",
   "login.password": "Passwort:",
@@ -34,7 +34,6 @@
   "login.help_text": "Verwenden Sie dieselbe E-Mail und dasselbe Passwort wie in der My Honda+ App.",
   "login.verification_text": "Honda hat eine Bestätigungs-E-Mail an Ihre Adresse gesendet.\n\n1. Öffnen Sie die E-Mail von Honda\n2. Klicken Sie mit der rechten Maustaste auf den Bestätigungslink\n3. Kopieren Sie die Link-URL — klicken Sie NICHT darauf\n4. Fügen Sie die vollständige URL unten ein:",
   "login.verification_cancelled": "Bestätigung abgebrochen",
-
   "dashboard.battery": "Batterie",
   "dashboard.security": "Sicherheit",
   "dashboard.location": "Standort",
@@ -67,6 +66,17 @@
   "dashboard.vin": "VIN",
   "dashboard.odometer": "Kilometerstand",
   "dashboard.ignition": "Zündung",
+  "dashboard.model": "Modell",
+  "dashboard.grade": "Ausstattung",
+  "dashboard.year": "Jahr",
+  "dashboard.subscription": "Abonnement",
+  "dashboard.package": "Paket",
+  "dashboard.sub_status": "Status",
+  "dashboard.sub_price": "Preis",
+  "dashboard.sub_payment": "Zahlung",
+  "dashboard.sub_renewal": "Auto-Verlängerung",
+  "dashboard.sub_period": "Zeitraum",
+  "dashboard.sub_next_payment": "Nächste Zahlung",
   "dashboard.no_warnings": "(keine)",
   "dashboard.locked": "Verriegelt",
   "dashboard.unlocked": "ENTRIEGELT",
@@ -78,7 +88,6 @@
   "dashboard.climate_off": "Aus",
   "dashboard.unknown": "Unbekannt",
   "dashboard.last_updated": "Zuletzt aktualisiert: {timestamp}",
-
   "dashboard.val.stopped": "Wird nicht geladen",
   "dashboard.val.running": "Wird geladen",
   "dashboard.val.charging": "Wird geladen",
@@ -94,7 +103,8 @@
   "dashboard.val.200v charging": "200V-Ladung",
   "dashboard.val.on": "Ein",
   "dashboard.val.off": "Aus",
-
+  "dashboard.val.active": "Aktiv",
+  "dashboard.val.monthly": "Monatlich",
   "commands.lock": "Verriegeln",
   "commands.unlock": "Entriegeln",
   "commands.climate_on": "Klima ein",
@@ -117,7 +127,6 @@
   "commands.cooler": "kälter",
   "commands.normal": "normal",
   "commands.hotter": "wärmer",
-
   "trips.include_locations": "Standorte einbeziehen",
   "trips.locations_tooltip": "Start-/Ziel-GPS-Koordinaten abrufen (langsamer, 2 API-Aufrufe pro Fahrt)",
   "trips.export_csv": "CSV exportieren",
@@ -146,9 +155,7 @@
   "trips.location_tooltip": "Doppelklicken, um in OpenStreetMap zu öffnen",
   "trips.not_available": "Fahrtenverlauf ist für dieses Konto nicht verfügbar ({role})",
   "trips.failed": "Fahrtenverlauf konnte nicht geladen werden",
-
   "status.ready": "Bereit",
-
   "workers.logging_in": "Anmeldung läuft...",
   "workers.completing_login": "Anmeldung wird abgeschlossen...",
   "workers.loading_status": "Status wird geladen...",
@@ -159,14 +166,12 @@
   "workers.no_command_id": "{label}: keine Befehls-ID zurückgegeben",
   "workers.device_verification": "Gerätebestätigungs-E-Mail wird angefordert...",
   "workers.verifying_link": "Link wird überprüft...",
-
   "error.network": "Verbindung zu den Honda-Servern nicht möglich. Bitte überprüfen Sie Ihre Internetverbindung.",
   "error.invalid_credentials": "Ungültige E-Mail oder Passwort. Bitte versuchen Sie es erneut.",
   "error.account_locked": "Konto vorübergehend gesperrt. Bitte versuchen Sie es später erneut.",
   "error.auth_failed": "Authentifizierung fehlgeschlagen: {detail}",
   "error.api_error": "Honda-Server haben einen Fehler zurückgegeben (HTTP {status}). Bitte versuchen Sie es später erneut.",
   "error.unexpected": "Ein unerwarteter Fehler ist aufgetreten: {detail}",
-
   "schedules.climate": "Klimazeitplan",
   "schedules.charge": "Ladesperre",
   "schedules.climate_settings": "Klimaeinstellungen",

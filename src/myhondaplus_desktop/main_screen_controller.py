@@ -3,11 +3,13 @@
 import logging
 
 from . import __version__
+from .config import image_cache_dir
 from .i18n import t
 from .widgets.schedules import ChargeLimitDialog, ClimateSettingsDialog
 from .workers import (
     CommandWorker,
     DashboardWorker,
+    ImageWorker,
     ScheduleLoadWorker,
     ScheduleSaveWorker,
     UpdateCheckWorker,
@@ -34,6 +36,7 @@ class MainScreenController:
         self._update_worker = None
         self._schedule_worker = None
         self._schedule_save_worker = None
+        self._image_worker = None
 
     def set_api(self, api):
         self._api = api
@@ -51,6 +54,7 @@ class MainScreenController:
         self._settings.save()
         self._reset_schedule_cache()
         self._view.update_dashboard_vin(vin)
+        self._apply_vehicle_details(vin)
         self._load_dashboard()
 
     def handle_refresh_current_tab(self, fresh: bool = False):
@@ -58,11 +62,11 @@ class MainScreenController:
         index = self._view.current_tab_index()
         if index == 0:
             self._load_dashboard(fresh=fresh)
-        elif index == 1:
+        elif index == 2:
             self._view.load_trips()
 
     def handle_tab_changed(self, index: int):
-        if index == 1:
+        if index == 2:
             self._view.load_trips()
 
     def handle_auth_error(self):
@@ -168,11 +172,34 @@ class MainScreenController:
         self._schedule_worker.error.connect(self._view.show_error)
         self._schedule_worker.start()
 
+    def _current_vehicle(self, vin: str):
+        for v in self._vehicles:
+            if (getattr(v, "vin", None) or v.get("vin")) == vin:
+                return v
+        return None
+
+    def _apply_vehicle_details(self, vin: str):
+        vehicle = self._current_vehicle(vin)
+        if vehicle:
+            self._view.set_capabilities(getattr(vehicle, "capabilities", None))
+            self._view.set_vehicle_info(vehicle)
+            self._view.set_subscription(getattr(vehicle, "subscription", None))
+            self._load_vehicle_image(vehicle)
+
+    def _load_vehicle_image(self, vehicle):
+        url = getattr(vehicle, "image_front", "") or ""
+        if not url:
+            return
+        self._image_worker = ImageWorker(url, image_cache_dir())
+        self._image_worker.finished.connect(self._view.set_vehicle_image)
+        self._image_worker.start()
+
     def _apply_vehicles(self, vehicles: list[dict]):
         self._vehicles = vehicles
         vin = self._view.populate_vehicles(vehicles, self._settings.vin)
         if vin:
             self._view.update_dashboard_vin(vin)
+            self._apply_vehicle_details(vin)
             self._load_dashboard()
 
     def _reset_schedule_cache(self):
@@ -201,11 +228,12 @@ class MainScreenController:
         self._dashboard_worker.progress.connect(self._view.show_status)
         self._dashboard_worker.start()
 
-    def _on_dashboard_loaded(self, status: dict):
+    def _on_dashboard_loaded(self, result):
+        status, stale = result
         self._view.set_refresh_enabled(True)
         self._view.update_dashboard_status(status)
         self._view.set_dashboard_actions_enabled(True)
-        if status.pop("_refresh_stale", False):
+        if stale:
             self._view.show_warning(t("app.refresh_stale"))
         else:
             self._view.show_success(t("app.status_loaded"))

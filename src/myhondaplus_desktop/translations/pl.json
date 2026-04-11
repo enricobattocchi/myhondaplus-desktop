@@ -9,6 +9,7 @@
   "app.refresh_stale": "Samochód nie odpowiedział — wyświetlanie danych z pamięci podręcznej",
   "app.dashboard": "Panel",
   "app.trips": "Podróże",
+  "app.vehicle": "Pojazd",
   "app.schedules": "Harmonogramy",
   "app.update_available": "Wersja {version} jest dostępna",
   "app.download": "Pobierz",
@@ -18,7 +19,6 @@
   "app.language": "Język:",
   "app.restart_language": "Język zmieni się po ponownym uruchomieniu.",
   "app.session_expired": "Sesja wygasła. Zaloguj się ponownie.",
-
   "login.email": "E-mail:",
   "login.email_placeholder": "uzytkownik@przyklad.pl",
   "login.password": "Hasło:",
@@ -34,7 +34,6 @@
   "login.help_text": "Użyj tego samego adresu e-mail i hasła co w aplikacji My Honda+.",
   "login.verification_text": "Honda wysłała e-mail weryfikacyjny na Twój adres.\n\n1. Otwórz e-mail od Hondy\n2. Kliknij prawym przyciskiem myszy na link weryfikacyjny\n3. Skopiuj adres URL — NIE klikaj w link\n4. Wklej pełny URL poniżej:",
   "login.verification_cancelled": "Weryfikacja anulowana",
-
   "dashboard.battery": "Akumulator",
   "dashboard.security": "Bezpieczeństwo",
   "dashboard.location": "Lokalizacja",
@@ -67,6 +66,17 @@
   "dashboard.vin": "VIN",
   "dashboard.odometer": "Licznik km",
   "dashboard.ignition": "Zapłon",
+  "dashboard.model": "Model",
+  "dashboard.grade": "Wersja",
+  "dashboard.year": "Rok modelowy",
+  "dashboard.subscription": "Subskrypcja",
+  "dashboard.package": "Pakiet",
+  "dashboard.sub_status": "Status",
+  "dashboard.sub_price": "Cena",
+  "dashboard.sub_payment": "Płatność",
+  "dashboard.sub_renewal": "Auto-odnowienie",
+  "dashboard.sub_period": "Okres",
+  "dashboard.sub_next_payment": "Kolejna płatność",
   "dashboard.no_warnings": "(brak)",
   "dashboard.locked": "Zamknięte",
   "dashboard.unlocked": "ODBLOKOWANE",
@@ -78,7 +88,6 @@
   "dashboard.climate_off": "Wyłączona",
   "dashboard.unknown": "Nieznany",
   "dashboard.last_updated": "Ostatnia aktualizacja: {timestamp}",
-
   "dashboard.val.stopped": "Nie ładuje",
   "dashboard.val.running": "Ładowanie",
   "dashboard.val.charging": "Ładowanie",
@@ -94,7 +103,8 @@
   "dashboard.val.200v charging": "Ładowanie 200V",
   "dashboard.val.on": "Włączony",
   "dashboard.val.off": "Wyłączony",
-
+  "dashboard.val.active": "Aktywne",
+  "dashboard.val.monthly": "Miesięcznie",
   "commands.lock": "Zablokuj",
   "commands.unlock": "Odblokuj",
   "commands.climate_on": "Klima włącz",
@@ -117,7 +127,6 @@
   "commands.cooler": "chłodniej",
   "commands.normal": "normalna",
   "commands.hotter": "cieplej",
-
   "trips.include_locations": "Uwzględnij lokalizacje",
   "trips.locations_tooltip": "Pobierz współrzędne GPS początku/końca (wolniejsze, 2 wywołania API na podróż)",
   "trips.export_csv": "Eksportuj CSV",
@@ -146,9 +155,7 @@
   "trips.location_tooltip": "Kliknij dwukrotnie, aby otworzyć w OpenStreetMap",
   "trips.not_available": "Historia podróży nie jest dostępna dla tego konta ({role})",
   "trips.failed": "Nie udało się załadować historii podróży",
-
   "status.ready": "Gotowe",
-
   "workers.logging_in": "Logowanie...",
   "workers.completing_login": "Kończenie logowania...",
   "workers.loading_status": "Ładowanie statusu...",
@@ -159,14 +166,12 @@
   "workers.no_command_id": "{label}: nie zwrócono ID polecenia",
   "workers.device_verification": "Wysyłanie e-maila weryfikacyjnego urządzenia...",
   "workers.verifying_link": "Weryfikacja linku...",
-
   "error.network": "Nie można połączyć się z serwerami Honda. Sprawdź połączenie internetowe.",
   "error.invalid_credentials": "Nieprawidłowy e-mail lub hasło. Spróbuj ponownie.",
   "error.account_locked": "Konto tymczasowo zablokowane. Spróbuj ponownie później.",
   "error.auth_failed": "Uwierzytelnianie nie powiodło się: {detail}",
   "error.api_error": "Serwery Honda zwróciły błąd (HTTP {status}). Spróbuj ponownie później.",
   "error.unexpected": "Wystąpił nieoczekiwany błąd: {detail}",
-
   "schedules.climate": "Harmonogram klimatyzacji",
   "schedules.charge": "Zakaz ładowania",
   "schedules.climate_settings": "Ustawienia klimatyzacji",

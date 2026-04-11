@@ -130,6 +130,22 @@ class FakeView:
     def load_trips(self):
         self.load_trips_calls += 1
 
+    def set_capabilities(self, caps):
+        self.capabilities_calls = getattr(self, "capabilities_calls", [])
+        self.capabilities_calls.append(caps)
+
+    def set_vehicle_info(self, vehicle):
+        self.vehicle_info_calls = getattr(self, "vehicle_info_calls", [])
+        self.vehicle_info_calls.append(vehicle)
+
+    def set_vehicle_image(self, path):
+        self.vehicle_image_calls = getattr(self, "vehicle_image_calls", [])
+        self.vehicle_image_calls.append(path)
+
+    def set_subscription(self, subscription):
+        self.subscription_calls = getattr(self, "subscription_calls", [])
+        self.subscription_calls.append(subscription)
+
     def open_charge_limit_dialog(self, status, on_accept):
         self.charge_limit_dialog = (status, on_accept)
 
@@ -330,7 +346,7 @@ def test_dashboard_loaded_shows_warning_when_refresh_stale(monkeypatch):
 
     controller = MainScreenController(view, api, settings, lambda: None)
     controller.handle_refresh_current_tab(fresh=True)
-    dashboard_worker.finished.emit({"battery": 70, "_refresh_stale": True})
+    dashboard_worker.finished.emit(({"battery": 70}, True))
 
     assert view.warning_messages == ["app.refresh_stale"]
     assert view.success_messages == []
@@ -350,7 +366,104 @@ def test_dashboard_loaded_shows_success_when_refresh_ok(monkeypatch):
 
     controller = MainScreenController(view, api, settings, lambda: None)
     controller.handle_refresh_current_tab()
-    dashboard_worker.finished.emit({"battery": 90})
+    dashboard_worker.finished.emit(({"battery": 90}, False))
 
     assert view.success_messages == ["app.status_loaded"]
     assert view.warning_messages == []
+
+
+class FakeCapabilities:
+    def __init__(self):
+        self.remote_charge = True
+        self.journey_history = False
+
+
+class FakeSubscription:
+    def __init__(self):
+        self.package_name = "Premium"
+        self.status = "Active"
+        self.start_date = "2024-01-01"
+        self.end_date = "2025-01-01"
+
+
+class FakeVehicle:
+    """A Vehicle-like object with typed attributes and dict-style access."""
+    def __init__(self, vin, name="Honda e", plate="GE395KM"):
+        self.vin = vin
+        self.name = name
+        self.plate = plate
+        self.model_name = "Honda e:Ny1"
+        self.grade = "Advance"
+        self.model_year = "2024"
+        self.image_front = ""
+        self.capabilities = FakeCapabilities()
+        self.subscription = FakeSubscription()
+
+    def get(self, key, default=None):
+        return getattr(self, key, default)
+
+    def __getitem__(self, key):
+        return getattr(self, key)
+
+    def __contains__(self, key):
+        return hasattr(self, key)
+
+
+def test_apply_vehicles_sets_capabilities_and_info(monkeypatch):
+    vehicles_worker = FakeWorker()
+    update_worker = FakeWorker()
+    dashboard_worker = FakeWorker()
+    image_worker = FakeWorker()
+    api = FakeAPI()
+    vehicle = FakeVehicle("VIN123")
+    api.tokens.vehicles = [vehicle]
+    view = FakeView()
+    settings = FakeSettings(vin="VIN123")
+
+    monkeypatch.setattr(
+        "myhondaplus_desktop.main_screen_controller.VehiclesWorker", lambda api: vehicles_worker
+    )
+    monkeypatch.setattr(
+        "myhondaplus_desktop.main_screen_controller.UpdateCheckWorker",
+        lambda current_version: update_worker,
+    )
+    monkeypatch.setattr(
+        "myhondaplus_desktop.main_screen_controller.DashboardWorker",
+        lambda api, vin, fresh=False: dashboard_worker,
+    )
+    monkeypatch.setattr(
+        "myhondaplus_desktop.main_screen_controller.ImageWorker",
+        lambda url, cache_dir: image_worker,
+    )
+
+    controller = MainScreenController(view, api, settings, lambda: None)
+    controller.activate()
+
+    assert len(view.capabilities_calls) == 1
+    assert view.capabilities_calls[0] is vehicle.capabilities
+    assert len(view.vehicle_info_calls) == 1
+    assert view.vehicle_info_calls[0] is vehicle
+    assert len(view.subscription_calls) == 1
+    assert view.subscription_calls[0] is vehicle.subscription
+
+
+def test_handle_vin_changed_sets_capabilities_and_info(monkeypatch):
+    dashboard_worker = FakeWorker()
+    api = FakeAPI()
+    view = FakeView()
+    settings = FakeSettings()
+    vehicle = FakeVehicle("VIN456")
+
+    monkeypatch.setattr(
+        "myhondaplus_desktop.main_screen_controller.DashboardWorker",
+        lambda api, vin, fresh=False: dashboard_worker,
+    )
+
+    controller = MainScreenController(view, api, settings, lambda: None)
+    controller._vehicles = [vehicle]
+    controller.handle_vin_changed("VIN456")
+
+    assert len(view.capabilities_calls) == 1
+    assert view.capabilities_calls[0] is vehicle.capabilities
+    assert len(view.vehicle_info_calls) == 1
+    assert view.vehicle_info_calls[0] is vehicle
