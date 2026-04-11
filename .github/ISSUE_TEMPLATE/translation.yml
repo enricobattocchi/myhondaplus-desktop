@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for helping translate My Honda+! Please fill in the fields below.
+        Thanks for helping translate the unofficial My Honda+ desktop app! Please fill in the fields below.
 
   - type: dropdown
     id: language

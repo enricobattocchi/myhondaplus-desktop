@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for your interest in contributing to the unofficial My Honda+ app!
+Thanks for your interest in contributing to the unofficial My Honda+ desktop app!
 
 ## Translations
 
