@@ -7,6 +7,7 @@ from .config import image_cache_dir
 from .i18n import t
 from .widgets.schedules import ChargeLimitDialog, ClimateSettingsDialog
 from .workers import (
+    ApiWorker,
     CommandWorker,
     DashboardWorker,
     ImageWorker,
@@ -37,6 +38,9 @@ class MainScreenController:
         self._schedule_worker = None
         self._schedule_save_worker = None
         self._image_worker = None
+        self._profile_worker = None
+        self._cached_profile = None
+        self._plugin_warning_climate = False
 
     def set_api(self, api):
         self._api = api
@@ -140,6 +144,21 @@ class MainScreenController:
             t("commands.locate"), self._api.request_car_location, self._view.current_vin()
         )
 
+    def load_profile(self):
+        if self._cached_profile is not None:
+            self._view.show_profile(self._cached_profile)
+            return
+        self._view.show_status(t("profile.loading"))
+        self._profile_worker = ApiWorker(self._api.get_user_profile)
+        self._profile_worker.finished.connect(self._on_profile_loaded)
+        self._profile_worker.error.connect(self._view.show_error)
+        self._profile_worker.start()
+
+    def _on_profile_loaded(self, profile):
+        self._cached_profile = profile
+        self._view.show_success(t("profile.loaded"))
+        self._view.show_profile(profile)
+
     def run_climate_schedule(self):
         vin = self._view.current_vin()
         if not vin:
@@ -182,6 +201,11 @@ class MainScreenController:
         vehicle = self._current_vehicle(vin)
         if vehicle:
             self._view.set_capabilities(getattr(vehicle, "capabilities", None))
+            ui_config = getattr(vehicle, "ui_config", None)
+            self._view.set_ui_config(ui_config)
+            self._plugin_warning_climate = (
+                getattr(ui_config, "show_plugin_warning_climate_schedule", False)
+                if ui_config else False)
             self._view.set_vehicle_info(vehicle)
             self._view.set_subscription(getattr(vehicle, "subscription", None))
             self._load_vehicle_image(vehicle)
@@ -292,6 +316,7 @@ class MainScreenController:
             schedule,
             self._save_climate_schedule,
             self._clear_climate_schedule,
+            plugin_warning=self._plugin_warning_climate,
         )
 
     def _show_charge_schedule_dialog(self, schedule: list):

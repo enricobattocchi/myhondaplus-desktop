@@ -146,14 +146,23 @@ class FakeView:
         self.subscription_calls = getattr(self, "subscription_calls", [])
         self.subscription_calls.append(subscription)
 
+    def set_ui_config(self, ui_config):
+        self.ui_config_calls = getattr(self, "ui_config_calls", [])
+        self.ui_config_calls.append(ui_config)
+
+    def show_profile(self, profile):
+        self.profile_calls = getattr(self, "profile_calls", [])
+        self.profile_calls.append(profile)
+
     def open_charge_limit_dialog(self, status, on_accept):
         self.charge_limit_dialog = (status, on_accept)
 
     def open_climate_settings_dialog(self, status, on_accept):
         self.climate_settings_dialog = (status, on_accept)
 
-    def open_climate_schedule_dialog(self, schedule, on_save, on_clear):
-        self.climate_schedule_dialog = (schedule, on_save, on_clear)
+    def open_climate_schedule_dialog(self, schedule, on_save, on_clear,
+                                     plugin_warning=False):
+        self.climate_schedule_dialog = (schedule, on_save, on_clear, plugin_warning)
 
     def open_charge_schedule_dialog(self, schedule, on_save, on_clear):
         self.charge_schedule_dialog = (schedule, on_save, on_clear)

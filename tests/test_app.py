@@ -126,12 +126,14 @@ def test_open_climate_schedule_dialog_passes_callbacks_via_constructor(monkeypat
     state = {}
 
     class FakeDialog:
-        def __init__(self, parent, schedule, on_save, on_clear):
+        def __init__(self, parent, schedule, on_save, on_clear,
+                     plugin_warning=False):
             state["dialog"] = self
             state["parent"] = parent
             state["schedule"] = schedule
             state["on_save"] = on_save
             state["on_clear"] = on_clear
+            state["plugin_warning"] = plugin_warning
 
         def exec(self):
             state["exec_called"] = True

@@ -133,6 +133,74 @@ class AboutDialog(QDialog):
             self._restart_label.setVisible(True)
 
 
+def _profile_row(label_text: str, value: str) -> QHBoxLayout:
+    h = QHBoxLayout()
+    lbl = QLabel(label_text)
+    lbl.setStyleSheet("color: gray;")
+    lbl.setFixedWidth(120)
+    val = QLabel(value)
+    val.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+    val.setCursor(Qt.CursorShape.IBeamCursor)
+    h.addWidget(lbl)
+    h.addWidget(val)
+    h.addStretch()
+    return h
+
+
+class ProfileDialog(QDialog):
+    def __init__(self, parent=None, profile=None):
+        super().__init__(parent)
+        self.setWindowTitle(t("profile.heading"))
+        self.setMinimumWidth(350)
+        layout = QVBoxLayout(self)
+
+        title = QLabel(t("profile.heading"))
+        title.setStyleSheet("font-size: 16px; font-weight: bold;")
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(title)
+
+        if profile is None:
+            loading = QLabel(t("profile.loading"))
+            loading.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            layout.addWidget(loading)
+        else:
+            name = " ".join(p for p in [
+                getattr(profile, "title", ""),
+                getattr(profile, "first_name", ""),
+                getattr(profile, "last_name", ""),
+            ] if p)
+            if name:
+                layout.addLayout(_profile_row(t("profile.name"), name))
+            email = getattr(profile, "email", "") or ""
+            if email:
+                layout.addLayout(_profile_row(t("profile.email"), email))
+            phone = getattr(profile, "phone_number", "") or ""
+            if phone:
+                layout.addLayout(_profile_row(t("profile.phone"), phone))
+            address = getattr(profile, "postal_address", "") or ""
+            if address:
+                layout.addLayout(_profile_row(t("profile.address"), address))
+            city = getattr(profile, "city", "") or ""
+            if city:
+                layout.addLayout(_profile_row(t("profile.city"), city))
+            state = getattr(profile, "state", "") or ""
+            if state:
+                layout.addLayout(_profile_row(t("profile.state"), state))
+            country = getattr(profile, "country", "") or ""
+            if country:
+                layout.addLayout(_profile_row(t("profile.country"), country))
+            lang = getattr(profile, "pref_language", "") or ""
+            if lang:
+                layout.addLayout(_profile_row(t("profile.language"), lang))
+            notif = getattr(profile, "pref_notification_setting", "") or ""
+            if notif:
+                layout.addLayout(_profile_row(t("profile.notifications"), notif))
+
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+        buttons.rejected.connect(self.accept)
+        layout.addWidget(buttons)
+
+
 def _vehicle_label(v) -> str:
     """Build a display label for a vehicle: 'Name (PLATE) — Model Grade Year'."""
     name = v.get("name") or v["vin"]
@@ -174,6 +242,13 @@ class MainScreen(QWidget):
         logout_btn = QPushButton(icon("log-out"), t("app.logout"))
         logout_btn.clicked.connect(on_logout)
         top.addWidget(logout_btn)
+
+        profile_btn = QPushButton(icon("circle-user"), "")
+        profile_btn.setFixedWidth(32)
+        profile_btn.setToolTip(t("profile.heading"))
+        profile_btn.clicked.connect(
+            lambda: self._controller.load_profile())
+        top.addWidget(profile_btn)
 
         about_btn = QPushButton(icon("info"), "")
         about_btn.setFixedWidth(32)
@@ -333,7 +408,11 @@ class MainScreen(QWidget):
 
     def set_capabilities(self, caps):
         self._dashboard.set_capabilities(caps)
+        self._vehicle_tab.set_capabilities(caps)
         self._tabs.setTabVisible(2, getattr(caps, "journey_history", True))
+
+    def set_ui_config(self, ui_config):
+        self._dashboard.set_ui_config(ui_config)
 
     def set_vehicle_info(self, vehicle):
         self._vehicle_tab.set_vehicle_info(vehicle)
@@ -343,6 +422,9 @@ class MainScreen(QWidget):
 
     def set_subscription(self, subscription):
         self._vehicle_tab.set_subscription(subscription)
+
+    def show_profile(self, profile):
+        ProfileDialog(self, profile=profile).exec()
 
     def show_update_available(self, new_version: str, release_url: str):
         self._update_info = (new_version, release_url)
@@ -386,12 +468,14 @@ class MainScreen(QWidget):
         dlg.set_accept_handler(lambda: on_accept(dlg))
         dlg.exec()
 
-    def open_climate_schedule_dialog(self, schedule: list, on_save, on_clear):
+    def open_climate_schedule_dialog(self, schedule: list, on_save, on_clear,
+                                     plugin_warning: bool = False):
         dlg = ClimateScheduleDialog(
             self,
             schedule=schedule,
             on_save=lambda rules: on_save(dlg, rules),
             on_clear=lambda: on_clear(dlg),
+            plugin_warning=plugin_warning,
         )
         dlg.exec()
 

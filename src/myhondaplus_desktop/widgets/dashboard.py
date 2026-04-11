@@ -111,6 +111,7 @@ class DashboardWidget(QWidget):
         super().__init__()
         self._actions = actions or {}
         self._labels = {}
+        self._rows = {}  # field -> QHBoxLayout (for hiding rows)
         self._status = {}
 
         grid = QGridLayout(self)
@@ -128,6 +129,7 @@ class DashboardWidget(QWidget):
             h, val = _row(icon_name, t(i18n_key))
             bat_layout.addLayout(h)
             self._labels[key] = val
+            self._rows[key] = h
         # Battery actions
         bat_actions = QHBoxLayout()
         self._charge_btn = QPushButton(icon("zap"), t("commands.charge_on"))
@@ -151,6 +153,7 @@ class DashboardWidget(QWidget):
             h, val = _row(icon_name, t(i18n_key))
             sec_layout.addLayout(h)
             self._labels[key] = val
+            self._rows[key] = h
         # Security actions
         sec_actions = QHBoxLayout()
         self._lock_btn = QPushButton(icon("lock"), t("commands.lock"))
@@ -201,6 +204,7 @@ class DashboardWidget(QWidget):
             h, val = _row(icon_name, t(i18n_key))
             clim_layout.addLayout(h)
             self._labels[key] = val
+            self._rows[key] = h
         # Climate actions
         clim_actions = QHBoxLayout()
         self._climate_btn = QPushButton(icon("snowflake"), t("commands.climate_on"))
@@ -382,6 +386,27 @@ class DashboardWidget(QWidget):
             ts_local = ts_raw
         self._timestamp.setText(
             t("dashboard.last_updated", timestamp=ts_local))
+
+    @staticmethod
+    def _set_row_visible(row: QHBoxLayout, visible: bool):
+        for i in range(row.count()):
+            widget = row.itemAt(i).widget()
+            if widget:
+                widget.setVisible(visible)
+
+    def set_ui_config(self, ui_config):
+        if ui_config is None:
+            return
+        if "all_windows_closed" in self._rows:
+            self._set_row_visible(
+                self._rows["all_windows_closed"],
+                not getattr(ui_config, "hide_window_status", False))
+        if "interior_temp" in self._rows:
+            self._set_row_visible(
+                self._rows["interior_temp"],
+                not getattr(ui_config, "hide_internal_temperature", False))
+        if getattr(ui_config, "hide_climate_settings", False):
+            self._settings_btn.setVisible(False)
 
     def set_capabilities(self, caps):
         mapping = {

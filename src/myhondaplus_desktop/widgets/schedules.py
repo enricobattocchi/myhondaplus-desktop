@@ -276,7 +276,7 @@ class ClimateScheduleDialog(QDialog):
     """View and manage climate schedule slots."""
 
     def __init__(self, parent=None, schedule=None,
-                 on_save=None, on_clear=None):
+                 on_save=None, on_clear=None, plugin_warning: bool = False):
         super().__init__(parent)
         self.setWindowTitle(t("schedules.climate"))
         self.setMinimumWidth(450)
@@ -288,6 +288,13 @@ class ClimateScheduleDialog(QDialog):
         self._saving = False
 
         self._layout = QVBoxLayout(self)
+
+        if plugin_warning:
+            warn = QLabel(t("schedules.plugin_warning"))
+            warn.setStyleSheet(
+                "color: #e67e22; font-style: italic; padding: 4px;")
+            warn.setWordWrap(True)
+            self._layout.addWidget(warn)
 
         self._status_label = QLabel("")
         self._status_label.setStyleSheet("color: gray; font-style: italic;")

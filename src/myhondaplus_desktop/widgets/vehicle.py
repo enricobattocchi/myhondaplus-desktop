@@ -78,9 +78,46 @@ class VehicleWidget(QWidget):
         h, val = _row("calendar", t("dashboard.year"))
         veh_layout.addLayout(h)
         self._year_label = val
+        h, val = _row("fuel", t("dashboard.fuel"))
+        veh_layout.addLayout(h)
+        self._fuel_label = val
+        h, val = _row("door-open", t("dashboard.doors"))
+        veh_layout.addLayout(h)
+        self._doors_label = val
+        h, val = _row("settings", t("dashboard.transmission"))
+        veh_layout.addLayout(h)
+        self._transmission_label = val
+        h, val = _row("gauge", t("dashboard.weight"))
+        veh_layout.addLayout(h)
+        self._weight_label = val
+        h, val = _row("calendar", t("dashboard.registration"))
+        veh_layout.addLayout(h)
+        self._registration_label = val
+        h, val = _row("calendar", t("dashboard.production"))
+        veh_layout.addLayout(h)
+        self._production_label = val
+        h, val = _row("globe", t("dashboard.country"))
+        veh_layout.addLayout(h)
+        self._country_label = val
         h, val = _row("milestone", t("dashboard.odometer"))
         veh_layout.addLayout(h)
         self._odometer_label = val
+        # Capabilities section
+        cap_header = QHBoxLayout()
+        cap_icon = QLabel()
+        cap_icon.setPixmap(pixmap("settings", 14))
+        cap_icon.setFixedWidth(20)
+        self._cap_title = QLabel(t("dashboard.capabilities"))
+        self._cap_title.setStyleSheet("color: gray; font-weight: bold;")
+        cap_header.addWidget(cap_icon)
+        cap_header.addWidget(self._cap_title)
+        cap_header.addStretch()
+        veh_layout.addLayout(cap_header)
+        self._cap_container = QVBoxLayout()
+        self._cap_container.setSpacing(2)
+        self._cap_container.setContentsMargins(24, 0, 0, 0)
+        veh_layout.addLayout(self._cap_container)
+        self._cap_title.setVisible(False)
         left = QVBoxLayout()
         left.addWidget(veh_box)
         left.addStretch()
@@ -110,6 +147,22 @@ class VehicleWidget(QWidget):
         h, val = _row("calendar", t("dashboard.sub_next_payment"))
         sub_layout.addLayout(h)
         self._sub_next_payment_label = val
+        # Services section
+        svc_header = QHBoxLayout()
+        svc_icon = QLabel()
+        svc_icon.setPixmap(pixmap("settings", 14))
+        svc_icon.setFixedWidth(20)
+        self._sub_services_title = QLabel()
+        self._sub_services_title.setStyleSheet("color: gray; font-weight: bold;")
+        svc_header.addWidget(svc_icon)
+        svc_header.addWidget(self._sub_services_title)
+        svc_header.addStretch()
+        sub_layout.addLayout(svc_header)
+        self._sub_services_container = QVBoxLayout()
+        self._sub_services_container.setSpacing(2)
+        self._sub_services_container.setContentsMargins(24, 0, 0, 0)
+        sub_layout.addLayout(self._sub_services_container)
+        self._sub_services_title.setVisible(False)
         self._sub_box.setVisible(False)
         right = QVBoxLayout()
         right.addWidget(self._sub_box)
@@ -119,10 +172,68 @@ class VehicleWidget(QWidget):
     def set_vin(self, vin: str):
         self._vin_label.setText(vin)
 
+    _CAP_FIELDS = [
+        ("remote_lock", "dashboard.cap_lock_unlock"),
+        ("remote_climate", "dashboard.cap_climate"),
+        ("remote_charge", "dashboard.cap_charging"),
+        ("remote_horn", "dashboard.cap_horn"),
+        ("digital_key", "dashboard.cap_digital_key"),
+        ("car_finder", "dashboard.cap_car_finder"),
+        ("geo_fence", "dashboard.cap_geo_fence"),
+        ("journey_history", "dashboard.cap_journeys"),
+        ("send_poi", "dashboard.cap_send_nav"),
+        ("charge_schedule", "dashboard.cap_charge_schedule"),
+        ("climate_schedule", "dashboard.cap_climate_schedule"),
+        ("max_charge", "dashboard.cap_max_charge"),
+    ]
+
+    def set_capabilities(self, caps):
+        while self._cap_container.count():
+            item = self._cap_container.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+        if caps is None:
+            self._cap_title.setVisible(False)
+            return
+        active = [t(i18n_key) for field, i18n_key in self._CAP_FIELDS
+                  if getattr(caps, field, False)]
+        if active:
+            self._cap_title.setText(
+                f"{t('dashboard.capabilities')} ({len(active)})")
+            for name in active:
+                lbl = QLabel(f"• {name}")
+                lbl.setStyleSheet("font-size: 11px;")
+                self._cap_container.addWidget(lbl)
+        else:
+            self._cap_title.setText(t("dashboard.capabilities"))
+        self._cap_title.setVisible(True)
+
     def set_vehicle_info(self, vehicle):
         self._model_label.setText(getattr(vehicle, "model_name", "") or "")
         self._grade_label.setText(getattr(vehicle, "grade", "") or "")
         self._year_label.setText(getattr(vehicle, "model_year", "") or "")
+        fuel = getattr(vehicle, "fuel_type", "") or ""
+        if fuel:
+            fuel_map = {"E": "ev", "X": "hybrid"}
+            self._fuel_label.setText(self._tv(fuel_map.get(fuel, "petrol")))
+        else:
+            self._fuel_label.setText("")
+        doors = getattr(vehicle, "doors", 0) or 0
+        self._doors_label.setText(str(doors) if doors else "")
+        trans = getattr(vehicle, "transmission", "") or ""
+        if trans:
+            trans_key = {"A": "automatic", "M": "manual"}.get(trans, trans)
+            self._transmission_label.setText(self._tv(trans_key))
+        else:
+            self._transmission_label.setText("")
+        weight = getattr(vehicle, "weight", 0) or 0
+        self._weight_label.setText(f"{weight:.0f} kg" if weight else "")
+        self._registration_label.setText(
+            getattr(vehicle, "registration_date", "") or "")
+        self._production_label.setText(
+            getattr(vehicle, "production_date", "") or "")
+        self._country_label.setText(
+            getattr(vehicle, "country_code", "") or "")
 
     def set_vehicle_image(self, path: str):
         pm = QPixmap(path)
@@ -160,6 +271,23 @@ class VehicleWidget(QWidget):
         self._sub_period_label.setText(period)
         self._sub_next_payment_label.setText(
             getattr(subscription, "next_payment_date", "") or "")
+        # Services list
+        while self._sub_services_container.count():
+            item = self._sub_services_container.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+        services = getattr(subscription, "services", []) or []
+        if services:
+            self._sub_services_title.setText(
+                f"{t('dashboard.sub_services')} ({len(services)})")
+            self._sub_services_title.setVisible(True)
+            for svc in services:
+                desc = getattr(svc, "description", "") or getattr(svc, "code", "")
+                lbl = _selectable(QLabel(desc))
+                lbl.setStyleSheet("font-size: 11px;")
+                self._sub_services_container.addWidget(lbl)
+        else:
+            self._sub_services_title.setVisible(False)
         self._sub_box.setVisible(True)
 
     def update_odometer(self, status):
