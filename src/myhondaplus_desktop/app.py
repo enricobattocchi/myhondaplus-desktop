@@ -28,7 +28,8 @@ from .i18n import active_language, available_languages, load_language, t
 from .icons import icon, pixmap
 from .main_screen_controller import MainScreenController
 from .session import AppSession
-from .widgets.dashboard import DashboardWidget
+from .widgets.dashboard import DashboardWidget, _dms_to_decimal
+from .widgets.geofence import GeofenceWidget
 from .widgets.login import LoginWidget
 from .widgets.schedules import (
     ChargeLimitDialog,
@@ -309,6 +310,15 @@ class MainScreen(QWidget):
         self._vehicle_tab = VehicleWidget()
         self._tabs.addTab(self._vehicle_tab, icon("info"), t("app.vehicle"))
 
+        # Geofence tab
+        self._geofence_tab = GeofenceWidget(actions={
+            "on_save": lambda lat, lon, r, name: self._controller.save_geofence(
+                lat, lon, r, name),
+            "on_clear": lambda: self._controller.clear_geofence(),
+            "on_refresh": lambda: self._controller.load_geofence(),
+        })
+        self._tabs.addTab(self._geofence_tab, icon("map-pin"), t("geofence.title"))
+
         # Trips tab
         self._trips = TripsWidget(
             get_api=lambda: self._api,
@@ -405,11 +415,17 @@ class MainScreen(QWidget):
     def update_dashboard_status(self, status: dict):
         self._dashboard.update_status(status)
         self._vehicle_tab.update_odometer(status)
+        # Forward car location to geofence tab
+        lat = _dms_to_decimal(status.get("latitude", ""))
+        lon = _dms_to_decimal(status.get("longitude", ""))
+        if lat is not None and lon is not None:
+            self._geofence_tab.set_car_location(lat, lon)
 
     def set_capabilities(self, caps):
         self._dashboard.set_capabilities(caps)
         self._vehicle_tab.set_capabilities(caps)
-        self._tabs.setTabVisible(2, getattr(caps, "journey_history", True))
+        self._tabs.setTabVisible(2, getattr(caps, "geo_fence", True))
+        self._tabs.setTabVisible(3, getattr(caps, "journey_history", True))
 
     def set_ui_config(self, ui_config):
         self._dashboard.set_ui_config(ui_config)
@@ -422,6 +438,12 @@ class MainScreen(QWidget):
 
     def set_subscription(self, subscription):
         self._vehicle_tab.set_subscription(subscription)
+
+    def set_geofence(self, geofence):
+        self._geofence_tab.set_geofence(geofence)
+
+    def set_geofence_controls_enabled(self, enabled: bool):
+        self._geofence_tab.set_controls_enabled(enabled)
 
     def show_profile(self, profile):
         ProfileDialog(self, profile=profile).exec()
@@ -596,6 +618,8 @@ def main():
         force_theme = "dark"
     if force_theme:
         os.environ.pop("QT_QPA_PLATFORMTHEME", None)
+    # QtWebEngineWidgets must be imported before QApplication is created
+    import PyQt6.QtWebEngineWidgets  # noqa: F401
     app = QApplication(sys.argv)
     app.setApplicationName(t("app.name"))
     app.setWindowIcon(icon("app-icon"))

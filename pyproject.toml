@@ -9,9 +9,10 @@ requires-python = ">=3.11"
 license = "GPL-3.0-or-later"
 dynamic = ["version"]
 dependencies = [
-    "pymyhondaplus>=5.4.0",
+    "pymyhondaplus>=5.6.0",
     "platformdirs>=4.0",
     "PyQt6>=6.6",
+    "PyQt6-WebEngine>=6.6",
 ]
 
 [project.optional-dependencies]

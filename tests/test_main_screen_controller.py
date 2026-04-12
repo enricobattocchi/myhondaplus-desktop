@@ -154,6 +154,14 @@ class FakeView:
         self.profile_calls = getattr(self, "profile_calls", [])
         self.profile_calls.append(profile)
 
+    def set_geofence(self, geofence):
+        self.geofence_calls = getattr(self, "geofence_calls", [])
+        self.geofence_calls.append(geofence)
+
+    def set_geofence_controls_enabled(self, enabled):
+        self.geofence_controls = getattr(self, "geofence_controls", [])
+        self.geofence_controls.append(enabled)
+
     def open_charge_limit_dialog(self, status, on_accept):
         self.charge_limit_dialog = (status, on_accept)
 

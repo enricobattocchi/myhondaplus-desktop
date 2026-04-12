@@ -41,6 +41,7 @@ class MainScreenController:
         self._profile_worker = None
         self._cached_profile = None
         self._plugin_warning_climate = False
+        self._geofence_worker = None
 
     def set_api(self, api):
         self._api = api
@@ -67,10 +68,14 @@ class MainScreenController:
         if index == 0:
             self._load_dashboard(fresh=fresh)
         elif index == 2:
+            self.load_geofence()
+        elif index == 3:
             self._view.load_trips()
 
     def handle_tab_changed(self, index: int):
         if index == 2:
+            self.load_geofence()
+        elif index == 3:
             self._view.load_trips()
 
     def handle_auth_error(self):
@@ -158,6 +163,64 @@ class MainScreenController:
         self._cached_profile = profile
         self._view.show_success(t("profile.loaded"))
         self._view.show_profile(profile)
+
+    def load_geofence(self):
+        vin = self._view.current_vin()
+        if not vin:
+            return
+        self._view.show_status(t("geofence.loading"))
+        self._geofence_worker = ApiWorker(self._api.get_geofence, vin)
+        self._geofence_worker.finished.connect(self._on_geofence_loaded)
+        self._geofence_worker.error.connect(self._view.show_error)
+        self._geofence_worker.start()
+
+    def _on_geofence_loaded(self, geofence):
+        self._view.set_geofence(geofence)
+        self._view.show_success(t("geofence.loaded") if geofence else "")
+
+    def _set_and_wait_geofence(self, vin, lat, lon, radius, name):
+        self._api.set_geofence(vin, lat, lon, radius=radius, name=name)
+        return self._api.wait_for_geofence(vin, timeout=120)
+
+    def save_geofence(self, lat, lon, radius, name):
+        vin = self._view.current_vin()
+        if not vin:
+            return
+        self._view.show_status(t("geofence.saving"))
+        self._view.set_geofence_controls_enabled(False)
+        self._geofence_worker = ApiWorker(
+            self._set_and_wait_geofence, vin, lat, lon, int(radius), name)
+        self._geofence_worker.finished.connect(self._on_geofence_saved)
+        self._geofence_worker.error.connect(self._on_geofence_error)
+        self._geofence_worker.start()
+
+    def _on_geofence_saved(self, geofence):
+        self._view.set_geofence_controls_enabled(True)
+        self._view.set_geofence(geofence)
+        self._view.show_success(t("geofence.saved"))
+
+    def clear_geofence(self):
+        vin = self._view.current_vin()
+        if not vin:
+            return
+        self._view.show_status(t("geofence.clearing"))
+        self._view.set_geofence_controls_enabled(False)
+        self._geofence_worker = CommandWorker(
+            self._api, t("geofence.clear"), self._api.clear_geofence, vin)
+        self._geofence_worker.auth_error.connect(self.handle_auth_error)
+        self._geofence_worker.progress.connect(self._view.show_status)
+        self._geofence_worker.finished.connect(self._on_geofence_cleared)
+        self._geofence_worker.error.connect(self._on_geofence_error)
+        self._geofence_worker.start()
+
+    def _on_geofence_cleared(self, label):
+        self._view.set_geofence_controls_enabled(True)
+        self._view.set_geofence(None)
+        self._view.show_success(t("geofence.cleared"))
+
+    def _on_geofence_error(self, message):
+        self._view.set_geofence_controls_enabled(True)
+        self._view.show_error(message)
 
     def run_climate_schedule(self):
         vin = self._view.current_vin()
