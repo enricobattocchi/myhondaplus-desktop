@@ -559,7 +559,7 @@ class MainWindow(QMainWindow):
         super().showEvent(event)
         # Lock to the natural size after layout is computed
         self.adjustSize()
-        self.setFixedSize(self.size())
+        self.setMinimumSize(self.size())
 
     def closeEvent(self, event):
         self._session.save_settings()
