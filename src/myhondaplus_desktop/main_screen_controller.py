@@ -198,6 +198,8 @@ class MainScreenController:
         self._view.set_geofence_controls_enabled(True)
         self._view.set_geofence(geofence)
         self._view.show_success(t("geofence.saved"))
+        if geofence and not geofence.active:
+            self.load_geofence()
 
     def clear_geofence(self):
         vin = self._view.current_vin()

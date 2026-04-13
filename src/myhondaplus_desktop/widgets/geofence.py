@@ -289,7 +289,7 @@ class GeofenceWidget(QWidget):
         self._marker_lon = geofence.longitude
         self._coord_label.setText(
             f"{geofence.latitude:.6f}, {geofence.longitude:.6f}")
-        if geofence.processing:
+        if geofence.processing or geofence.waiting_activate:
             self._status_label.setText(t("geofence.processing"))
             self._status_label.setStyleSheet(
                 "color: #e67e22; font-weight: bold;")
