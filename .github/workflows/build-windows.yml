@@ -28,6 +28,11 @@ jobs:
       - name: Install app
         run: pip install -e .
 
+      - name: Get version
+        id: version
+        shell: bash
+        run: echo "version=$(python -c 'from myhondaplus_desktop import __version__; print(__version__)')" >> "$GITHUB_OUTPUT"
+
       - name: Convert SVG icon to ICO
         run: |
           python -c "
@@ -53,16 +58,16 @@ jobs:
           "
 
       - name: Build .exe
-        run: python scripts/build_pyinstaller.py --name "My-Honda-for-desktop-Windows" --icon app-icon.ico --onefile
+        run: python scripts/build_pyinstaller.py --name "My-Honda-for-desktop-${{ steps.version.outputs.version }}-Windows" --icon app-icon.ico --onefile
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: My Honda+ for desktop (Windows)
-          path: "dist/My-Honda-for-desktop-Windows.exe"
+          path: "dist/My-Honda-for-desktop-${{ steps.version.outputs.version }}-Windows.exe"
 
       - name: Attach to release
         if: github.event_name == 'release'
-        run: gh release upload "${{ github.event.release.tag_name }}" "dist/My-Honda-for-desktop-Windows.exe"
+        run: gh release upload "${{ github.event.release.tag_name }}" "dist/My-Honda-for-desktop-${{ steps.version.outputs.version }}-Windows.exe"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

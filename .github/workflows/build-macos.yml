@@ -29,6 +29,10 @@ jobs:
       - name: Install app
         run: pip install -e .
 
+      - name: Get version
+        id: version
+        run: echo "version=$(python -c 'from myhondaplus_desktop import __version__; print(__version__)')" >> "$GITHUB_OUTPUT"
+
       - name: Convert SVG icon to ICNS
         run: |
           mkdir -p icon.iconset
@@ -57,17 +61,17 @@ jobs:
             --icon-size 128 \
             --icon "My Honda+ for desktop.app" 150 200 \
             --app-drop-link 450 200 \
-            "My-Honda-for-desktop-macOS.dmg" \
+            "My-Honda-for-desktop-${{ steps.version.outputs.version }}-macOS.dmg" \
             "dist/My Honda+ for desktop.app"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: My Honda+ for desktop (macOS)
-          path: "My-Honda-for-desktop-macOS.dmg"
+          path: "My-Honda-for-desktop-${{ steps.version.outputs.version }}-macOS.dmg"
 
       - name: Attach to release
         if: github.event_name == 'release'
-        run: gh release upload "${{ github.event.release.tag_name }}" "My-Honda-for-desktop-macOS.dmg"
+        run: gh release upload "${{ github.event.release.tag_name }}" "My-Honda-for-desktop-${{ steps.version.outputs.version }}-macOS.dmg"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

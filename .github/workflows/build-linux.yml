@@ -33,6 +33,10 @@ jobs:
       - name: Install app
         run: pip install -e .
 
+      - name: Get version
+        id: version
+        run: echo "version=$(python -c 'from myhondaplus_desktop import __version__; print(__version__)')" >> "$GITHUB_OUTPUT"
+
       - name: Build with PyInstaller
         run: python scripts/build_pyinstaller.py --name "My Honda+ for desktop"
 
@@ -74,16 +78,16 @@ jobs:
           chmod +x AppDir/AppRun
 
           # Build AppImage
-          ARCH=x86_64 ./appimagetool-x86_64.AppImage AppDir "My-Honda-for-desktop-Linux-x86_64.AppImage"
+          ARCH=x86_64 ./appimagetool-x86_64.AppImage AppDir "My-Honda-for-desktop-${{ steps.version.outputs.version }}-x86_64.AppImage"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: My Honda+ for desktop (Linux)
-          path: "My-Honda-for-desktop-Linux-x86_64.AppImage"
+          path: "My-Honda-for-desktop-${{ steps.version.outputs.version }}-x86_64.AppImage"
 
       - name: Attach to release
         if: github.event_name == 'release'
-        run: gh release upload "${{ github.event.release.tag_name }}" "My-Honda-for-desktop-Linux-x86_64.AppImage"
+        run: gh release upload "${{ github.event.release.tag_name }}" "My-Honda-for-desktop-${{ steps.version.outputs.version }}-x86_64.AppImage"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

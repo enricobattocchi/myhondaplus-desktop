@@ -33,11 +33,11 @@ Tested on Honda e. Should work with other Honda Connect Europe vehicles (e:Ny1, 
 
 Pre-built binaries are available from the [latest release](https://github.com/enricobattocchi/myhondaplus-desktop/releases/latest):
 
-| Platform | Download |
-|----------|----------|
-| macOS | `My-Honda-for-desktop-macOS.dmg` |
-| Windows | `My-Honda-for-desktop-Windows.exe` |
-| Linux | `My-Honda-for-desktop-Linux-x86_64.AppImage` |
+| Platform | File |
+|----------|------|
+| macOS | `My-Honda-for-desktop-<version>-macOS.dmg` |
+| Windows | `My-Honda-for-desktop-<version>-Windows.exe` |
+| Linux | `My-Honda-for-desktop-<version>-x86_64.AppImage` |
 
 ### Install via pip
 
