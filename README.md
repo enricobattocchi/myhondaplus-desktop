@@ -1,8 +1,19 @@
-# My Honda+ for desktop
+# My Honda+ for desktop (unofficial)
 
 Unofficial desktop GUI for Honda Connect Europe (My Honda+). Control and monitor your Honda vehicle from your computer.
 
 Built with PyQt6 and [pymyhondaplus](https://github.com/enricobattocchi/pymyhondaplus).
+
+> **Europe only** — this app uses the Honda Connect Europe API (My Honda+ app). It does **not** work with HondaLink (North America), Honda Connect (Japan/Asia), or any non-European Honda connected service.
+
+## Disclaimer
+
+This project is **unofficial** and **not affiliated with, endorsed by, or connected to Honda Motor Co., Ltd.** in any way.
+
+- Use at your own risk. The authors accept no responsibility for any damage to your vehicle, account, or warranty.
+- Honda may change their API at any time, which could break this application without notice.
+- Sending remote commands (lock, unlock, climate, charging) to your vehicle is your responsibility.
+- This project does not store or transmit your credentials to any third party. Authentication is performed directly with Honda's servers. Tokens are encrypted at rest.
 
 ## Features
 
@@ -111,15 +122,6 @@ Available: Czech, Danish, Dutch, English, French, German, Hungarian, Italian, No
 
 - [pymyhondaplus](https://github.com/enricobattocchi/pymyhondaplus) — Python client library and CLI for the Honda Connect Europe API
 - [myhondaplus-homeassistant](https://github.com/enricobattocchi/myhondaplus-homeassistant) — Home Assistant integration
-
-## Disclaimer
-
-This project is **unofficial** and **not affiliated with, endorsed by, or connected to Honda Motor Co., Ltd.** in any way.
-
-- Use at your own risk. The authors accept no responsibility for any damage to your vehicle, account, or warranty.
-- Honda may change their API at any time, which could break this application without notice.
-- Sending remote commands (lock, unlock, climate, charging) to your vehicle is your responsibility.
-- This project does not store or transmit your credentials to any third party. Authentication is performed directly with Honda's servers. Tokens are encrypted at rest.
 
 ## License
 
