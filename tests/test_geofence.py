@@ -1,80 +1,44 @@
-"""Tests for the geofence widget JS queueing logic."""
+"""Tests for the geofence tile-map math functions."""
 
-from unittest.mock import MagicMock
-
-
-class FakePage:
-    def __init__(self):
-        self.js_calls = []
-
-    def runJavaScript(self, code):
-        self.js_calls.append(code)
-
-
-def _make_widget():
-    """Create a GeofenceWidget-like object with just the JS queueing logic."""
-
-    class Widget:
-        def __init__(self):
-            self._map = MagicMock()
-            self._map.page.return_value = FakePage()
-            self._map_ready = False
-            self._pending_js = []
-            self._marker_lat = 0.0
-            self._marker_lon = 0.0
-            self._car_lat = None
-            self._car_lon = None
-
-        def _run_js(self, code):
-            if self._map_ready:
-                self._map.page().runJavaScript(code)
-            else:
-                self._pending_js.append(code)
-
-        def _on_map_ready(self):
-            self._map_ready = True
-            pending = list(self._pending_js)
-            self._pending_js.clear()
-            for code in pending:
-                self._map.page().runJavaScript(code)
-
-    return Widget()
+from myhondaplus_desktop.widgets.geofence import (
+    _km_to_scene_pixels,
+    _lat_lon_to_scene,
+    _lat_lon_to_tile,
+    _scene_to_lat_lon,
+    _tile_to_lat_lon,
+    _zoom_to_fit_radius,
+)
 
 
-def test_run_js_queues_before_map_ready():
-    w = _make_widget()
-    assert w._map_ready is False
-    w._run_js("setMarker(1, 2, 3)")
-    w._run_js("setRadius(5)")
-    assert w._pending_js == ["setMarker(1, 2, 3)", "setRadius(5)"]
-    assert w._map.page().js_calls == []
+def test_lat_lon_to_tile_center():
+    x, y = _lat_lon_to_tile(0, 0, 0)
+    assert x == 0.5
+    assert abs(y - 0.5) < 0.001
 
 
-def test_run_js_executes_after_map_ready():
-    w = _make_widget()
-    w._on_map_ready()
-    assert w._map_ready is True
-    w._run_js("setMarker(1, 2, 3)")
-    assert w._map.page().js_calls == ["setMarker(1, 2, 3)"]
-    assert w._pending_js == []
+def test_lat_lon_tile_roundtrip():
+    lat, lon = 45.0, 10.0
+    for zoom in [5, 10, 15]:
+        tx, ty = _lat_lon_to_tile(lat, lon, zoom)
+        lat2, lon2 = _tile_to_lat_lon(tx, ty, zoom)
+        assert abs(lat - lat2) < 0.0001
+        assert abs(lon - lon2) < 0.0001
 
 
-def test_on_map_ready_replays_pending_js():
-    w = _make_widget()
-    w._run_js("setMarker(1, 2, 3)")
-    w._run_js("setRadius(5)")
-    assert len(w._map.page().js_calls) == 0
-    w._on_map_ready()
-    assert w._map.page().js_calls == ["setMarker(1, 2, 3)", "setRadius(5)"]
-    assert w._pending_js == []
+def test_scene_roundtrip():
+    lat, lon, zoom = 48.8566, 2.3522, 12
+    sx, sy = _lat_lon_to_scene(lat, lon, zoom)
+    lat2, lon2 = _scene_to_lat_lon(sx, sy, zoom)
+    assert abs(lat - lat2) < 0.0001
+    assert abs(lon - lon2) < 0.0001
 
 
-def test_pending_cleared_after_replay():
-    w = _make_widget()
-    w._run_js("a()")
-    w._run_js("b()")
-    w._on_map_ready()
-    # After replay, new calls go directly
-    w._run_js("c()")
-    assert w._map.page().js_calls == ["a()", "b()", "c()"]
-    assert w._pending_js == []
+def test_km_to_pixels_larger_at_higher_zoom():
+    px_z10 = _km_to_scene_pixels(45.0, 1.0, 10)
+    px_z15 = _km_to_scene_pixels(45.0, 1.0, 15)
+    assert px_z15 > px_z10
+
+
+def test_zoom_to_fit_radius():
+    z = _zoom_to_fit_radius(45.0, 5.0, 600)
+    assert 2 <= z <= 18

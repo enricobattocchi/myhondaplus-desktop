@@ -87,7 +87,7 @@ The Vehicle tab shows your car's specifications, subscription services, and capa
 
 ### Geofence
 
-The Geofence tab displays an interactive map (Leaflet via QWebEngine) where you can draw a circular geofence around your vehicle's location. Use the Save button to store the geofence on Honda's servers, or Clear to remove it.
+The Geofence tab displays an interactive map where you can place a circular geofence around your vehicle's location. Use the Save button to store the geofence on Honda's servers, or Clear to remove it.
 
 ### Language
 

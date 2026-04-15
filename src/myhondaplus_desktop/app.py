@@ -618,8 +618,6 @@ def main():
         force_theme = "dark"
     if force_theme:
         os.environ.pop("QT_QPA_PLATFORMTHEME", None)
-    # QtWebEngineWidgets must be imported before QApplication is created
-    import PyQt6.QtWebEngineWidgets  # noqa: F401
     app = QApplication(sys.argv)
     app.setApplicationName(t("app.name"))
     app.setWindowIcon(icon("app-icon"))
