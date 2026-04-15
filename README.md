@@ -13,6 +13,9 @@ Built with PyQt6 and [pymyhondaplus](https://github.com/enricobattocchi/pymyhond
 - **Warnings** — active warning lamps
 - **Remote commands** — lock/unlock, climate on/off/settings, charge on/off/limit, horn + lights, locate
 - **Trip history** — monthly trip list with statistics, optional GPS locations, CSV export
+- **Vehicle info** — model details, specifications, subscription services, and vehicle capabilities
+- **Geofence** — set and manage a geofence boundary on an interactive map
+- **Charge & climate schedules** — view and manage scheduled charging and climate control
 - **Multi-vehicle support** — dropdown with vehicle name and plate number, auto-populated from your account
 - **Secure storage** — tokens and device keys encrypted at rest via OS keyring or machine-derived key
 - **Persistent login** — auto-refresh on expiry, no need to re-enter credentials
@@ -77,6 +80,14 @@ Commands that could be disruptive (unlock, horn + lights) require confirmation b
 ### Trips
 
 Switch to the Trips tab to see trip history for the current month. Use the arrows to navigate between months. Enable "Include locations" for start/end GPS coordinates (double-click to open in OpenStreetMap). Export to CSV with the Export button.
+
+### Vehicle
+
+The Vehicle tab shows your car's specifications, subscription services, and capabilities as reported by Honda Connect.
+
+### Geofence
+
+The Geofence tab displays an interactive map (Leaflet via QWebEngine) where you can draw a circular geofence around your vehicle's location. Use the Save button to store the geofence on Honda's servers, or Clear to remove it.
 
 ### Language
 
