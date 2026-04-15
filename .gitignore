@@ -8,6 +8,7 @@ build/
 .ruff_cache/
 .codex
 .claude/
+!.claude/skills/
 *.pem
 *.json
 !src/myhondaplus_desktop/translations/*.json
