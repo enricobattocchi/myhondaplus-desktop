@@ -12,10 +12,12 @@ Built with PyQt6 and [pymyhondaplus](https://github.com/enricobattocchi/pymyhond
 - **Climate** — active/off status, cabin and interior temperature
 - **Warnings** — active warning lamps
 - **Remote commands** — lock/unlock, climate on/off/settings, charge on/off/limit, horn + lights, locate
+- **Charge & climate schedules** — view, create, and clear charge prohibition and climate schedules
+- **Vehicle info** — VIN, model, grade, year, fuel type, weight, odometer, production date, registration date, country
+- **Subscription details** — package, status, price, payment period, renewal, services list
+- **Vehicle capabilities** — list of supported features for your vehicle
+- **Geofence** — interactive map to set, view, and clear a geofence around your vehicle
 - **Trip history** — monthly trip list with statistics, optional GPS locations, CSV export
-- **Vehicle info** — model details, specifications, subscription services, and vehicle capabilities
-- **Geofence** — set and manage a geofence boundary on an interactive map
-- **Charge & climate schedules** — view and manage scheduled charging and climate control
 - **Multi-vehicle support** — dropdown with vehicle name and plate number, auto-populated from your account
 - **Secure storage** — tokens and device keys encrypted at rest via OS keyring or machine-derived key
 - **Persistent login** — auto-refresh on expiry, no need to re-enter credentials
