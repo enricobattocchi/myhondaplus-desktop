@@ -4,7 +4,7 @@ import logging
 
 from . import __version__
 from .config import image_cache_dir
-from .i18n import t
+from .i18n import t, t_lib
 from .widgets.schedules import ChargeLimitDialog, ClimateSettingsDialog
 from .workers import (
     ApiWorker,
@@ -180,7 +180,7 @@ class MainScreenController:
 
     def _set_and_wait_geofence(self, vin, lat, lon, radius, name):
         self._api.set_geofence(vin, lat, lon, radius=radius, name=name)
-        return self._api.wait_for_geofence(vin, timeout=120)
+        return self._api.wait_for_geofence(vin, timeout=420)
 
     def save_geofence(self, lat, lon, radius, name):
         vin = self._view.current_vin()
@@ -197,11 +197,19 @@ class MainScreenController:
     def _on_geofence_saved(self, geofence):
         self._view.set_geofence_controls_enabled(True)
         self._view.set_geofence(geofence)
-        failure_states = ("failure", "timeout")
-        if geofence and (geofence.activate_status in failure_states
-                         or geofence.deactivate_status in failure_states):
-            self._view.show_error(t("geofence.save_failed"))
-            return
+        if geofence is not None:
+            # Use Honda's specific failure/timeout texts via the library —
+            # more informative than a generic "save failed" banner.
+            if (geofence.activate_status == "timeout"
+                    or geofence.deactivate_status == "timeout"):
+                self._view.show_error(t_lib("geofence_timeout_error"))
+                return
+            if geofence.activate_status == "failure":
+                self._view.show_error(t_lib("geofence_activate_error"))
+                return
+            if geofence.deactivate_status == "failure":
+                self._view.show_error(t_lib("geofence_deactivate_error"))
+                return
         self._view.show_success(t("geofence.saved"))
         if geofence and not geofence.active:
             self.load_geofence()

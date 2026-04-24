@@ -3,14 +3,23 @@
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPixmap
 from PyQt6.QtWidgets import (
+    QDialog,
+    QDialogButtonBox,
     QGroupBox,
     QHBoxLayout,
     QLabel,
+    QPushButton,
+    QScrollArea,
     QVBoxLayout,
     QWidget,
 )
 
-from ..i18n import active_capability_labels, t
+from ..i18n import (
+    active_capability_labels,
+    not_supported_capability_labels,
+    t,
+    t_lib,
+)
 from ..icons import pixmap
 
 
@@ -102,22 +111,27 @@ class VehicleWidget(QWidget):
         h, val = _row("milestone", t("dashboard.odometer"))
         veh_layout.addLayout(h)
         self._odometer_label = val
-        # Capabilities section
+        # Capabilities section — a single button opens a modal with the
+        # full Active + Not supported lists. Keeps the vehicle panel compact.
         cap_header = QHBoxLayout()
         cap_icon = QLabel()
         cap_icon.setPixmap(pixmap("settings", 14))
         cap_icon.setFixedWidth(20)
-        self._cap_title = QLabel(t("dashboard.capabilities"))
-        self._cap_title.setStyleSheet("color: gray; font-weight: bold;")
+        self._cap_button = QPushButton(t("dashboard.capabilities"))
+        self._cap_button.setFlat(True)
+        self._cap_button.setStyleSheet(
+            "QPushButton { text-align: left; color: gray; font-weight: bold; "
+            "border: none; padding: 0; } "
+            "QPushButton:hover { text-decoration: underline; }"
+        )
+        self._cap_button.clicked.connect(self._show_capabilities_dialog)
+        self._cap_button.setVisible(False)
+        self._cap_active = []
+        self._cap_not_supported = []
         cap_header.addWidget(cap_icon)
-        cap_header.addWidget(self._cap_title)
+        cap_header.addWidget(self._cap_button)
         cap_header.addStretch()
         veh_layout.addLayout(cap_header)
-        self._cap_container = QVBoxLayout()
-        self._cap_container.setSpacing(2)
-        self._cap_container.setContentsMargins(24, 0, 0, 0)
-        veh_layout.addLayout(self._cap_container)
-        self._cap_title.setVisible(False)
         left = QVBoxLayout()
         left.addWidget(veh_box)
         left.addStretch()
@@ -152,17 +166,20 @@ class VehicleWidget(QWidget):
         svc_icon = QLabel()
         svc_icon.setPixmap(pixmap("settings", 14))
         svc_icon.setFixedWidth(20)
-        self._sub_services_title = QLabel()
-        self._sub_services_title.setStyleSheet("color: gray; font-weight: bold;")
+        self._sub_services_button = QPushButton()
+        self._sub_services_button.setFlat(True)
+        self._sub_services_button.setStyleSheet(
+            "QPushButton { text-align: left; color: gray; font-weight: bold; "
+            "border: none; padding: 0; } "
+            "QPushButton:hover { text-decoration: underline; }"
+        )
+        self._sub_services_button.clicked.connect(self._show_services_dialog)
+        self._sub_services_button.setVisible(False)
+        self._sub_services = []
         svc_header.addWidget(svc_icon)
-        svc_header.addWidget(self._sub_services_title)
+        svc_header.addWidget(self._sub_services_button)
         svc_header.addStretch()
         sub_layout.addLayout(svc_header)
-        self._sub_services_container = QVBoxLayout()
-        self._sub_services_container.setSpacing(2)
-        self._sub_services_container.setContentsMargins(24, 0, 0, 0)
-        sub_layout.addLayout(self._sub_services_container)
-        self._sub_services_title.setVisible(False)
         self._sub_box.setVisible(False)
         right = QVBoxLayout()
         right.addWidget(self._sub_box)
@@ -173,24 +190,31 @@ class VehicleWidget(QWidget):
         self._vin_label.setText(vin)
 
     def set_capabilities(self, caps):
-        while self._cap_container.count():
-            item = self._cap_container.takeAt(0)
-            if item.widget():
-                item.widget().deleteLater()
         if caps is None:
-            self._cap_title.setVisible(False)
+            self._cap_active = []
+            self._cap_not_supported = []
+            self._cap_button.setVisible(False)
             return
-        active_labels = active_capability_labels(caps)
-        if active_labels:
-            self._cap_title.setText(
-                f"{t('dashboard.capabilities')} ({len(active_labels)})")
-            for name in active_labels:
-                lbl = QLabel(f"• {name}")
-                lbl.setStyleSheet("font-size: 11px;")
-                self._cap_container.addWidget(lbl)
+        self._cap_active = active_capability_labels(caps)
+        self._cap_not_supported = not_supported_capability_labels(caps)
+        total = len(self._cap_active) + len(self._cap_not_supported)
+        if total == 0:
+            self._cap_button.setText(t("dashboard.capabilities"))
+            self._cap_button.setEnabled(False)
         else:
-            self._cap_title.setText(t("dashboard.capabilities"))
-        self._cap_title.setVisible(True)
+            self._cap_button.setText(
+                f"{t('dashboard.capabilities')} ({len(self._cap_active)})"
+            )
+            self._cap_button.setEnabled(True)
+        self._cap_button.setVisible(True)
+
+    def _show_capabilities_dialog(self):
+        dlg = _CapabilitiesDialog(
+            self._cap_active,
+            self._cap_not_supported,
+            parent=self,
+        )
+        dlg.exec()
 
     def set_vehicle_info(self, vehicle):
         self._model_label.setText(getattr(vehicle, "model_name", "") or "")
@@ -255,24 +279,27 @@ class VehicleWidget(QWidget):
         self._sub_period_label.setText(period)
         self._sub_next_payment_label.setText(
             getattr(subscription, "next_payment_date", "") or "")
-        # Services list
-        while self._sub_services_container.count():
-            item = self._sub_services_container.takeAt(0)
-            if item.widget():
-                item.widget().deleteLater()
+        # Services list — stored and surfaced via a modal on demand.
         services = getattr(subscription, "services", []) or []
-        if services:
-            self._sub_services_title.setText(
-                f"{t('dashboard.sub_services')} ({len(services)})")
-            self._sub_services_title.setVisible(True)
-            for svc in services:
-                desc = getattr(svc, "description", "") or getattr(svc, "code", "")
-                lbl = _selectable(QLabel(desc))
-                lbl.setStyleSheet("font-size: 11px;")
-                self._sub_services_container.addWidget(lbl)
+        self._sub_services = [
+            (
+                getattr(svc, "description", "") or getattr(svc, "code", ""),
+                getattr(svc, "code", ""),
+            )
+            for svc in services
+        ]
+        if self._sub_services:
+            self._sub_services_button.setText(
+                f"{t('dashboard.sub_services')} ({len(self._sub_services)})"
+            )
+            self._sub_services_button.setVisible(True)
         else:
-            self._sub_services_title.setVisible(False)
+            self._sub_services_button.setVisible(False)
         self._sub_box.setVisible(True)
+
+    def _show_services_dialog(self):
+        dlg = _ServicesDialog(self._sub_services, parent=self)
+        dlg.exec()
 
     def update_odometer(self, status):
         """Update odometer from dashboard status data."""
@@ -282,3 +309,96 @@ class VehicleWidget(QWidget):
             self._odometer_label.setText(f"{odometer:,} {dist}")
         else:
             self._odometer_label.setText("")
+
+
+
+class _CapabilitiesDialog(QDialog):
+    """Modal showing two bulleted lists: Active and Not supported capabilities."""
+
+    def __init__(
+        self,
+        active: list[str],
+        not_supported: list[str],
+        parent: QWidget | None = None,
+    ) -> None:
+        super().__init__(parent)
+        self.setWindowTitle(t("dashboard.capabilities"))
+        self.setModal(True)
+
+        layout = QVBoxLayout()
+        self.setLayout(layout)
+
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        inner = QWidget()
+        inner_layout = QVBoxLayout()
+        inner_layout.setContentsMargins(8, 8, 8, 8)
+        inner.setLayout(inner_layout)
+
+        def _add_section(header: str, items: list[str]) -> None:
+            if not items:
+                return
+            hdr = QLabel(f"{header} ({len(items)})")
+            hdr.setStyleSheet("font-weight: bold; padding-top: 6px;")
+            inner_layout.addWidget(hdr)
+            for item in items:
+                lbl = QLabel(f"• {item}")
+                lbl.setStyleSheet("padding-left: 12px;")
+                inner_layout.addWidget(lbl)
+
+        _add_section(t_lib("cap_active"), active)
+        _add_section(t_lib("cap_not_supported"), not_supported)
+        inner_layout.addStretch()
+
+        scroll.setWidget(inner)
+        layout.addWidget(scroll)
+
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+        buttons.rejected.connect(self.reject)
+        buttons.accepted.connect(self.accept)
+        layout.addWidget(buttons)
+
+        self.resize(420, 480)
+
+
+class _ServicesDialog(QDialog):
+    """Modal showing the list of services included in the active subscription."""
+
+    def __init__(
+        self,
+        services: list[tuple[str, str]],
+        parent: QWidget | None = None,
+    ) -> None:
+        super().__init__(parent)
+        self.setWindowTitle(t("dashboard.sub_services"))
+        self.setModal(True)
+
+        layout = QVBoxLayout()
+        self.setLayout(layout)
+
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        inner = QWidget()
+        inner_layout = QVBoxLayout()
+        inner_layout.setContentsMargins(8, 8, 8, 8)
+        inner.setLayout(inner_layout)
+
+        for description, code in services:
+            primary = description or code
+            lbl = _selectable(QLabel(f"• {primary}"))
+            inner_layout.addWidget(lbl)
+            if code and description and code != description:
+                sub = _selectable(QLabel(code))
+                sub.setStyleSheet("color: gray; font-size: 10px; padding-left: 12px;")
+                inner_layout.addWidget(sub)
+        inner_layout.addStretch()
+
+        scroll.setWidget(inner)
+        layout.addWidget(scroll)
+
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+        buttons.rejected.connect(self.reject)
+        buttons.accepted.connect(self.accept)
+        layout.addWidget(buttons)
+
+        self.resize(420, 480)

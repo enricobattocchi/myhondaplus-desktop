@@ -5,6 +5,8 @@ import locale
 import logging
 from importlib.resources import files
 
+from pymyhondaplus import get_translator as _lib_get_translator
+
 logger = logging.getLogger(__name__)
 
 _TRANSLATIONS_PKG = files("myhondaplus_desktop") / "translations"
@@ -77,23 +79,37 @@ def t(key: str, **kwargs) -> str:
     return text
 
 
-def active_capability_labels(caps) -> list[str]:
-    """Return the raw Honda API keys of a vehicle's active capabilities.
+def t_lib(key: str) -> str:
+    """Translate a key using pymyhondaplus's TRANSLATIONS store in the current locale."""
+    return _lib_get_translator(_active_lang)(key)
 
-    Delegates to VehicleCapabilities.active_api_keys() so both CLI and
-    desktop share the same behaviour, including the fallback path for
-    tokens saved by pymyhondaplus <= 5.8.0 (which didn't persist the
-    raw capability dict).
-    """
+
+def active_capability_labels(caps) -> list[str]:
+    """Return the raw Honda API keys of a vehicle's active capabilities."""
+    return _capability_labels(caps, "active")
+
+
+def not_supported_capability_labels(caps) -> list[str]:
+    """Return the raw Honda API keys of a vehicle's notSupported capabilities."""
+    return _capability_labels(caps, "notSupported")
+
+
+def _capability_labels(caps, feature_status: str) -> list[str]:
     if caps is None:
         return []
-    getter = getattr(caps, "active_api_keys", None)
-    if callable(getter):
-        return list(getter())
-    # Older VehicleCapabilities object without the helper — iterate raw
-    # directly as a safety net.
+    # Prefer the library's helpers so both CLI and desktop share behaviour,
+    # including backward-compat for tokens saved by pymyhondaplus <= 5.8.0.
+    if feature_status == "active":
+        getter = getattr(caps, "active_api_keys", None)
+        if callable(getter):
+            return list(getter())
+    elif feature_status == "notSupported":
+        getter = getattr(caps, "not_supported_api_keys", None)
+        if callable(getter):
+            return list(getter())
+    # Older VehicleCapabilities without the helper — iterate raw directly.
     raw = getattr(caps, "raw", {}) or {}
     return sorted(
         api_key for api_key, entry in raw.items()
-        if isinstance(entry, dict) and entry.get("featureStatus") == "active"
+        if isinstance(entry, dict) and entry.get("featureStatus") == feature_status
     )
