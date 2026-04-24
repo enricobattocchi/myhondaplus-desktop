@@ -10,7 +10,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from ..i18n import t
+from ..i18n import active_capability_labels, t
 from ..icons import pixmap
 
 
@@ -172,21 +172,6 @@ class VehicleWidget(QWidget):
     def set_vin(self, vin: str):
         self._vin_label.setText(vin)
 
-    _CAP_FIELDS = [
-        ("remote_lock", "dashboard.cap_lock_unlock"),
-        ("remote_climate", "dashboard.cap_climate"),
-        ("remote_charge", "dashboard.cap_charging"),
-        ("remote_horn", "dashboard.cap_horn"),
-        ("digital_key", "dashboard.cap_digital_key"),
-        ("car_finder", "dashboard.cap_car_finder"),
-        ("geo_fence", "dashboard.cap_geo_fence"),
-        ("journey_history", "dashboard.cap_journeys"),
-        ("send_poi", "dashboard.cap_send_nav"),
-        ("charge_schedule", "dashboard.cap_charge_schedule"),
-        ("climate_schedule", "dashboard.cap_climate_schedule"),
-        ("max_charge", "dashboard.cap_max_charge"),
-    ]
-
     def set_capabilities(self, caps):
         while self._cap_container.count():
             item = self._cap_container.takeAt(0)
@@ -195,12 +180,11 @@ class VehicleWidget(QWidget):
         if caps is None:
             self._cap_title.setVisible(False)
             return
-        active = [t(i18n_key) for field, i18n_key in self._CAP_FIELDS
-                  if getattr(caps, field, False)]
-        if active:
+        active_labels = active_capability_labels(caps)
+        if active_labels:
             self._cap_title.setText(
-                f"{t('dashboard.capabilities')} ({len(active)})")
-            for name in active:
+                f"{t('dashboard.capabilities')} ({len(active_labels)})")
+            for name in active_labels:
                 lbl = QLabel(f"• {name}")
                 lbl.setStyleSheet("font-size: 11px;")
                 self._cap_container.addWidget(lbl)

@@ -254,6 +254,7 @@
   "geofence.saving": "Geofence wird gespeichert...",
   "geofence.clearing": "Geofence wird gelöscht...",
   "geofence.saved": "Geofence gespeichert",
+  "geofence.save_failed": "Speichern des Geo-Zauns fehlgeschlagen",
   "geofence.cleared": "Geofence gelöscht",
   "geofence.loaded": "Geofence geladen",
   "schedules.mon": "Mo",

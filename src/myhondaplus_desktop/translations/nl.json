@@ -254,6 +254,7 @@
   "geofence.saving": "Geofence opslaan...",
   "geofence.clearing": "Geofence verwijderen...",
   "geofence.saved": "Geofence opgeslagen",
+  "geofence.save_failed": "Opslaan van geofence mislukt",
   "geofence.cleared": "Geofence verwijderd",
   "geofence.loaded": "Geofence geladen",
   "schedules.mon": "Ma",

@@ -254,6 +254,7 @@
   "geofence.saving": "Sparar larmområde...",
   "geofence.clearing": "Tar bort larmområde...",
   "geofence.saved": "Larmområde sparat",
+  "geofence.save_failed": "Det gick inte att spara larmområdet",
   "geofence.cleared": "Larmområde borttaget",
   "geofence.loaded": "Larmområde laddat",
   "schedules.mon": "Mån",

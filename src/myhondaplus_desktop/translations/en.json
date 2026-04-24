@@ -254,6 +254,7 @@
   "geofence.saving": "Saving geofence...",
   "geofence.clearing": "Clearing geofence...",
   "geofence.saved": "Geofence saved",
+  "geofence.save_failed": "Geofence save failed",
   "geofence.cleared": "Geofence cleared",
   "geofence.loaded": "Geofence loaded",
   "schedules.mon": "Mon",

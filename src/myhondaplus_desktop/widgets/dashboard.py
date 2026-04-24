@@ -262,7 +262,7 @@ class DashboardWidget(QWidget):
 
     def _on_charge_toggle(self):
         status = self._status.get("charge_status", "")
-        if status in ("running", "charging"):
+        if status == "charging":
             self._call("on_charge_stop")
         else:
             self._call("on_charge_start")
@@ -358,7 +358,7 @@ class DashboardWidget(QWidget):
             self._lock_btn.setIcon(icon("lock"))
 
         charge_status = status.get("charge_status", "")
-        if charge_status in ("running", "charging"):
+        if charge_status == "charging":
             self._charge_btn.setText(t("commands.charge_off"))
             self._charge_btn.setIcon(icon("square"))
         else:

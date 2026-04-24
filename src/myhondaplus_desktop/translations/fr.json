@@ -254,6 +254,7 @@
   "geofence.saving": "Enregistrement du géorepérage...",
   "geofence.clearing": "Suppression du géorepérage...",
   "geofence.saved": "Géorepérage enregistré",
+  "geofence.save_failed": "Échec de l'enregistrement du géorepérage",
   "geofence.cleared": "Géorepérage supprimé",
   "geofence.loaded": "Géorepérage chargé",
   "schedules.mon": "Lun",

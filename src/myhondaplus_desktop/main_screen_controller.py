@@ -197,6 +197,11 @@ class MainScreenController:
     def _on_geofence_saved(self, geofence):
         self._view.set_geofence_controls_enabled(True)
         self._view.set_geofence(geofence)
+        failure_states = ("failure", "timeout")
+        if geofence and (geofence.activate_status in failure_states
+                         or geofence.deactivate_status in failure_states):
+            self._view.show_error(t("geofence.save_failed"))
+            return
         self._view.show_success(t("geofence.saved"))
         if geofence and not geofence.active:
             self.load_geofence()

@@ -254,6 +254,7 @@
   "geofence.saving": "Zapisywanie geofence...",
   "geofence.clearing": "Usuwanie geofence...",
   "geofence.saved": "Geofence zapisany",
+  "geofence.save_failed": "Zapisanie geofence nie powiodło się",
   "geofence.cleared": "Geofence usunięty",
   "geofence.loaded": "Geofence załadowany",
   "schedules.mon": "Pon",

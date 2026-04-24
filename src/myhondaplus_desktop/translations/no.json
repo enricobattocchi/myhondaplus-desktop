@@ -254,6 +254,7 @@
   "geofence.saving": "Lagrer geofence...",
   "geofence.clearing": "Sletter geofence...",
   "geofence.saved": "Geofence lagret",
+  "geofence.save_failed": "Lagring av geofence mislyktes",
   "geofence.cleared": "Geofence slettet",
   "geofence.loaded": "Geofence lastet",
   "schedules.mon": "Man",

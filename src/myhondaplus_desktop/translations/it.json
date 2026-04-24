@@ -254,6 +254,7 @@
   "geofence.saving": "Salvataggio geofence...",
   "geofence.clearing": "Eliminazione geofence...",
   "geofence.saved": "Geofence salvato",
+  "geofence.save_failed": "Salvataggio geofence fallito",
   "geofence.cleared": "Geofence eliminato",
   "geofence.loaded": "Geofence caricato",
   "schedules.mon": "Lun",
