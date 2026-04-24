@@ -254,6 +254,7 @@
   "geofence.saving": "Ukladanie geofence...",
   "geofence.clearing": "Mazanie geofence...",
   "geofence.saved": "Geofence uložený",
+  "geofence.save_failed": "Uloženie geofence zlyhalo",
   "geofence.cleared": "Geofence vymazaný",
   "geofence.loaded": "Geofence načítaný",
   "schedules.mon": "Po",

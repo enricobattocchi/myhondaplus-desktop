@@ -254,6 +254,7 @@
   "geofence.saving": "Guardando zona de control...",
   "geofence.clearing": "Eliminando zona de control...",
   "geofence.saved": "Zona de control guardada",
+  "geofence.save_failed": "Error al guardar la zona de control",
   "geofence.cleared": "Zona de control eliminada",
   "geofence.loaded": "Zona de control cargada",
   "schedules.mon": "Lun",

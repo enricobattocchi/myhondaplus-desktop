@@ -254,6 +254,7 @@
   "geofence.saving": "Gemmer geofence...",
   "geofence.clearing": "Sletter geofence...",
   "geofence.saved": "Geofence gemt",
+  "geofence.save_failed": "Lagring af geofence mislykkedes",
   "geofence.cleared": "Geofence slettet",
   "geofence.loaded": "Geofence indlæst",
   "schedules.mon": "Man",

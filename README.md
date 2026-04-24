@@ -112,7 +112,7 @@ Available: Czech, Danish, Dutch, English, French, German, Hungarian, Italian, No
 
 - Python 3.11+
 - PyQt6 >= 6.6
-- [pymyhondaplus](https://pypi.org/project/pymyhondaplus/) >= 5.6.3
+- [pymyhondaplus](https://pypi.org/project/pymyhondaplus/) >= 5.8.2
 
 ### Optional
 

@@ -20,7 +20,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from ..i18n import t
+from ..i18n import t, t_lib
 from ..icons import icon
 
 _TILE_SIZE = 256
@@ -502,16 +502,20 @@ class GeofenceWidget(QWidget):
         self._marker_lon = geofence.longitude
         self._coord_label.setText(
             f"{geofence.latitude:.6f}, {geofence.longitude:.6f}")
-        if geofence.processing or geofence.waiting_activate:
-            self._status_label.setText(t("geofence.processing"))
+        if geofence.waiting_activate:
+            self._status_label.setText(t_lib("geofence_state_activating"))
+            self._status_label.setStyleSheet(
+                "color: #e67e22; font-weight: bold;")
+        elif geofence.waiting_deactivate:
+            self._status_label.setText(t_lib("geofence_state_deactivating"))
             self._status_label.setStyleSheet(
                 "color: #e67e22; font-weight: bold;")
         elif geofence.active:
-            self._status_label.setText(t("geofence.active"))
+            self._status_label.setText(t_lib("geofence_state_active"))
             self._status_label.setStyleSheet(
                 "color: green; font-weight: bold;")
         else:
-            self._status_label.setText(t("geofence.inactive"))
+            self._status_label.setText(t_lib("geofence_state_inactive"))
             self._status_label.setStyleSheet(
                 "color: gray; font-weight: bold;")
         radius = geofence.radius or 1.0

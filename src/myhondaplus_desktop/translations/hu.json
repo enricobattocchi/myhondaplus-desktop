@@ -254,6 +254,7 @@
   "geofence.saving": "Zónakontroll mentése...",
   "geofence.clearing": "Zónakontroll törlése...",
   "geofence.saved": "Zónakontroll mentve",
+  "geofence.save_failed": "A zónakontroll mentése sikertelen",
   "geofence.cleared": "Zónakontroll törölve",
   "geofence.loaded": "Zónakontroll betöltve",
   "schedules.mon": "Hé",
