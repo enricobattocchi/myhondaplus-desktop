@@ -80,13 +80,18 @@ def t(key: str, **kwargs) -> str:
 def active_capability_labels(caps) -> list[str]:
     """Return the raw Honda API keys of a vehicle's active capabilities.
 
-    Iterates VehicleCapabilities.raw, filters to active capabilities, and
-    returns the raw API key for each (e.g. "telematicsRemoteLockUnlock",
-    "useSpecificTemperatureControl"). No translation — Honda treats these
-    as backend feature flags and publishes no canonical localized labels
-    for most of them, so displaying the raw key is the honest choice and
-    avoids silently dropping flags the desktop doesn't know about.
+    Delegates to VehicleCapabilities.active_api_keys() so both CLI and
+    desktop share the same behaviour, including the fallback path for
+    tokens saved by pymyhondaplus <= 5.8.0 (which didn't persist the
+    raw capability dict).
     """
+    if caps is None:
+        return []
+    getter = getattr(caps, "active_api_keys", None)
+    if callable(getter):
+        return list(getter())
+    # Older VehicleCapabilities object without the helper — iterate raw
+    # directly as a safety net.
     raw = getattr(caps, "raw", {}) or {}
     return sorted(
         api_key for api_key, entry in raw.items()
