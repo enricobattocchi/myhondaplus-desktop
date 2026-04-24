@@ -5,9 +5,6 @@ import locale
 import logging
 from importlib.resources import files
 
-from pymyhondaplus import CAPABILITY_API_KEY_TO_TRANSLATION_KEY
-from pymyhondaplus import get_translator as _lib_get_translator
-
 logger = logging.getLogger(__name__)
 
 _TRANSLATIONS_PKG = files("myhondaplus_desktop") / "translations"
@@ -81,21 +78,17 @@ def t(key: str, **kwargs) -> str:
 
 
 def active_capability_labels(caps) -> list[str]:
-    """Return localized labels for a vehicle's active capabilities.
+    """Return the raw Honda API keys of a vehicle's active capabilities.
 
-    Iterates VehicleCapabilities.raw, filters to active capabilities, sorts
-    alphabetically by the raw Honda API key, and returns translated labels
-    from the library's translations where available. Capabilities this
-    library version doesn't yet know about render as the raw API key, so
-    new Honda additions are never silently hidden.
+    Iterates VehicleCapabilities.raw, filters to active capabilities, and
+    returns the raw API key for each (e.g. "telematicsRemoteLockUnlock",
+    "useSpecificTemperatureControl"). No translation — Honda treats these
+    as backend feature flags and publishes no canonical localized labels
+    for most of them, so displaying the raw key is the honest choice and
+    avoids silently dropping flags the desktop doesn't know about.
     """
-    lib_t = _lib_get_translator(_active_lang)
     raw = getattr(caps, "raw", {}) or {}
-    labels = []
-    for api_key in sorted(raw):
-        entry = raw[api_key]
-        if not isinstance(entry, dict) or entry.get("featureStatus") != "active":
-            continue
-        tkey = CAPABILITY_API_KEY_TO_TRANSLATION_KEY.get(api_key)
-        labels.append(lib_t(tkey) if tkey else api_key)
-    return labels
+    return sorted(
+        api_key for api_key, entry in raw.items()
+        if isinstance(entry, dict) and entry.get("featureStatus") == "active"
+    )

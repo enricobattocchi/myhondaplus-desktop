@@ -70,42 +70,38 @@ def test_detect_language_falls_back_to_english(monkeypatch):
     assert _detect_language() == "en"
 
 
-def test_active_capability_labels_translated_english():
-    load_language("en")
+def test_active_capability_labels_returns_raw_api_keys():
     caps = VehicleCapabilities(raw={
         "telematicsRemoteLockUnlock": {"featureStatus": "active"},
         "telematicsRemoteCharge": {"featureStatus": "active"},
         "telematicsRemoteHorn": {"featureStatus": "notSupported"},
     })
     labels = active_capability_labels(caps)
-    assert "Lock/Unlock" in labels
-    assert "Charging" in labels
-    assert "Horn" not in labels
-    assert len(labels) == 2
+    assert labels == ["telematicsRemoteCharge", "telematicsRemoteLockUnlock"]
 
 
-def test_active_capability_labels_translated_italian():
-    load_language("it")
+def test_active_capability_labels_same_regardless_of_locale():
     caps = VehicleCapabilities(raw={
         "telematicsRemoteLockUnlock": {"featureStatus": "active"},
     })
-    labels = active_capability_labels(caps)
-    assert labels == ["Blocca/Sblocca"]
-
-
-def test_active_capability_labels_unknown_key_renders_raw():
     load_language("en")
+    en_labels = active_capability_labels(caps)
+    load_language("it")
+    it_labels = active_capability_labels(caps)
+    load_language("en")  # Restore default so test ordering is stable.
+    assert en_labels == it_labels == ["telematicsRemoteLockUnlock"]
+
+
+def test_active_capability_labels_future_flags_render_raw():
     caps = VehicleCapabilities(raw={
         "useSpecificTemperatureControl": {"featureStatus": "active"},
         "telematicsFuturePhonyFeature": {"featureStatus": "active"},
     })
     labels = active_capability_labels(caps)
-    assert "useSpecificTemperatureControl" in labels
-    assert "telematicsFuturePhonyFeature" in labels
+    assert labels == ["telematicsFuturePhonyFeature", "useSpecificTemperatureControl"]
 
 
 def test_active_capability_labels_no_actives():
-    load_language("en")
     caps = VehicleCapabilities(raw={
         "telematicsRemoteLockUnlock": {"featureStatus": "notSupported"},
     })
@@ -113,6 +109,15 @@ def test_active_capability_labels_no_actives():
 
 
 def test_active_capability_labels_no_raw():
-    load_language("en")
     caps = VehicleCapabilities(raw={})
     assert active_capability_labels(caps) == []
+
+
+def test_active_capability_labels_non_dict_entries_ignored():
+    caps = VehicleCapabilities(raw={
+        "telematicsRemoteLockUnlock": {"featureStatus": "active"},
+        "bogusStringEntry": "not a dict",
+        "anotherWeirdOne": None,
+    })
+    labels = active_capability_labels(caps)
+    assert labels == ["telematicsRemoteLockUnlock"]
