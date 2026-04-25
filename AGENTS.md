@@ -21,7 +21,7 @@ Refer to the upstream service as "the My Honda+ API" or "the Honda Connect Europ
 [`pymyhondaplus`](https://github.com/enricobattocchi/pymyhondaplus) (Python library + CLI) is consumed by:
 
 - [`myhondaplus-homeassistant`](https://github.com/enricobattocchi/myhondaplus-homeassistant) — Home Assistant integration, pinned `==X.Y.Z` (HA convention).
-- `myhondaplus-desktop` (this repo) — PyQt6 desktop app, pinned `>=X.Y.Z`.
+- [`myhondaplus-desktop`](https://github.com/enricobattocchi/myhondaplus-desktop) — PyQt6 desktop app, pinned `>=X.Y.Z`.
 
 **Ownership boundaries** — each concern lives in exactly one repo:
 
@@ -53,6 +53,7 @@ If a task feels like it crosses boundaries, default to "the library owns the API
 - **Release order is library first, then consumers.** Bump `pymyhondaplus`, tag, GitHub-release; then update HA `manifest.json` `requirements` (`==X.Y.Z`) and/or desktop `pyproject.toml` + `README.md` (`>=X.Y.Z`), then release each consumer.
 - **Pin update rule**: HA pins exact (Home Assistant convention); desktop pins minimum.
 - **Translation-drift PRs** may span library + HA. When a string converges in wording, move the pair from `_KNOWN_DRIFT` to `ENFORCED_OVERLAPS` in the same PR (HA test: `tests/test_translation_drift.py`).
+- **Cross-repo change checklist**: land library-owned API/parsing/auth/translation behavior in `pymyhondaplus` first; update HA's exact pin and desktop's minimum pin only after a library release; keep consumer enum options, entity descriptors, and UI copy aligned with canonical library behavior.
 
 ## 6. Common pitfalls
 
@@ -63,7 +64,13 @@ If a task feels like it crosses boundaries, default to "the library owns the API
 - PyQt6, not PyQt5 — signals are `pyqtSignal`.
 - Library-owned strings (geofence states, capability labels, geofence errors) must come through `t_lib()`, not be re-typed into desktop JSONs.
 
-## 7. Gates
+## 7. Gates and local commands
+
+- Setup: `pip install -e ".[dev]"`
+- Use a sibling library checkout while testing integration changes: `.venv/bin/pip install -e /path/to/pymyhondaplus --no-deps`
+- Tests: `python -m pytest`
+- Lint: `ruff check src/ tests/`
+- Release version check: `python scripts/check_release_version.py X.Y.Z`
 
 `Test` (pytest on Python 3.11/3.12/3.13 matrix), `Lint` (ruff). Tag is the bare version (e.g. `2.7.0`, not `v2.7.0`); `__version__` in `src/myhondaplus_desktop/__init__.py` must match the tag (`scripts/check_release_version.py` enforces this). PyInstaller bundle workflows (`build-linux.yml`, `build-macos.yml`, `build-windows.yml`) run on release publish.
 
