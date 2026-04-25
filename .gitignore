@@ -13,3 +13,4 @@ build/
 *.json
 !src/myhondaplus_desktop/translations/*.json
 .idea/
+.local/
