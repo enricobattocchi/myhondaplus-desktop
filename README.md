@@ -1,5 +1,9 @@
 # My Honda+ for desktop (unofficial)
 
+[![Release](https://img.shields.io/github/v/release/enricobattocchi/myhondaplus-desktop)](https://github.com/enricobattocchi/myhondaplus-desktop/releases)
+[![Downloads](https://img.shields.io/github/downloads/enricobattocchi/myhondaplus-desktop/total.svg)](https://github.com/enricobattocchi/myhondaplus-desktop/releases)
+[![Latest downloads](https://img.shields.io/github/downloads/enricobattocchi/myhondaplus-desktop/latest/total.svg)](https://github.com/enricobattocchi/myhondaplus-desktop/releases/latest)
+
 Unofficial desktop GUI for Honda Connect Europe (My Honda+). Control and monitor your Honda vehicle from your computer.
 
 Built with PyQt6 and [pymyhondaplus](https://github.com/enricobattocchi/pymyhondaplus).
