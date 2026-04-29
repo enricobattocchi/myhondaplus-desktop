@@ -277,7 +277,10 @@ class CommandWorker(QThread):
 
 class TripsWorker(QThread):
     """Fetches trip history and statistics."""
-    finished = pyqtSignal(object)
+    # Named result_ready (not finished) to avoid shadowing QThread.finished;
+    # callers rely on QThread.finished to know when run() has actually returned
+    # before releasing the last Python reference to the worker.
+    result_ready = pyqtSignal(object)
     error = pyqtSignal(str)
     auth_error = pyqtSignal()
     progress = pyqtSignal(str)
@@ -320,7 +323,7 @@ class TripsWorker(QThread):
             stats = compute_trip_stats(
                 trips, fuel_type=fuel_type,
                 distance_unit=distance_unit) if trips else None
-            self.finished.emit({"trips": trips, "stats": stats})
+            self.result_ready.emit({"trips": trips, "stats": stats})
         except HondaAuthError:
             self.auth_error.emit()
         except HondaAPIError:

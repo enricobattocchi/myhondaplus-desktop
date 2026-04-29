@@ -37,6 +37,8 @@ def _run_worker(worker):
     results = {"finished": None, "error": None, "auth_error": False, "update": None}
     if hasattr(worker, "finished"):
         worker.finished.connect(lambda *args: results.update(finished=args[0] if args else True))
+    if hasattr(worker, "result_ready"):
+        worker.result_ready.connect(lambda *args: results.update(finished=args[0] if args else True))
     if hasattr(worker, "error"):
         worker.error.connect(lambda v: results.update(error=v))
     if hasattr(worker, "auth_error"):

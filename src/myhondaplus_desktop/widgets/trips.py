@@ -64,6 +64,10 @@ class TripsWidget(QWidget):
         self._on_error = on_error
         self._on_auth_error = on_auth_error
         self._worker = None
+        # Workers whose run() is still in flight when a new request starts.
+        # Held until QThread.finished fires so PyQt doesn't destroy a running
+        # QThread (which would qFatal -> abort).
+        self._retired_workers: list[TripsWorker] = []
         self._current_month = date.today().replace(day=1)
         self._trips_data = []
         self._last_consumption_unit = ""
@@ -199,15 +203,21 @@ class TripsWidget(QWidget):
         if not vin:
             return
         if self._worker is not None and self._worker.isRunning():
-            self._worker.finished.disconnect()
-            self._worker.error.disconnect()
+            old = self._worker
+            for sig in (old.result_ready, old.error, old.auth_error, old.progress):
+                try:
+                    sig.disconnect()
+                except TypeError:
+                    pass
+            self._retired_workers.append(old)
+            old.finished.connect(lambda w=old: self._retired_workers.remove(w))
         self._prev_btn.setEnabled(False)
         self._next_btn.setEnabled(False)
         month_start = self._current_month.strftime("%Y-%m-%dT00:00:00.000Z")
         self._worker = TripsWorker(
             api, vin, month_start=month_start,
             include_locations=self._locations_cb.isChecked())
-        self._worker.finished.connect(self._on_trips_loaded)
+        self._worker.result_ready.connect(self._on_trips_loaded)
         self._worker.error.connect(self._on_trips_error)
         if self._on_auth_error:
             self._worker.auth_error.connect(self._on_auth_error)
