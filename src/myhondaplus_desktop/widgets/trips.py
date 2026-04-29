@@ -20,7 +20,7 @@ from PyQt6.QtWidgets import (
 
 from ..i18n import active_language, t
 from ..icons import icon, pixmap
-from ..workers import TripsWorker
+from ..workers import TripsWorker, retire_worker
 
 
 def _to_local_time(iso_str: str) -> str:
@@ -64,9 +64,6 @@ class TripsWidget(QWidget):
         self._on_error = on_error
         self._on_auth_error = on_auth_error
         self._worker = None
-        # Workers whose run() is still in flight when a new request starts.
-        # Held until QThread.finished fires so PyQt doesn't destroy a running
-        # QThread (which would qFatal -> abort).
         self._retired_workers: list[TripsWorker] = []
         self._current_month = date.today().replace(day=1)
         self._trips_data = []
@@ -202,15 +199,7 @@ class TripsWidget(QWidget):
         vin = self._get_vin()
         if not vin:
             return
-        if self._worker is not None and self._worker.isRunning():
-            old = self._worker
-            for sig in (old.result_ready, old.error, old.auth_error, old.progress):
-                try:
-                    sig.disconnect()
-                except TypeError:
-                    pass
-            self._retired_workers.append(old)
-            old.finished.connect(lambda w=old: self._retired_workers.remove(w))
+        retire_worker(self._worker, self._retired_workers)
         self._prev_btn.setEnabled(False)
         self._next_btn.setEnabled(False)
         month_start = self._current_month.strftime("%Y-%m-%dT00:00:00.000Z")

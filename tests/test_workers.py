@@ -35,8 +35,6 @@ def mock_api():
 def _run_worker(worker):
     """Run the worker synchronously and capture signals."""
     results = {"finished": None, "error": None, "auth_error": False, "update": None}
-    if hasattr(worker, "finished"):
-        worker.finished.connect(lambda *args: results.update(finished=args[0] if args else True))
     if hasattr(worker, "result_ready"):
         worker.result_ready.connect(lambda *args: results.update(finished=args[0] if args else True))
     if hasattr(worker, "error"):
@@ -418,7 +416,7 @@ def test_image_worker_cache_hit(tmp_path):
 
     worker = ImageWorker(url, tmp_path)
     results = {"finished": None, "error": None}
-    worker.finished.connect(lambda v: results.update(finished=v))
+    worker.result_ready.connect(lambda v: results.update(finished=v))
     worker.error.connect(lambda v: results.update(error=v))
     worker.run()
 
@@ -443,7 +441,7 @@ def test_image_worker_cache_miss(tmp_path, monkeypatch):
 
     worker = ImageWorker(url, tmp_path)
     results = {"finished": None, "error": None}
-    worker.finished.connect(lambda v: results.update(finished=v))
+    worker.result_ready.connect(lambda v: results.update(finished=v))
     worker.error.connect(lambda v: results.update(error=v))
     worker.run()
 
