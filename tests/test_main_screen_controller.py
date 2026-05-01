@@ -30,7 +30,7 @@ class FakeSignal:
 
 class FakeWorker:
     def __init__(self):
-        self.finished = FakeSignal()
+        self.result_ready = FakeSignal()
         self.error = FakeSignal()
         self.progress = FakeSignal()
         self.auth_error = FakeSignal()
@@ -39,6 +39,9 @@ class FakeWorker:
 
     def start(self):
         self.started = True
+
+    def isRunning(self):
+        return False
 
 
 class FakeTokens:
@@ -256,7 +259,7 @@ def test_command_success_reloads_dashboard(monkeypatch):
 
     controller = MainScreenController(view, api, settings, lambda: None)
     controller.run_lock()
-    command_worker.finished.emit("Lock")
+    command_worker.result_ready.emit("Lock")
 
     assert view.dashboard_actions == [False, True]
     assert view.success_messages[-1] == "Lock: done!"
@@ -363,7 +366,7 @@ def test_dashboard_loaded_shows_warning_when_refresh_stale(monkeypatch):
 
     controller = MainScreenController(view, api, settings, lambda: None)
     controller.handle_refresh_current_tab(fresh=True)
-    dashboard_worker.finished.emit(({"battery": 70}, True))
+    dashboard_worker.result_ready.emit(({"battery": 70}, True))
 
     assert view.warning_messages == ["app.refresh_stale"]
     assert view.success_messages == []
@@ -383,7 +386,7 @@ def test_dashboard_loaded_shows_success_when_refresh_ok(monkeypatch):
 
     controller = MainScreenController(view, api, settings, lambda: None)
     controller.handle_refresh_current_tab()
-    dashboard_worker.finished.emit(({"battery": 90}, False))
+    dashboard_worker.result_ready.emit(({"battery": 90}, False))
 
     assert view.success_messages == ["app.status_loaded"]
     assert view.warning_messages == []

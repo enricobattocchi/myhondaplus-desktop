@@ -17,6 +17,7 @@ from ..workers import (
     DeviceRegistrationWorker,
     LoginWorker,
     VerifyAndLoginWorker,
+    retire_worker,
 )
 
 
@@ -28,6 +29,7 @@ class LoginWidget(QWidget):
         self._worker = None
         self._reg_worker = None
         self._verify_worker = None
+        self._retired_workers: list = []
         self._auth = None
 
         layout = QVBoxLayout(self)
@@ -98,8 +100,9 @@ class LoginWidget(QWidget):
         self._login_btn.setEnabled(False)
         self._status.setText(t("login.logging_in"))
 
+        retire_worker(self._worker, self._retired_workers)
         self._worker = LoginWorker(email, password, storage=self._storage)
-        self._worker.finished.connect(self._on_login_done)
+        self._worker.result_ready.connect(self._on_login_done)
         self._worker.error.connect(self._on_login_error)
         self._worker.progress.connect(self._status.setText)
         self._worker.device_registration_needed.connect(
@@ -123,8 +126,9 @@ class LoginWidget(QWidget):
         email = self._email.text().strip()
         password = self._password.text()
 
+        retire_worker(self._reg_worker, self._retired_workers)
         self._reg_worker = DeviceRegistrationWorker(auth, email, password)
-        self._reg_worker.finished.connect(
+        self._reg_worker.result_ready.connect(
             lambda: self._ask_for_verification_link(auth, email, password))
         self._reg_worker.error.connect(self._on_login_error)
         self._reg_worker.progress.connect(self._status.setText)
@@ -141,9 +145,10 @@ class LoginWidget(QWidget):
             self._login_btn.setEnabled(True)
             return
 
+        retire_worker(self._verify_worker, self._retired_workers)
         self._verify_worker = VerifyAndLoginWorker(
             auth, email, password, link.strip())
-        self._verify_worker.finished.connect(self._on_login_done)
+        self._verify_worker.result_ready.connect(self._on_login_done)
         self._verify_worker.error.connect(self._on_login_error)
         self._verify_worker.progress.connect(self._status.setText)
         self._verify_worker.start()

@@ -20,7 +20,7 @@ from PyQt6.QtWidgets import (
 
 from ..i18n import active_language, t
 from ..icons import icon, pixmap
-from ..workers import TripsWorker
+from ..workers import TripsWorker, retire_worker
 
 
 def _to_local_time(iso_str: str) -> str:
@@ -64,6 +64,7 @@ class TripsWidget(QWidget):
         self._on_error = on_error
         self._on_auth_error = on_auth_error
         self._worker = None
+        self._retired_workers: list[TripsWorker] = []
         self._current_month = date.today().replace(day=1)
         self._trips_data = []
         self._last_consumption_unit = ""
@@ -198,16 +199,14 @@ class TripsWidget(QWidget):
         vin = self._get_vin()
         if not vin:
             return
-        if self._worker is not None and self._worker.isRunning():
-            self._worker.finished.disconnect()
-            self._worker.error.disconnect()
+        retire_worker(self._worker, self._retired_workers)
         self._prev_btn.setEnabled(False)
         self._next_btn.setEnabled(False)
         month_start = self._current_month.strftime("%Y-%m-%dT00:00:00.000Z")
         self._worker = TripsWorker(
             api, vin, month_start=month_start,
             include_locations=self._locations_cb.isChecked())
-        self._worker.finished.connect(self._on_trips_loaded)
+        self._worker.result_ready.connect(self._on_trips_loaded)
         self._worker.error.connect(self._on_trips_error)
         if self._on_auth_error:
             self._worker.auth_error.connect(self._on_auth_error)

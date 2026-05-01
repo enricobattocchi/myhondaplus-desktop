@@ -118,10 +118,20 @@ class DashboardWidget(QWidget):
 
         # Battery card
         bat_box, bat_layout = _card(t("dashboard.battery"), "battery-charging")
+        bat_bar_row = QHBoxLayout()
         self._battery_bar = QProgressBar()
         self._battery_bar.setRange(0, 100)
-        self._battery_bar.setTextVisible(True)
-        bat_layout.addWidget(self._battery_bar)
+        # macOS' native QProgressBar style ignores setTextVisible, so render
+        # the percentage ourselves in a sibling label for cross-platform parity.
+        self._battery_bar.setTextVisible(False)
+        self._battery_pct = QLabel("0%")
+        self._battery_pct.setStyleSheet("font-weight: bold;")
+        self._battery_pct.setMinimumWidth(40)
+        self._battery_pct.setAlignment(
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        bat_bar_row.addWidget(self._battery_bar, 1)
+        bat_bar_row.addWidget(self._battery_pct)
+        bat_layout.addLayout(bat_bar_row)
         for key in ("range_climate_on", "range_climate_off", "total_range", "charge_status",
                      "plug_status", "charge_mode", "time_to_charge",
                      "charge_limit_home", "charge_limit_away", "ignition"):
@@ -286,7 +296,9 @@ class DashboardWidget(QWidget):
 
     def update_status(self, status: dict):
         self._status = status
-        self._battery_bar.setValue(status.get("battery_level", 0))
+        battery_level = status.get("battery_level", 0)
+        self._battery_bar.setValue(battery_level)
+        self._battery_pct.setText(f"{battery_level}%")
 
         lat_raw = status.get("latitude", "")
         lon_raw = status.get("longitude", "")

@@ -1,4 +1,13 @@
-"""Background workers for API calls (run off the GUI thread)."""
+"""Background workers for API calls (run off the GUI thread).
+
+All workers expose a ``result_ready`` signal (rather than overriding the
+inherited ``finished`` signal). Owners listen to ``QThread.finished`` to
+know when ``run()`` has actually returned, which is the only safe moment
+to drop the last Python reference: dropping it while the thread is still
+running triggers ``QThread::~QThread()`` -> ``qFatal`` -> ``abort()``.
+Use :func:`retire_worker` when reassigning a field that holds a worker
+that may still be in flight.
+"""
 
 import logging
 
@@ -80,9 +89,42 @@ def _verify_magic_link(auth: HondaAuth, link: str):
     auth.verify_magic_link(key, link_type)
 
 
+_USER_SIGNAL_NAMES = (
+    "result_ready", "error", "progress", "auth_error",
+    "device_registration_needed", "update_available",
+)
+
+
+def retire_worker(worker, retired_list):
+    """Park a still-running QThread until ``run()`` returns.
+
+    Reassigning the field that holds a running worker drops the only
+    Python reference and triggers ``QThread::~QThread()``-while-running
+    ``qFatal`` -> ``abort``. This holds a strong reference in the
+    caller-owned ``retired_list`` until ``QThread.finished`` fires.
+
+    Also disconnects the worker's user-facing signals so stale results
+    don't update the UI after the caller has moved on.
+    """
+    if worker is None or not worker.isRunning():
+        return
+    for name in _USER_SIGNAL_NAMES:
+        sig = getattr(worker, name, None)
+        if sig is None:
+            continue
+        try:
+            sig.disconnect()
+        except TypeError:
+            pass
+    retired_list.append(worker)
+    worker.finished.connect(
+        lambda: retired_list.remove(worker)
+        if worker in retired_list else None)
+
+
 class ApiWorker(QThread):
     """Base worker that runs a callable in a thread."""
-    finished = pyqtSignal(object)
+    result_ready = pyqtSignal(object)
     error = pyqtSignal(str)
     progress = pyqtSignal(str)
 
@@ -95,7 +137,7 @@ class ApiWorker(QThread):
     def run(self):
         try:
             result = self._func(*self._args, **self._kwargs)
-            self.finished.emit(result)
+            self.result_ready.emit(result)
         except Exception as e:
             logger.exception("Worker error")
             self.error.emit(_friendly_error(e))
@@ -103,7 +145,7 @@ class ApiWorker(QThread):
 
 class LoginWorker(QThread):
     """Handles the login flow (initiate + complete)."""
-    finished = pyqtSignal(object)
+    result_ready = pyqtSignal(object)
     error = pyqtSignal(str)
     progress = pyqtSignal(str)
     device_registration_needed = pyqtSignal()
@@ -121,7 +163,7 @@ class LoginWorker(QThread):
             tokens = _complete_login(
                 self.auth, self.email, self.password, self.locale, self.progress.emit
             )
-            self.finished.emit(tokens)
+            self.result_ready.emit(tokens)
         except HondaAuthError as e:
             if "device-authenticator-not-registered" in str(e):
                 self.device_registration_needed.emit()
@@ -150,14 +192,14 @@ class LoginWorker(QThread):
             tokens = _complete_login(
                 self.auth, self.email, self.password, self.locale, self.progress.emit
             )
-            self.finished.emit(tokens)
+            self.result_ready.emit(tokens)
         except Exception as e:
             self.error.emit(_friendly_error(e))
 
 
 class DeviceRegistrationWorker(QThread):
     """Handles the device registration step."""
-    finished = pyqtSignal()
+    result_ready = pyqtSignal()
     error = pyqtSignal(str)
     progress = pyqtSignal(str)
 
@@ -172,14 +214,14 @@ class DeviceRegistrationWorker(QThread):
             _reset_device_authenticator(
                 self.auth, self.email, self.password, self.progress.emit
             )
-            self.finished.emit()
+            self.result_ready.emit()
         except Exception as e:
             self.error.emit(_friendly_error(e))
 
 
 class VerifyAndLoginWorker(QThread):
     """Verifies magic link then completes login."""
-    finished = pyqtSignal(object)
+    result_ready = pyqtSignal(object)
     error = pyqtSignal(str)
     progress = pyqtSignal(str)
 
@@ -199,14 +241,14 @@ class VerifyAndLoginWorker(QThread):
             tokens = _complete_login(
                 self.auth, self.email, self.password, self.locale, self.progress.emit
             )
-            self.finished.emit(tokens)
+            self.result_ready.emit(tokens)
         except Exception as e:
             self.error.emit(_friendly_error(e))
 
 
 class DashboardWorker(QThread):
     """Fetches dashboard data."""
-    finished = pyqtSignal(object)
+    result_ready = pyqtSignal(object)
     error = pyqtSignal(str)
     auth_error = pyqtSignal()
     progress = pyqtSignal(str)
@@ -224,12 +266,12 @@ class DashboardWorker(QThread):
                 result = self.api.refresh_dashboard(self.vin)
                 dashboard = self.api.get_dashboard_cached(self.vin)
                 status = parse_ev_status(dashboard)
-                self.finished.emit((status, not result.success))
+                self.result_ready.emit((status, not result.success))
             else:
                 self.progress.emit(t("workers.loading_status"))
                 dashboard = self.api.get_dashboard(self.vin)
                 status = parse_ev_status(dashboard)
-                self.finished.emit((status, False))
+                self.result_ready.emit((status, False))
         except HondaAuthError:
             self.auth_error.emit()
         except Exception as e:
@@ -239,7 +281,7 @@ class DashboardWorker(QThread):
 
 class CommandWorker(QThread):
     """Executes a remote command and waits for completion."""
-    finished = pyqtSignal(str)
+    result_ready = pyqtSignal(str)
     error = pyqtSignal(str)
     auth_error = pyqtSignal()
     progress = pyqtSignal(str)
@@ -262,7 +304,7 @@ class CommandWorker(QThread):
 
             result = self.api.wait_for_command(command_id, timeout=90)
             if result.success:
-                self.finished.emit(self.label)
+                self.result_ready.emit(self.label)
             elif result.timed_out:
                 self.error.emit(t("workers.timed_out", label=self.label))
             else:
@@ -277,7 +319,7 @@ class CommandWorker(QThread):
 
 class TripsWorker(QThread):
     """Fetches trip history and statistics."""
-    finished = pyqtSignal(object)
+    result_ready = pyqtSignal(object)
     error = pyqtSignal(str)
     auth_error = pyqtSignal()
     progress = pyqtSignal(str)
@@ -320,7 +362,7 @@ class TripsWorker(QThread):
             stats = compute_trip_stats(
                 trips, fuel_type=fuel_type,
                 distance_unit=distance_unit) if trips else None
-            self.finished.emit({"trips": trips, "stats": stats})
+            self.result_ready.emit({"trips": trips, "stats": stats})
         except HondaAuthError:
             self.auth_error.emit()
         except HondaAPIError:
@@ -371,7 +413,7 @@ class UpdateCheckWorker(QThread):
 
 class ScheduleLoadWorker(QThread):
     """Fetches schedules and climate settings from dashboard."""
-    finished = pyqtSignal(object)
+    result_ready = pyqtSignal(object)
     error = pyqtSignal(str)
     auth_error = pyqtSignal()
     progress = pyqtSignal(str)
@@ -388,7 +430,7 @@ class ScheduleLoadWorker(QThread):
             ev = parse_ev_status(dashboard)
             climate_schedule = parse_climate_schedule(dashboard)
             charge_schedule = parse_charge_schedule(dashboard)
-            self.finished.emit({
+            self.result_ready.emit({
                 "climate_schedule": climate_schedule,
                 "charge_schedule": charge_schedule,
                 "climate_temp": ev.get("climate_temp", "normal"),
@@ -404,7 +446,7 @@ class ScheduleLoadWorker(QThread):
 
 class ScheduleSaveWorker(QThread):
     """Saves a schedule and waits for completion."""
-    finished = pyqtSignal(str)
+    result_ready = pyqtSignal(str)
     error = pyqtSignal(str)
     auth_error = pyqtSignal()
     progress = pyqtSignal(str)
@@ -422,12 +464,12 @@ class ScheduleSaveWorker(QThread):
             self.progress.emit(t("workers.sending", label=self.label))
             command_id = self._func(*self._args, **self._kwargs)
             if not command_id:
-                self.finished.emit(self.label)
+                self.result_ready.emit(self.label)
                 return
 
             result = self.api.wait_for_command(command_id, timeout=90)
             if result.success:
-                self.finished.emit(self.label)
+                self.result_ready.emit(self.label)
             elif result.timed_out:
                 self.error.emit(t("workers.timed_out", label=self.label))
             else:
@@ -442,7 +484,7 @@ class ScheduleSaveWorker(QThread):
 
 class ImageWorker(QThread):
     """Downloads and caches a vehicle image."""
-    finished = pyqtSignal(str)
+    result_ready = pyqtSignal(str)
     error = pyqtSignal(str)
 
     def __init__(self, url: str, cache_dir):
@@ -472,14 +514,14 @@ class ImageWorker(QThread):
             cached = cache_dir / f"{key}{ext}"
 
             if cached.exists():
-                self.finished.emit(str(cached))
+                self.result_ready.emit(str(cached))
                 return
 
             req = urllib.request.Request(self._url)
             with urllib.request.urlopen(req, timeout=15) as resp:
                 data = resp.read()
             cached.write_bytes(data)
-            self.finished.emit(str(cached))
+            self.result_ready.emit(str(cached))
         except Exception as e:
             logger.debug("Image download failed: %s", e)
             self.error.emit(str(e))
@@ -487,7 +529,7 @@ class ImageWorker(QThread):
 
 class VehiclesWorker(QThread):
     """Fetches vehicle list (VIN, name, plate)."""
-    finished = pyqtSignal(object)
+    result_ready = pyqtSignal(object)
     error = pyqtSignal(str)
 
     def __init__(self, api: HondaAPI):
@@ -500,7 +542,7 @@ class VehiclesWorker(QThread):
             # Store in tokens for persistence
             self.api.tokens.vehicles = vehicles
             self.api._save_tokens()
-            self.finished.emit(vehicles)
+            self.result_ready.emit(vehicles)
         except Exception as e:
             logger.exception("Vehicles error")
             self.error.emit(_friendly_error(e))

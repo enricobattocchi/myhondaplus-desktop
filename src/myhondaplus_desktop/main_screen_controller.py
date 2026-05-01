@@ -15,6 +15,7 @@ from .workers import (
     ScheduleSaveWorker,
     UpdateCheckWorker,
     VehiclesWorker,
+    retire_worker,
 )
 
 logger = logging.getLogger(__name__)
@@ -42,6 +43,7 @@ class MainScreenController:
         self._cached_profile = None
         self._plugin_warning_climate = False
         self._geofence_worker = None
+        self._retired_workers: list = []
 
     def set_api(self, api):
         self._api = api
@@ -154,8 +156,9 @@ class MainScreenController:
             self._view.show_profile(self._cached_profile)
             return
         self._view.show_status(t("profile.loading"))
+        retire_worker(self._profile_worker, self._retired_workers)
         self._profile_worker = ApiWorker(self._api.get_user_profile)
-        self._profile_worker.finished.connect(self._on_profile_loaded)
+        self._profile_worker.result_ready.connect(self._on_profile_loaded)
         self._profile_worker.error.connect(self._view.show_error)
         self._profile_worker.start()
 
@@ -169,8 +172,9 @@ class MainScreenController:
         if not vin:
             return
         self._view.show_status(t("geofence.loading"))
+        retire_worker(self._geofence_worker, self._retired_workers)
         self._geofence_worker = ApiWorker(self._api.get_geofence, vin)
-        self._geofence_worker.finished.connect(self._on_geofence_loaded)
+        self._geofence_worker.result_ready.connect(self._on_geofence_loaded)
         self._geofence_worker.error.connect(self._view.show_error)
         self._geofence_worker.start()
 
@@ -188,9 +192,10 @@ class MainScreenController:
             return
         self._view.show_status(t("geofence.saving"))
         self._view.set_geofence_controls_enabled(False)
+        retire_worker(self._geofence_worker, self._retired_workers)
         self._geofence_worker = ApiWorker(
             self._set_and_wait_geofence, vin, lat, lon, int(radius), name)
-        self._geofence_worker.finished.connect(self._on_geofence_saved)
+        self._geofence_worker.result_ready.connect(self._on_geofence_saved)
         self._geofence_worker.error.connect(self._on_geofence_error)
         self._geofence_worker.start()
 
@@ -220,11 +225,12 @@ class MainScreenController:
             return
         self._view.show_status(t("geofence.clearing"))
         self._view.set_geofence_controls_enabled(False)
+        retire_worker(self._geofence_worker, self._retired_workers)
         self._geofence_worker = CommandWorker(
             self._api, t("geofence.clear"), self._api.clear_geofence, vin)
         self._geofence_worker.auth_error.connect(self.handle_auth_error)
         self._geofence_worker.progress.connect(self._view.show_status)
-        self._geofence_worker.finished.connect(self._on_geofence_cleared)
+        self._geofence_worker.result_ready.connect(self._on_geofence_cleared)
         self._geofence_worker.error.connect(self._on_geofence_error)
         self._geofence_worker.start()
 
@@ -245,9 +251,10 @@ class MainScreenController:
             self._show_climate_schedule_dialog(self._cached_climate_schedule)
             return
         self._view.show_status(t("schedules.loading"))
+        retire_worker(self._schedule_worker, self._retired_workers)
         self._schedule_worker = ScheduleLoadWorker(self._api, vin)
         self._schedule_worker.auth_error.connect(self.handle_auth_error)
-        self._schedule_worker.finished.connect(
+        self._schedule_worker.result_ready.connect(
             lambda data: self._show_climate_schedule_dialog(data["climate_schedule"])
         )
         self._schedule_worker.error.connect(self._view.show_error)
@@ -261,9 +268,10 @@ class MainScreenController:
             self._show_charge_schedule_dialog(self._cached_charge_schedule)
             return
         self._view.show_status(t("schedules.loading"))
+        retire_worker(self._schedule_worker, self._retired_workers)
         self._schedule_worker = ScheduleLoadWorker(self._api, vin)
         self._schedule_worker.auth_error.connect(self.handle_auth_error)
-        self._schedule_worker.finished.connect(
+        self._schedule_worker.result_ready.connect(
             lambda data: self._show_charge_schedule_dialog(data["charge_schedule"])
         )
         self._schedule_worker.error.connect(self._view.show_error)
@@ -292,8 +300,9 @@ class MainScreenController:
         url = getattr(vehicle, "image_front", "") or ""
         if not url:
             return
+        retire_worker(self._image_worker, self._retired_workers)
         self._image_worker = ImageWorker(url, image_cache_dir())
-        self._image_worker.finished.connect(self._view.set_vehicle_image)
+        self._image_worker.result_ready.connect(self._view.set_vehicle_image)
         self._image_worker.start()
 
     def _apply_vehicles(self, vehicles: list[dict]):
@@ -309,8 +318,9 @@ class MainScreenController:
         self._cached_charge_schedule = None
 
     def _fetch_vehicles(self):
+        retire_worker(self._vehicles_worker, self._retired_workers)
         self._vehicles_worker = VehiclesWorker(self._api)
-        self._vehicles_worker.finished.connect(self._apply_vehicles)
+        self._vehicles_worker.result_ready.connect(self._apply_vehicles)
         self._vehicles_worker.error.connect(self._on_vehicle_fetch_error)
         self._vehicles_worker.start()
 
@@ -323,8 +333,9 @@ class MainScreenController:
             self._view.show_error(t("app.no_vin"))
             return
         self._view.set_refresh_enabled(False)
+        retire_worker(self._dashboard_worker, self._retired_workers)
         self._dashboard_worker = DashboardWorker(self._api, vin, fresh=fresh)
-        self._dashboard_worker.finished.connect(self._on_dashboard_loaded)
+        self._dashboard_worker.result_ready.connect(self._on_dashboard_loaded)
         self._dashboard_worker.auth_error.connect(self.handle_auth_error)
         self._dashboard_worker.error.connect(self._on_dashboard_error)
         self._dashboard_worker.progress.connect(self._view.show_status)
@@ -345,25 +356,28 @@ class MainScreenController:
         self._view.show_error(message)
 
     def _check_update(self):
+        retire_worker(self._update_worker, self._retired_workers)
         self._update_worker = UpdateCheckWorker(__version__)
         self._update_worker.update_available.connect(self._view.show_update_available)
         self._update_worker.start()
 
     def _run_command(self, label: str, func, *args, **kwargs):
         self._view.set_dashboard_actions_enabled(False)
+        retire_worker(self._command_worker, self._retired_workers)
         self._command_worker = CommandWorker(self._api, label, func, *args, **kwargs)
         self._command_worker.auth_error.connect(self.handle_auth_error)
         self._command_worker.progress.connect(self._view.show_status)
-        self._command_worker.finished.connect(self._on_command_success)
+        self._command_worker.result_ready.connect(self._on_command_success)
         self._command_worker.error.connect(self._on_command_error)
         self._command_worker.start()
 
     def _run_dialog_command(self, dialog, label: str, func, *args, **kwargs):
         dialog.set_saving(True, t("workers.sending", label=label))
+        retire_worker(self._command_worker, self._retired_workers)
         self._command_worker = CommandWorker(self._api, label, func, *args, **kwargs)
         self._command_worker.auth_error.connect(self.handle_auth_error)
         self._command_worker.progress.connect(lambda message: dialog.set_saving(True, message))
-        self._command_worker.finished.connect(
+        self._command_worker.result_ready.connect(
             lambda worker_label: self._on_dialog_command_success(dialog, worker_label)
         )
         self._command_worker.error.connect(lambda message: self._on_dialog_command_error(dialog, message))
@@ -450,10 +464,11 @@ class MainScreenController:
     def _run_schedule_save(self, dialog, label: str, func, payload, on_success, success_message: str):
         vin = self._view.current_vin()
         dialog.set_saving(True, t("workers.sending", label=label))
+        retire_worker(self._schedule_save_worker, self._retired_workers)
         self._schedule_save_worker = ScheduleSaveWorker(self._api, label, func, vin, payload)
         self._schedule_save_worker.auth_error.connect(self.handle_auth_error)
         self._schedule_save_worker.progress.connect(lambda message: dialog.set_saving(True, message))
-        self._schedule_save_worker.finished.connect(
+        self._schedule_save_worker.result_ready.connect(
             lambda _: self._on_schedule_save_success(dialog, on_success, success_message)
         )
         self._schedule_save_worker.error.connect(
