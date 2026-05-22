@@ -25,7 +25,7 @@ from PyQt6.QtWidgets import (
 from . import __version__
 from .config import Settings
 from .i18n import active_language, available_languages, load_language, t
-from .icons import icon, pixmap
+from .icons import icon, link_color_hex, pixmap
 from .main_screen_controller import MainScreenController
 from .session import AppSession
 from .widgets.car_finder import CarFinderDialog
@@ -84,9 +84,11 @@ class AboutDialog(QDialog):
             update_lbl.setStyleSheet("color: #3498db; font-weight: bold;")
             layout.addWidget(update_lbl)
 
+        _lc = link_color_hex()
         links = QLabel(
-            f'<a href="{REPO_URL}">GitHub</a>'
-            f' · Built with <a href="{LIB_URL}">pymyhondaplus</a>')
+            f'<a href="{REPO_URL}" style="color: {_lc};">GitHub</a>'
+            f' · Built with '
+            f'<a href="{LIB_URL}" style="color: {_lc};">pymyhondaplus</a>')
         links.setOpenExternalLinks(True)
         links.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(links)
@@ -97,7 +99,7 @@ class AboutDialog(QDialog):
         disclaimer.setWordWrap(True)
         layout.addWidget(disclaimer)
 
-        # Language selector
+        # Language + theme selectors
         if self._settings is not None:
             lang_layout = QHBoxLayout()
             lang_layout.addStretch()
@@ -117,7 +119,27 @@ class AboutDialog(QDialog):
             lang_layout.addStretch()
             layout.addLayout(lang_layout)
 
-            self._restart_label = QLabel(t("app.restart_language"))
+            theme_layout = QHBoxLayout()
+            theme_layout.addStretch()
+            theme_label = QLabel(t("app.theme"))
+            theme_layout.addWidget(theme_label)
+            theme_combo = QComboBox()
+            for value, label_key in (
+                ("system", "app.theme_system"),
+                ("light", "app.theme_light"),
+                ("dark", "app.theme_dark"),
+            ):
+                theme_combo.addItem(t(label_key), value)
+            idx = theme_combo.findData(self._settings.theme or "system")
+            if idx >= 0:
+                theme_combo.setCurrentIndex(idx)
+            theme_combo.currentIndexChanged.connect(
+                lambda i: self._on_theme_changed(theme_combo.currentData()))
+            theme_layout.addWidget(theme_combo)
+            theme_layout.addStretch()
+            layout.addLayout(theme_layout)
+
+            self._restart_label = QLabel(t("app.restart_required"))
             self._restart_label.setStyleSheet(
                 "color: gray; font-size: 11px;")
             self._restart_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -131,6 +153,12 @@ class AboutDialog(QDialog):
     def _on_language_changed(self, lang_code: str):
         if self._settings is not None:
             self._settings.language = lang_code
+            self._settings.save()
+            self._restart_label.setVisible(True)
+
+    def _on_theme_changed(self, theme: str):
+        if self._settings is not None:
+            self._settings.theme = theme
             self._settings.save()
             self._restart_label.setVisible(True)
 
@@ -600,13 +628,27 @@ def _force_palette(app: QApplication, mode: str):
         p.setColor(QPalette.ColorRole.Button, QColor(55, 55, 55))
         p.setColor(QPalette.ColorRole.ButtonText, QColor(220, 220, 220))
         p.setColor(QPalette.ColorRole.BrightText, QColor(255, 50, 50))
-        p.setColor(QPalette.ColorRole.Link, QColor(80, 160, 255))
+        # Brighter link on dark surfaces — the previous (80, 160, 255) cleared
+        # WCAG AA on Base but read as "too dark" against Window / Button greys.
+        p.setColor(QPalette.ColorRole.Link, QColor(128, 192, 255))
         p.setColor(QPalette.ColorRole.Highlight, QColor(50, 120, 200))
         p.setColor(QPalette.ColorRole.HighlightedText, QColor(255, 255, 255))
         p.setColor(QPalette.ColorRole.ToolTipBase, QColor(50, 50, 50))
         p.setColor(QPalette.ColorRole.ToolTipText, QColor(220, 220, 220))
         p.setColor(QPalette.ColorRole.PlaceholderText, QColor(128, 128, 128))
     app.setPalette(p)
+
+
+def _detect_system_theme(app: QApplication) -> str:
+    """Resolve the OS color-scheme hint to ``"light"`` or ``"dark"``.
+
+    Uses :class:`QStyleHints.colorScheme`, available since Qt 6.5. Defaults
+    to ``"light"`` when the platform reports ``Unknown`` (older platforms,
+    unconfigured Wayland sessions, etc.).
+    """
+    from PyQt6.QtCore import Qt
+    scheme = app.styleHints().colorScheme()
+    return "dark" if scheme == Qt.ColorScheme.Dark else "light"
 
 
 def main():
@@ -616,18 +658,21 @@ def main():
     logging.basicConfig(level=logging.INFO)
     settings = Settings.load()
     load_language(settings.language)
-    force_theme = None
+    # CLI flag wins; otherwise honor saved Settings.theme.
+    # "system" resolves to light/dark via the OS color-scheme hint, so our
+    # palette (incl. link color) always applies — never the platform theme.
+    explicit = None
     if "--light" in sys.argv:
-        force_theme = "light"
+        explicit = "light"
     elif "--dark" in sys.argv:
-        force_theme = "dark"
-    if force_theme:
-        os.environ.pop("QT_QPA_PLATFORMTHEME", None)
+        explicit = "dark"
+    elif settings.theme in ("light", "dark"):
+        explicit = settings.theme
+    os.environ.pop("QT_QPA_PLATFORMTHEME", None)
     app = QApplication(sys.argv)
     app.setApplicationName(t("app.name"))
     app.setWindowIcon(icon("app-icon"))
-    if force_theme:
-        _force_palette(app, force_theme)
+    _force_palette(app, explicit or _detect_system_theme(app))
     window = MainWindow()
     window.show()
     sys.exit(app.exec())

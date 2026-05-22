@@ -37,6 +37,7 @@ def image_cache_dir() -> Path:
 class Settings:
     vin: str = ""
     language: str = ""  # empty = auto-detect from system locale
+    theme: str = "system"  # one of "system", "light", "dark"
 
     def save(self):
         path = settings_file()

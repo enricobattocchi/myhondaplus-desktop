@@ -21,6 +21,18 @@ def _text_color_hex() -> str:
         QPalette.ColorRole.WindowText).name()
 
 
+def link_color_hex() -> str:
+    """Get the current palette Link color as hex.
+
+    Qt's QLabel rich-text ignores QPalette.Link for raw ``<a>`` tags and
+    falls back to a hard-coded blue (≈ #0000FF) that's unreadable on dark
+    backgrounds. Inject this value via inline ``style="color: …"`` to make
+    links theme-aware.
+    """
+    return QApplication.instance().palette().color(
+        QPalette.ColorRole.Link).name()
+
+
 def _load_svg_bytes(name: str) -> bytes:
     """Load raw SVG bytes (cached)."""
     if name not in _raw_cache:
