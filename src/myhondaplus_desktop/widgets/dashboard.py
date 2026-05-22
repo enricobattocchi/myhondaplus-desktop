@@ -16,7 +16,7 @@ from PyQt6.QtWidgets import (
 )
 
 from ..i18n import t
-from ..icons import icon, pixmap
+from ..icons import icon, link_color_hex, pixmap
 
 
 def _dms_to_decimal(dms: str) -> float | None:
@@ -308,7 +308,8 @@ class DashboardWidget(QWidget):
             osm_url = (f"https://www.openstreetmap.org/"
                        f"?mlat={lat:.6f}&mlon={lon:.6f}#map=17/{lat:.6f}/{lon:.6f}")
             self._location_link.setText(
-                f'<a href="{osm_url}">{lat:.6f}, {lon:.6f}</a>')
+                f'<a href="{osm_url}" style="color: {link_color_hex()};">'
+                f'{lat:.6f}, {lon:.6f}</a>')
         else:
             self._location_link.setText(t("dashboard.unknown"))
 

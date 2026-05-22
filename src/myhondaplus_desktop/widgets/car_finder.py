@@ -10,6 +10,7 @@ from PyQt6.QtWidgets import (
 )
 
 from ..i18n import t
+from ..icons import link_color_hex
 from .geofence import _TileMapView
 
 
@@ -49,7 +50,9 @@ class CarFinderDialog(QDialog):
             f"&mlon={location.longitude:.6f}#map=18/"
             f"{location.latitude:.6f}/{location.longitude:.6f}"
         )
-        coord_label = QLabel(f'<a href="{osm_url}">{coord_text}</a>')
+        coord_label = QLabel(
+            f'<a href="{osm_url}" style="color: {link_color_hex()};">{coord_text}</a>'
+        )
         coord_label.setOpenExternalLinks(True)
         coord_label.setTextFormat(Qt.TextFormat.RichText)
         coord_label.setTextInteractionFlags(

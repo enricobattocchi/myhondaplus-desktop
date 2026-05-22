@@ -37,7 +37,7 @@ This project is **unofficial** and **not affiliated with, endorsed by, or connec
 - **Secure storage** — tokens and device keys encrypted at rest via OS keyring or machine-derived key
 - **Persistent login** — auto-refresh on expiry, no need to re-enter credentials
 - **Lucide SVG icons** — crisp, theme-aware icons throughout the UI
-- **Light/dark theme** — follows system theme, or force with `--light` / `--dark`
+- **Light/dark theme** — auto-detects the system color scheme, or pick explicitly from Settings (System / Light / Dark). `--light` / `--dark` CLI flags still override.
 - **Multi-language** — 13 languages included, [easy to add more](TRANSLATING.md)
 
 ## Supported vehicles
@@ -76,7 +76,7 @@ myhondaplus-desktop
 # or
 python -m myhondaplus_desktop
 
-# Force light or dark theme
+# Force light or dark theme (overrides the Settings choice for this run)
 myhondaplus-desktop --light
 myhondaplus-desktop --dark
 ```
@@ -112,11 +112,15 @@ The app auto-detects your system language. To change it manually, open the About
 
 Available: Czech, Danish, Dutch, English, French, German, Hungarian, Italian, Norwegian, Polish, Slovak, Spanish, Swedish. See [TRANSLATING.md](TRANSLATING.md) to contribute a new language.
 
+### Theme
+
+Same dialog as the language selector. Pick **System default** (follows the OS color scheme), **Light**, or **Dark**. The change takes effect on restart. CLI `--light` / `--dark` flags override the saved setting for that run.
+
 ## Requirements
 
 - Python 3.11+
 - PyQt6 >= 6.6
-- [pymyhondaplus](https://pypi.org/project/pymyhondaplus/) >= 5.8.2
+- [pymyhondaplus](https://pypi.org/project/pymyhondaplus/) >= 5.9.0
 
 ### Optional
 
