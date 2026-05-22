@@ -22,7 +22,7 @@ from pymyhondaplus import (
     parse_climate_schedule,
     parse_ev_status,
 )
-from pymyhondaplus.api import compute_trip_stats
+from pymyhondaplus.api import CarLocation, compute_trip_stats
 from PyQt6.QtCore import QThread, pyqtSignal
 
 from .i18n import t
@@ -263,7 +263,8 @@ class DashboardWorker(QThread):
         try:
             if self.fresh:
                 self.progress.emit(t("workers.waking_car"))
-                result = self.api.refresh_dashboard(self.vin)
+                command_id = self.api.refresh_dashboard(self.vin)
+                result = self.api.wait_for_command(command_id, timeout=90)
                 dashboard = self.api.get_dashboard_cached(self.vin)
                 status = parse_ev_status(dashboard)
                 self.result_ready.emit((status, not result.success))
@@ -314,6 +315,49 @@ class CommandWorker(QThread):
             self.auth_error.emit()
         except Exception as e:
             logger.exception("Command error")
+            self.error.emit(f"{self.label}: {_friendly_error(e)}")
+
+
+class LocateWorker(QThread):
+    """Locates the car via Honda's car-location endpoint.
+
+    Honda's ``/tsp/car-location`` returns the GPS fix in the command-status
+    response (in ``output.Content`` as a JSON-encoded payload), not by
+    updating the dashboard cache. This worker calls the command, parses the
+    result via ``CarLocation.from_command_result``, and emits the typed
+    location for the UI to display directly.
+    """
+    result_ready = pyqtSignal(object)  # CarLocation or None on parse failure
+    error = pyqtSignal(str)
+    auth_error = pyqtSignal()
+    progress = pyqtSignal(str)
+
+    def __init__(self, api: HondaAPI, vin: str, label: str):
+        super().__init__()
+        self.api = api
+        self.vin = vin
+        self.label = label
+
+    def run(self):
+        try:
+            self.progress.emit(t("workers.sending", label=self.label))
+            command_id = self.api.refresh_location(self.vin)
+            if not command_id:
+                self.error.emit(t("workers.no_command_id", label=self.label))
+                return
+            result = self.api.wait_for_command(command_id, timeout=90)
+            if not result.success:
+                if result.timed_out:
+                    self.error.emit(t("workers.timed_out", label=self.label))
+                else:
+                    self.error.emit(
+                        f"{self.label}: {result.reason or result.status}")
+                return
+            self.result_ready.emit(CarLocation.from_command_result(result))
+        except HondaAuthError:
+            self.auth_error.emit()
+        except Exception as e:
+            logger.exception("Locate error")
             self.error.emit(f"{self.label}: {_friendly_error(e)}")
 
 

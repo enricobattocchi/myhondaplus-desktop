@@ -263,5 +263,12 @@
   "schedules.thu": "Czw",
   "schedules.fri": "Pt",
   "schedules.sat": "Sob",
-  "schedules.sun": "Ndz"
+  "schedules.sun": "Ndz",
+  "car_finder.title": "Lokalizator samochodu",
+  "car_finder.coordinates": "Współrzędne",
+  "car_finder.fix_time": "Czas pozycji",
+  "car_finder.speed": "Prędkość",
+  "car_finder.heading": "Kurs",
+  "car_finder.ignition": "Zapłon",
+  "car_finder.note": "Ostatnia pozycja GPS zarejestrowana przez pojazd; może nieco różnić się od pozycji na panelu."
 }

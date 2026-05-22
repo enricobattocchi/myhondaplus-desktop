@@ -263,5 +263,12 @@
   "schedules.thu": "Čt",
   "schedules.fri": "Pá",
   "schedules.sat": "So",
-  "schedules.sun": "Ne"
+  "schedules.sun": "Ne",
+  "car_finder.title": "Vyhledávač vozidla",
+  "car_finder.coordinates": "Souřadnice",
+  "car_finder.fix_time": "Čas pozice",
+  "car_finder.speed": "Rychlost",
+  "car_finder.heading": "Směr",
+  "car_finder.ignition": "Zapalování",
+  "car_finder.note": "Poslední GPS pozice zaznamenaná vozidlem; může se mírně lišit od pozice na panelu."
 }

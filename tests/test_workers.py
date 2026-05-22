@@ -12,6 +12,7 @@ from myhondaplus_desktop.workers import (
     DashboardWorker,
     DeviceRegistrationWorker,
     ImageWorker,
+    LocateWorker,
     LoginWorker,
     ScheduleLoadWorker,
     ScheduleSaveWorker,
@@ -319,7 +320,8 @@ def test_verify_and_login_worker_reports_bad_link(monkeypatch):
 
 
 def test_dashboard_worker_fresh_success(monkeypatch, mock_api):
-    mock_api.refresh_dashboard.return_value = MagicMock(success=True)
+    mock_api.refresh_dashboard.return_value = "cmd-1"
+    mock_api.wait_for_command.return_value = MagicMock(success=True)
     mock_api.get_dashboard_cached.return_value = {"raw": True}
     monkeypatch.setattr(workers, "parse_ev_status", lambda d: {"battery": 80})
 
@@ -331,11 +333,13 @@ def test_dashboard_worker_fresh_success(monkeypatch, mock_api):
     assert status["battery"] == 80
     assert stale is False
     mock_api.refresh_dashboard.assert_called_once_with("VIN123")
+    mock_api.wait_for_command.assert_called_once_with("cmd-1", timeout=90)
     mock_api.get_dashboard_cached.assert_called_once_with("VIN123")
 
 
 def test_dashboard_worker_fresh_car_not_responding(monkeypatch, mock_api):
-    mock_api.refresh_dashboard.return_value = MagicMock(success=False)
+    mock_api.refresh_dashboard.return_value = "cmd-2"
+    mock_api.wait_for_command.return_value = MagicMock(success=False)
     mock_api.get_dashboard_cached.return_value = {"raw": True}
     monkeypatch.setattr(workers, "parse_ev_status", lambda d: {"battery": 70})
 
@@ -359,6 +363,56 @@ def test_dashboard_worker_cached_has_no_stale_flag(monkeypatch, mock_api):
     status, stale = results["finished"]
     assert stale is False
     mock_api.refresh_dashboard.assert_not_called()
+
+
+def test_locate_worker_emits_parsed_car_location(mock_api):
+    import json as _json
+
+    mock_api.refresh_location.return_value = "loc-cmd-1"
+    mock_api.wait_for_command.return_value = MagicMock(
+        success=True, timed_out=False, status="success", reason=None,
+        raw={"output": {"Content": _json.dumps({
+            "gpsData": {
+                "dtTime": "2026-04-26T18:18:01+00:00",
+                "coordinate": {"latitude": 156791051, "longitude": 37196051},
+                "velocity": {"unit": "kph", "value": 0},
+            },
+            "ignition": "ignitionOff",
+        })}},
+    )
+
+    worker = LocateWorker(mock_api, "VIN123", "Locate")
+    results = _run_worker(worker)
+
+    assert results["error"] is None
+    location = results["finished"]
+    assert location is not None
+    assert abs(location.latitude - 43.553) < 0.001
+    assert abs(location.longitude - 10.332) < 0.001
+    mock_api.refresh_location.assert_called_once_with("VIN123")
+
+
+def test_locate_worker_no_command_id_emits_error(mock_api):
+    mock_api.refresh_location.return_value = ""
+
+    worker = LocateWorker(mock_api, "VIN123", "Locate")
+    results = _run_worker(worker)
+
+    assert results["finished"] is None
+    assert "Locate" in results["error"]
+
+
+def test_locate_worker_timeout_emits_error(mock_api):
+    mock_api.refresh_location.return_value = "loc-cmd-2"
+    mock_api.wait_for_command.return_value = MagicMock(
+        success=False, timed_out=True, status="pending", reason=None, raw={},
+    )
+
+    worker = LocateWorker(mock_api, "VIN123", "Locate")
+    results = _run_worker(worker)
+
+    assert results["finished"] is None
+    assert "timed out" in results["error"].lower()
 
 
 def test_schedule_save_worker_uses_90s_timeout(mock_api):

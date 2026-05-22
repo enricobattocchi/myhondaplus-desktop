@@ -263,5 +263,12 @@
   "schedules.thu": "Jue",
   "schedules.fri": "Vie",
   "schedules.sat": "Sáb",
-  "schedules.sun": "Dom"
+  "schedules.sun": "Dom",
+  "car_finder.title": "Buscador de coche",
+  "car_finder.coordinates": "Coordenadas",
+  "car_finder.fix_time": "Hora de la posición",
+  "car_finder.speed": "Velocidad",
+  "car_finder.heading": "Rumbo",
+  "car_finder.ignition": "Encendido",
+  "car_finder.note": "Última posición GPS registrada por el vehículo; puede diferir ligeramente de la ubicación del panel."
 }

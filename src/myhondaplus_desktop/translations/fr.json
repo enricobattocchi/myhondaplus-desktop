@@ -263,5 +263,12 @@
   "schedules.thu": "Jeu",
   "schedules.fri": "Ven",
   "schedules.sat": "Sam",
-  "schedules.sun": "Dim"
+  "schedules.sun": "Dim",
+  "car_finder.title": "Localisateur de véhicule",
+  "car_finder.coordinates": "Coordonnées",
+  "car_finder.fix_time": "Heure de la position",
+  "car_finder.speed": "Vitesse",
+  "car_finder.heading": "Cap",
+  "car_finder.ignition": "Allumage",
+  "car_finder.note": "Dernière position GPS enregistrée par le véhicule ; peut différer légèrement de la position du tableau de bord."
 }

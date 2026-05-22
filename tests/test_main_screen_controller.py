@@ -61,7 +61,7 @@ class FakeAPI:
         self.remote_climate_start = object()
         self.remote_climate_stop = object()
         self.set_climate_settings = object()
-        self.request_car_location = object()
+        self.refresh_location = object()
         self.set_climate_schedule = object()
         self.set_charge_schedule = object()
 
@@ -170,6 +170,10 @@ class FakeView:
 
     def open_climate_settings_dialog(self, status, on_accept):
         self.climate_settings_dialog = (status, on_accept)
+
+    def open_car_finder_dialog(self, location):
+        self.car_finder_dialog = getattr(self, "car_finder_dialog", [])
+        self.car_finder_dialog.append(location)
 
     def open_climate_schedule_dialog(self, schedule, on_save, on_clear,
                                      plugin_warning=False):

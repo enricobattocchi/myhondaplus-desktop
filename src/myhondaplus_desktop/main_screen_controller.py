@@ -11,6 +11,7 @@ from .workers import (
     CommandWorker,
     DashboardWorker,
     ImageWorker,
+    LocateWorker,
     ScheduleLoadWorker,
     ScheduleSaveWorker,
     UpdateCheckWorker,
@@ -43,6 +44,7 @@ class MainScreenController:
         self._cached_profile = None
         self._plugin_warning_climate = False
         self._geofence_worker = None
+        self._locate_worker = None
         self._retired_workers: list = []
 
     def set_api(self, api):
@@ -147,9 +149,27 @@ class MainScreenController:
         self._view.open_climate_settings_dialog(status, on_accept)
 
     def run_locate(self):
-        self._run_command(
-            t("commands.locate"), self._api.request_car_location, self._view.current_vin()
-        )
+        vin = self._view.current_vin()
+        if not vin:
+            return
+        self._view.set_dashboard_actions_enabled(False)
+        retire_worker(self._locate_worker, self._retired_workers)
+        self._locate_worker = LocateWorker(self._api, vin, t("commands.locate"))
+        self._locate_worker.auth_error.connect(self.handle_auth_error)
+        self._locate_worker.progress.connect(self._view.show_status)
+        self._locate_worker.result_ready.connect(self._on_locate_success)
+        self._locate_worker.error.connect(self._on_command_error)
+        self._locate_worker.start()
+
+    def _on_locate_success(self, location):
+        self._view.set_dashboard_actions_enabled(True)
+        self._view.show_success(t("commands.done", label=t("commands.locate")))
+        if location is None:
+            return
+        # The car-finder result is shown in a separate dialog, mirroring the
+        # official app. The dashboard's location card stays bound to its own
+        # data source (which can differ slightly).
+        self._view.open_car_finder_dialog(location)
 
     def load_profile(self):
         if self._cached_profile is not None:

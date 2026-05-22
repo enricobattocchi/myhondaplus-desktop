@@ -263,5 +263,12 @@
   "schedules.thu": "Tor",
   "schedules.fri": "Fre",
   "schedules.sat": "Lör",
-  "schedules.sun": "Sön"
+  "schedules.sun": "Sön",
+  "car_finder.title": "Bilsökare",
+  "car_finder.coordinates": "Koordinater",
+  "car_finder.fix_time": "Tid för position",
+  "car_finder.speed": "Hastighet",
+  "car_finder.heading": "Riktning",
+  "car_finder.ignition": "Tändning",
+  "car_finder.note": "Senaste GPS-position registrerad av fordonet; kan skilja sig något från positionen på instrumentpanelen."
 }

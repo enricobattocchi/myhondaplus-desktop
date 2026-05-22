@@ -263,5 +263,12 @@
   "schedules.thu": "Do",
   "schedules.fri": "Fr",
   "schedules.sat": "Sa",
-  "schedules.sun": "So"
+  "schedules.sun": "So",
+  "car_finder.title": "Fahrzeugortung",
+  "car_finder.coordinates": "Koordinaten",
+  "car_finder.fix_time": "Zeitpunkt der Position",
+  "car_finder.speed": "Geschwindigkeit",
+  "car_finder.heading": "Richtung",
+  "car_finder.ignition": "Zündung",
+  "car_finder.note": "Letzte vom Fahrzeug erfasste GPS-Position; kann leicht von der Position im Dashboard abweichen."
 }

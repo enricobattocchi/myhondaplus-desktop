@@ -263,5 +263,12 @@
   "schedules.thu": "Do",
   "schedules.fri": "Vr",
   "schedules.sat": "Za",
-  "schedules.sun": "Zo"
+  "schedules.sun": "Zo",
+  "car_finder.title": "Autozoeker",
+  "car_finder.coordinates": "Coördinaten",
+  "car_finder.fix_time": "Tijd van positie",
+  "car_finder.speed": "Snelheid",
+  "car_finder.heading": "Richting",
+  "car_finder.ignition": "Contact",
+  "car_finder.note": "Laatste GPS-positie geregistreerd door het voertuig; kan iets afwijken van de dashboardlocatie."
 }
