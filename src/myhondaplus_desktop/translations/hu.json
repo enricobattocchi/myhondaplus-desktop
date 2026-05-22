@@ -263,5 +263,12 @@
   "schedules.thu": "Csü",
   "schedules.fri": "Pé",
   "schedules.sat": "Szo",
-  "schedules.sun": "Vas"
+  "schedules.sun": "Vas",
+  "car_finder.title": "Autókereső",
+  "car_finder.coordinates": "Koordináták",
+  "car_finder.fix_time": "Pozíció időpontja",
+  "car_finder.speed": "Sebesség",
+  "car_finder.heading": "Haladási irány",
+  "car_finder.ignition": "Gyújtás",
+  "car_finder.note": "A jármű által rögzített legutóbbi GPS-pozíció; eltérhet az irányítópult helyétől."
 }

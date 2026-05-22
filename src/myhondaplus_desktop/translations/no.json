@@ -263,5 +263,12 @@
   "schedules.thu": "Tor",
   "schedules.fri": "Fre",
   "schedules.sat": "Lør",
-  "schedules.sun": "Søn"
+  "schedules.sun": "Søn",
+  "car_finder.title": "Bilfinner",
+  "car_finder.coordinates": "Koordinater",
+  "car_finder.fix_time": "Tidspunkt for posisjon",
+  "car_finder.speed": "Hastighet",
+  "car_finder.heading": "Retning",
+  "car_finder.ignition": "Tenning",
+  "car_finder.note": "Siste GPS-posisjon registrert av kjøretøyet; kan avvike litt fra posisjonen på instrumentbordet."
 }

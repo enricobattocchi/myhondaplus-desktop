@@ -263,5 +263,12 @@
   "schedules.thu": "Thu",
   "schedules.fri": "Fri",
   "schedules.sat": "Sat",
-  "schedules.sun": "Sun"
+  "schedules.sun": "Sun",
+  "car_finder.title": "Car Finder",
+  "car_finder.coordinates": "Coordinates",
+  "car_finder.fix_time": "Fix time",
+  "car_finder.speed": "Speed",
+  "car_finder.heading": "Heading",
+  "car_finder.ignition": "Ignition",
+  "car_finder.note": "Last GPS fix recorded by the vehicle; may differ slightly from the dashboard's location."
 }

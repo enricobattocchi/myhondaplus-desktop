@@ -28,6 +28,7 @@ from .i18n import active_language, available_languages, load_language, t
 from .icons import icon, pixmap
 from .main_screen_controller import MainScreenController
 from .session import AppSession
+from .widgets.car_finder import CarFinderDialog
 from .widgets.dashboard import DashboardWidget, _dms_to_decimal
 from .widgets.geofence import GeofenceWidget
 from .widgets.login import LoginWidget
@@ -488,6 +489,10 @@ class MainScreen(QWidget):
             defrost=status.get("climate_defrost", True),
         )
         dlg.set_accept_handler(lambda: on_accept(dlg))
+        dlg.exec()
+
+    def open_car_finder_dialog(self, location):
+        dlg = CarFinderDialog(location, self)
         dlg.exec()
 
     def open_climate_schedule_dialog(self, schedule: list, on_save, on_clear,
