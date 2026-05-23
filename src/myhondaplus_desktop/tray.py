@@ -23,6 +23,19 @@ from .platform_support import click_opens_menu, is_macos
 
 logger = logging.getLogger(__name__)
 
+# The full app icon (rounded square + glow + car) is opaque across its
+# whole bounding box, which is fine for the Linux/Windows tray slot but
+# breaks macOS template images: NSStatusItem uses the alpha channel as
+# a mask, so an opaque rectangle becomes a solid filled rectangle when
+# tinted by the menu bar. Use the Lucide car silhouette there instead,
+# which is stroke-only on a transparent background.
+_TRAY_ICON_NAME_DEFAULT = "app-icon"
+_TRAY_ICON_NAME_MACOS = "car"
+
+
+def _tray_icon_name() -> str:
+    return _TRAY_ICON_NAME_MACOS if is_macos() else _TRAY_ICON_NAME_DEFAULT
+
 
 class TrayController(QObject):
     """Owns the application's system tray icon and menu.
@@ -80,14 +93,18 @@ class TrayController(QObject):
         vehicle_name: str = "",
         battery_pct: int | None = None,
         locked: bool | None = None,
+        low_pct: int = 0,
     ) -> None:
         """Update the tooltip and the dynamic icon with current vehicle state.
 
         Used by the background poller to show that data has refreshed
         even while the window is hidden. Missing fields are skipped in
         the tooltip; the icon falls back to the static app icon when no
-        battery level is known (or on macOS, where the tray icon must
-        stay monochrome for the menu bar template).
+        battery level is known. On macOS the dynamic icon is rendered as
+        a monochrome template image (alpha-only) so the menu bar can
+        tint it for light/dark themes. ``low_pct`` is the user's
+        low-battery threshold from settings; passing 0 disables the
+        low-charge glyph overlay.
         """
         if self._tray is None:
             return
@@ -100,13 +117,17 @@ class TrayController(QObject):
         elif locked is False:
             parts.append(t("dashboard.unlocked"))
         self._tray.setToolTip(" • ".join(parts))
-        if is_macos():
-            # macOS keeps the static template icon either way.
-            return
         if battery_pct is None:
-            # Restore the static icon so a previous battery bar isn't left
-            # stranded across snapshots that omit battery_level.
-            self._tray.setIcon(load_icon("app-icon"))
+            # Restore the static icon so a previous battery glyph isn't
+            # left stranded across snapshots that omit battery_level.
+            qi = load_icon(_tray_icon_name())
+            if is_macos():
+                qi.setIsMask(True)
+            self._tray.setIcon(qi)
+            return
+        low = low_pct > 0 and battery_pct < low_pct
+        if is_macos():
+            self._tray.setIcon(_battery_template_icon(battery_pct, low))
         else:
             self._tray.setIcon(_battery_bar_icon(battery_pct))
 
@@ -172,11 +193,11 @@ class TrayController(QObject):
             self._toggle_action.setText(t("tray.show_window"))
 
     def _build_icon(self) -> None:
-        qi = load_icon("app-icon")
+        qi = load_icon(_tray_icon_name())
         # On macOS, NSStatusItem expects a monochrome template image so
-        # the system can tint it for light / dark menu bars. Lucide SVG
-        # already renders single-colour via currentColor; flagging it as
-        # a mask is enough.
+        # the system can tint it for light / dark menu bars. The Lucide
+        # car silhouette is stroke-only on a transparent background, so
+        # the alpha channel acts as a clean mask; flagging it is enough.
         if is_macos():
             qi.setIsMask(True)
         self._tray = QSystemTrayIcon(qi, self)
@@ -279,4 +300,79 @@ def _battery_bar_icon(battery_pct: int) -> QIcon:
     icon = QIcon()
     for size in (16, 22, 24, 32, 48, 64):
         icon.addPixmap(_render_battery_bar(battery_pct, size))
+    return icon
+
+
+# -- macOS template variant --------------------------------------------------
+
+def _render_battery_template(battery_pct: int, size: int, low: bool) -> QPixmap:
+    """Render the battery icon as an alpha-only template image for macOS.
+
+    NSStatusItem ignores the RGB channels of a template image and uses
+    only the alpha channel as a tint mask: the menu bar then fills the
+    shape with the appropriate color for the current light/dark theme.
+    Everything is drawn in solid black; the bar background uses a lower
+    alpha so the empty portion of the gauge reads as a softer outline.
+
+    When ``low`` is true an exclamation glyph is overlaid in the
+    top-right corner of the canvas to compensate for the loss of the
+    red-bucket threshold color we use on Linux / Windows.
+    """
+    pct = max(0, min(100, int(battery_pct)))
+    canvas = QPixmap(size, size)
+    canvas.fill(Qt.GlobalColor.transparent)
+    painter = QPainter(canvas)
+    painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+
+    bar_height = max(3, size // 7)
+    side_margin = max(1, size // 16)
+    bar_y = size - bar_height
+    bar_x = side_margin
+    bar_w = size - 2 * side_margin
+
+    icon_size = size - bar_height - max(1, size // 16)
+    if icon_size > 0:
+        base = load_pixmap(_TRAY_ICON_NAME_MACOS, icon_size)
+        painter.drawPixmap((size - icon_size) // 2, 0, base)
+
+    painter.setPen(Qt.PenStyle.NoPen)
+    radius = bar_height / 2
+
+    # Empty portion: semi-transparent so it reads as an outline.
+    painter.setBrush(QColor(0, 0, 0, 90))
+    painter.drawRoundedRect(QRectF(bar_x, bar_y, bar_w, bar_height),
+                            radius, radius)
+
+    # Filled portion: solid alpha.
+    fill_w = int(bar_w * pct / 100)
+    if fill_w > 0:
+        painter.setBrush(QColor(0, 0, 0, 255))
+        painter.drawRoundedRect(QRectF(bar_x, bar_y, fill_w, bar_height),
+                                radius, radius)
+
+    if low:
+        glyph_w = max(2, size // 8)
+        glyph_h = max(6, size // 3)
+        gmargin = max(1, size // 16)
+        gx = size - gmargin - glyph_w
+        gy = gmargin
+        stem_h = int(glyph_h * 0.65)
+        painter.setBrush(QColor(0, 0, 0, 255))
+        painter.drawRoundedRect(
+            QRectF(gx, gy, glyph_w, stem_h),
+            glyph_w / 2, glyph_w / 2,
+        )
+        dot_y = gy + stem_h + max(1, glyph_h // 8)
+        painter.drawEllipse(QRectF(gx, dot_y, glyph_w, glyph_w))
+
+    painter.end()
+    return canvas
+
+
+def _battery_template_icon(battery_pct: int, low: bool) -> QIcon:
+    """Template-flagged QIcon variant for macOS menu bars."""
+    icon = QIcon()
+    for size in (16, 22, 24, 32, 48, 64):
+        icon.addPixmap(_render_battery_template(battery_pct, size, low))
+    icon.setIsMask(True)
     return icon
