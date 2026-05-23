@@ -38,6 +38,9 @@ This project is **unofficial** and **not affiliated with, endorsed by, or connec
 - **Persistent login** — auto-refresh on expiry, no need to re-enter credentials
 - **Lucide SVG icons** — crisp, theme-aware icons throughout the UI
 - **Light/dark theme** — auto-detects the system color scheme, or pick explicitly from Settings (System / Light / Dark). `--light` / `--dark` CLI flags still override.
+- **System tray** — coloured battery bar on the tray icon (green ≥ 50%, yellow 20-49%, red below); tooltip with name and lock status; optional "close to tray" and "start minimized".
+- **Background polling** — optional periodic dashboard refresh while the window is hidden (off by default; defaults match the HA integration when enabled).
+- **Desktop notifications** — alerts for charging started / stopped, climate started / stopped, car unlocked, battery below a configurable threshold, warning light on.
 - **Multi-language** — 13 languages included, [easy to add more](TRANSLATING.md)
 
 ## Supported vehicles
@@ -79,6 +82,9 @@ python -m myhondaplus_desktop
 # Force light or dark theme (overrides the Settings choice for this run)
 myhondaplus-desktop --light
 myhondaplus-desktop --dark
+
+# Start with the window hidden in the tray (useful for autostart entries)
+myhondaplus-desktop --minimized
 ```
 
 ### First login
@@ -106,15 +112,38 @@ The Vehicle tab shows your car's specifications, subscription services, and capa
 
 The Geofence tab displays an interactive map where you can place a circular geofence around your vehicle's location. Use the Save button to store the geofence on Honda's servers, or Clear to remove it.
 
+### Settings
+
+All preferences live in the **Impostazioni** tab (last tab on the right), grouped in four panels:
+
+- **General** — language, theme.
+- **Tray** — show the icon, "close to tray" (hide instead of quit when pressing the window's X), "start minimized" (window hidden at launch, app reachable from the tray).
+- **Background polling** — refresh the cached dashboard at a configurable interval (5 / 10 / 15 / 30 / 60 minutes; default 10), and optionally wake the TCU on a slower one (6 / 12 / 24 hours). Polling only runs while the window is hidden — open window means the user is there and can refresh by hand.
+- **Notifications** — desktop alerts for the events listed above, each independently toggleable. Notifications use the OS notification daemon (libnotify on Linux, balloon on Windows, NSUserNotification on macOS).
+
+Most setting changes take effect on restart; the label below the panels makes that visible.
+
+### System tray
+
+When the OS exposes a tray (most Linux DEs, Windows, macOS menu bar) the app shows an icon with a battery bar drawn along the bottom, colour-coded by charge level. The tooltip shows the vehicle name, battery percentage, and lock state and refreshes after every dashboard load.
+
+The tray menu has **Show window**, **Settings** (jumps to the Settings tab), **Exit**, and a **Veicolo** submenu when the account has more than one vehicle.
+
+Notes per platform:
+
+- **GNOME** removed the native tray in 3.26 — install the **AppIndicator and KStatusNotifierItem Support** extension to make the icon visible. The app shows a hint in Settings if it detects GNOME without the extension.
+- **macOS** keeps the icon as a monochrome template image so the menu bar can tint it properly; click opens the menu (single-click toggle is a Linux/Windows convention).
+- **Wayland**: KDE works out of the box; GNOME-Wayland needs the same AppIndicator extension as X11; other compositors depend on the user's status bar configuration.
+
 ### Language
 
-The app auto-detects your system language. To change it manually, open the About dialog (info button in the top bar) and select a language. The change takes effect on restart.
+The app auto-detects your system language. Change it from the **General** group of the Settings tab. The change takes effect on restart.
 
 Available: Czech, Danish, Dutch, English, French, German, Hungarian, Italian, Norwegian, Polish, Slovak, Spanish, Swedish. See [TRANSLATING.md](TRANSLATING.md) to contribute a new language.
 
 ### Theme
 
-Same dialog as the language selector. Pick **System default** (follows the OS color scheme), **Light**, or **Dark**. The change takes effect on restart. CLI `--light` / `--dark` flags override the saved setting for that run.
+Same group as the language selector. Pick **System default** (follows the OS color scheme), **Light**, or **Dark**. The change takes effect on restart. CLI `--light` / `--dark` flags override the saved setting for that run.
 
 ## Requirements
 
