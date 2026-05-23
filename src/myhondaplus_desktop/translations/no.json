@@ -26,6 +26,7 @@
   "app.restart_required": "Endringen trer i kraft ved neste omstart.",
   "tray.show_window": "Vis vindu",
   "tray.hide_window": "Skjul vindu",
+  "tray.vehicle_submenu": "Kjøretøy",
   "tray.settings": "Innstillinger",
   "tray.quit": "Avslutt",
   "settings.tray.heading": "Systemstatusfelt",

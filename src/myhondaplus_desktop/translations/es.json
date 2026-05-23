@@ -26,6 +26,7 @@
   "app.restart_required": "El cambio se aplicará en el próximo reinicio.",
   "tray.show_window": "Mostrar ventana",
   "tray.hide_window": "Ocultar ventana",
+  "tray.vehicle_submenu": "Vehículo",
   "tray.settings": "Ajustes",
   "tray.quit": "Salir",
   "settings.tray.heading": "Bandeja del sistema",

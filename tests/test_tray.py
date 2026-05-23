@@ -36,9 +36,10 @@ def test_tray_built_when_system_tray_available(monkeypatch):
     assert controller.available is True
     assert controller._tray is not None
     assert controller._menu is not None
-    # Menu has at least: toggle, separator, settings, quit.
+    # Menu has: toggle, vehicle submenu (hidden by default), separator,
+    # settings, quit — 4 non-separator entries.
     actions = controller._menu.actions()
-    assert len([a for a in actions if not a.isSeparator()]) == 3
+    assert len([a for a in actions if not a.isSeparator()]) == 4
 
 
 def test_set_window_visible_toggles_action_label(monkeypatch):
@@ -70,10 +71,56 @@ def test_signals_wired_to_menu_actions(monkeypatch):
     controller.show_window_requested.connect(lambda: events.append("show"))
     controller.settings_requested.connect(lambda: events.append("settings"))
     controller.quit_requested.connect(lambda: events.append("quit"))
-    actions = [a for a in controller._menu.actions() if not a.isSeparator()]
+    # Skip the hidden vehicle submenu (a menu, not a leaf action).
+    actions = [a for a in controller._menu.actions()
+               if not a.isSeparator() and a is not controller._vehicle_submenu_action]
     for action in actions:
         action.trigger()
     assert events == ["show", "settings", "quit"]
+
+
+def test_set_vehicles_hides_submenu_when_single_vehicle(monkeypatch):
+    monkeypatch.setattr(
+        QSystemTrayIcon, "isSystemTrayAvailable", staticmethod(lambda: True))
+    controller = TrayController()
+    controller.set_vehicles([{"vin": "VIN1", "name": "Lopomobile"}], "VIN1")
+    assert controller._vehicle_submenu_action.isVisible() is False
+
+
+def test_set_vehicles_populates_submenu_for_multiple(monkeypatch):
+    monkeypatch.setattr(
+        QSystemTrayIcon, "isSystemTrayAvailable", staticmethod(lambda: True))
+    controller = TrayController()
+    controller.set_vehicles(
+        [
+            {"vin": "VIN1", "name": "Lopomobile"},
+            {"vin": "VIN2", "name": "Spare"},
+        ],
+        "VIN1",
+    )
+    assert controller._vehicle_submenu_action.isVisible() is True
+    items = controller._vehicle_submenu.actions()
+    assert [a.text() for a in items] == ["Lopomobile", "Spare"]
+    assert items[0].isChecked() is True
+    assert items[1].isChecked() is False
+
+
+def test_set_vehicles_emits_signal_on_pick(monkeypatch):
+    monkeypatch.setattr(
+        QSystemTrayIcon, "isSystemTrayAvailable", staticmethod(lambda: True))
+    controller = TrayController()
+    picked: list[str] = []
+    controller.vehicle_selected.connect(picked.append)
+    controller.set_vehicles(
+        [
+            {"vin": "VIN1", "name": "A"},
+            {"vin": "VIN2", "name": "B"},
+        ],
+        "VIN1",
+    )
+    items = controller._vehicle_submenu.actions()
+    items[1].trigger()
+    assert picked == ["VIN2"]
 
 
 def test_activated_emits_show_on_linux(monkeypatch):

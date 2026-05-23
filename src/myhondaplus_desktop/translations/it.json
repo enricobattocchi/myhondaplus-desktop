@@ -26,6 +26,7 @@
   "app.restart_required": "La modifica avrà effetto al prossimo riavvio.",
   "tray.show_window": "Mostra finestra",
   "tray.hide_window": "Nascondi finestra",
+  "tray.vehicle_submenu": "Veicolo",
   "tray.settings": "Impostazioni",
   "tray.quit": "Esci",
   "settings.tray.heading": "Icona nella tray",

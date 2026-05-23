@@ -26,6 +26,7 @@
   "app.restart_required": "Změna se projeví při příštím spuštění.",
   "tray.show_window": "Zobrazit okno",
   "tray.hide_window": "Skrýt okno",
+  "tray.vehicle_submenu": "Vozidlo",
   "tray.settings": "Nastavení",
   "tray.quit": "Ukončit",
   "settings.tray.heading": "Systémová lišta",

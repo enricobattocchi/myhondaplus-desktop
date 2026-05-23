@@ -26,6 +26,7 @@
   "app.restart_required": "Change will apply on next restart.",
   "tray.show_window": "Show window",
   "tray.hide_window": "Hide window",
+  "tray.vehicle_submenu": "Vehicle",
   "tray.settings": "Settings",
   "tray.quit": "Quit",
   "settings.tray.heading": "System tray",

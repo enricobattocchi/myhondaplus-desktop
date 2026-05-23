@@ -193,6 +193,10 @@ class MainScreen(QWidget):
     # the signal as `object` because EVStatus is not a real dict.
     dashboard_loaded = pyqtSignal(object)
 
+    # Emitted after the vehicle list has been refreshed. Lets the host
+    # rebuild the tray's "Vehicle" submenu.
+    vehicles_changed = pyqtSignal(list, str)
+
     def __init__(self, api: HondaAPI, settings: Settings, on_logout):
         super().__init__()
         self._api = api
@@ -370,6 +374,17 @@ class MainScreen(QWidget):
         We forward the object as-is; the receiver uses ``.get()``.
         """
         self.dashboard_loaded.emit(status)
+
+    def notify_vehicles_changed(self, vehicles: list, current_vin: str) -> None:
+        """Called by the controller after the vehicle list changes."""
+        self.vehicles_changed.emit(list(vehicles), current_vin)
+
+    def select_vehicle(self, vin: str) -> None:
+        """Programmatically switch to the given VIN (used by tray submenu)."""
+        for i, v in enumerate(self._vehicles):
+            if v.get("vin") == vin:
+                self._vin_combo.setCurrentIndex(i)
+                return
 
     def current_vehicle_label(self) -> str:
         idx = self._vin_combo.currentIndex()
@@ -566,6 +581,11 @@ class MainWindow(QMainWindow):
         # tooltip reflects the latest state (especially useful while hidden).
         self._main.dashboard_loaded.connect(self._on_main_dashboard_loaded)
 
+        # Keep the tray's "Vehicle" submenu in sync with the loaded list.
+        self._main.vehicles_changed.connect(self._on_main_vehicles_changed)
+        if self._tray is not None:
+            self._tray.vehicle_selected.connect(self._main.select_vehicle)
+
         # Desktop notifications driven by edge detection on consecutive
         # dashboard snapshots.
         self._notifier = NotificationDispatcher(self._settings)
@@ -641,6 +661,11 @@ class MainWindow(QMainWindow):
             return
         logger.info("Background tick (car refresh): triggering refresh")
         self._main.refresh(fresh=True)
+
+    def _on_main_vehicles_changed(self, vehicles: list, current_vin: str):
+        """Push the latest vehicle list into the tray submenu."""
+        if self._tray is not None and self._tray.available:
+            self._tray.set_vehicles(vehicles, current_vin)
 
     def _on_main_dashboard_loaded(self, status):
         """Refresh the tray tooltip after every dashboard load (live update).
@@ -774,7 +799,14 @@ def main():
     # Ctrl+Q stay as the explicit exits.
     if window.has_tray() and settings.close_to_tray:
         app.setQuitOnLastWindowClosed(False)
-    # Honour start_minimized only when there's actually a tray to come back from.
-    if not (settings.start_minimized and window.has_tray()):
+    # `--minimized` CLI flag forces a tray-only start regardless of the saved
+    # Settings, for autostart entries (XDG .desktop, Windows Startup, etc.)
+    # that want the choice to live next to the launcher itself.
+    cli_minimized = "--minimized" in sys.argv
+    if cli_minimized and window.has_tray():
+        app.setQuitOnLastWindowClosed(False)
+    start_hidden = (
+        (settings.start_minimized or cli_minimized) and window.has_tray())
+    if not start_hidden:
         window.show()
     sys.exit(app.exec())

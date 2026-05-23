@@ -26,6 +26,7 @@
   "app.restart_required": "De wijziging wordt toegepast bij de volgende herstart.",
   "tray.show_window": "Venster tonen",
   "tray.hide_window": "Venster verbergen",
+  "tray.vehicle_submenu": "Voertuig",
   "tray.settings": "Instellingen",
   "tray.quit": "Afsluiten",
   "settings.tray.heading": "Systeemvak",

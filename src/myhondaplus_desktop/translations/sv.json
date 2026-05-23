@@ -26,6 +26,7 @@
   "app.restart_required": "Ändringen träder i kraft vid nästa omstart.",
   "tray.show_window": "Visa fönster",
   "tray.hide_window": "Dölj fönster",
+  "tray.vehicle_submenu": "Fordon",
   "tray.settings": "Inställningar",
   "tray.quit": "Avsluta",
   "settings.tray.heading": "Systemfält",

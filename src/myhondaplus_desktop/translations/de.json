@@ -26,6 +26,7 @@
   "app.restart_required": "Die Änderung wird beim nächsten Neustart wirksam.",
   "tray.show_window": "Fenster anzeigen",
   "tray.hide_window": "Fenster ausblenden",
+  "tray.vehicle_submenu": "Fahrzeug",
   "tray.settings": "Einstellungen",
   "tray.quit": "Beenden",
   "settings.tray.heading": "System-Tray",

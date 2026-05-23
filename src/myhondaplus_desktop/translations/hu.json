@@ -26,6 +26,7 @@
   "app.restart_required": "A módosítás a következő újraindításkor lép életbe.",
   "tray.show_window": "Ablak megjelenítése",
   "tray.hide_window": "Ablak elrejtése",
+  "tray.vehicle_submenu": "Jármű",
   "tray.settings": "Beállítások",
   "tray.quit": "Kilépés",
   "settings.tray.heading": "Rendszertálca",

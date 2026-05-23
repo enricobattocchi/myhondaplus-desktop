@@ -340,6 +340,9 @@ class MainScreenController:
             self._view.update_dashboard_vin(vin)
             self._apply_vehicle_details(vin)
             self._load_dashboard()
+        # Let the view propagate to anyone listening (e.g. the tray submenu).
+        if hasattr(self._view, "notify_vehicles_changed"):
+            self._view.notify_vehicles_changed(vehicles, vin)
 
     def _reset_schedule_cache(self):
         self._cached_climate_schedule = None

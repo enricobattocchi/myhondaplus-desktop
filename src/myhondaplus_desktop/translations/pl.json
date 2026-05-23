@@ -26,6 +26,7 @@
   "app.restart_required": "Zmiana zostanie zastosowana po następnym uruchomieniu.",
   "tray.show_window": "Pokaż okno",
   "tray.hide_window": "Ukryj okno",
+  "tray.vehicle_submenu": "Pojazd",
   "tray.settings": "Ustawienia",
   "tray.quit": "Wyjdź",
   "settings.tray.heading": "Zasobnik systemowy",
