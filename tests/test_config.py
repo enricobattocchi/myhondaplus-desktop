@@ -51,3 +51,165 @@ def test_settings_load_ignores_unknown_fields(monkeypatch, tmp_path):
     )
 
     assert Settings.load() == Settings(vin="VIN123", language="en")
+
+
+def test_settings_tray_defaults():
+    s = Settings()
+    assert s.tray_enabled is True
+    assert s.close_to_tray is False
+    assert s.start_minimized is False
+
+
+def test_settings_tray_roundtrip(monkeypatch, tmp_path):
+    config_dir = tmp_path / "config"
+    monkeypatch.setattr(
+        config.platformdirs, "user_config_path",
+        lambda *args, **kwargs: config_dir)
+    saved = Settings(
+        vin="VIN1",
+        tray_enabled=False,
+        close_to_tray=True,
+        start_minimized=True,
+    )
+    saved.save()
+    assert Settings.load() == saved
+
+
+def test_settings_load_handles_missing_tray_fields(monkeypatch, tmp_path):
+    """Old settings.json files predate the tray fields; defaults must apply."""
+    config_dir = tmp_path / "config"
+    monkeypatch.setattr(
+        config.platformdirs, "user_config_path",
+        lambda *args, **kwargs: config_dir)
+    path = config.settings_file()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        '{"vin": "VIN1", "language": "it", "theme": "dark"}',
+        encoding="utf-8",
+    )
+    loaded = Settings.load()
+    assert loaded.vin == "VIN1"
+    assert loaded.tray_enabled is True
+    assert loaded.close_to_tray is False
+    assert loaded.start_minimized is False
+
+
+def test_settings_polling_defaults():
+    s = Settings()
+    assert s.background_poll_enabled is False
+    assert s.background_poll_cached_interval_min == 10
+    assert s.background_car_refresh_enabled is False
+    assert s.background_car_refresh_hours == 12
+
+
+def test_settings_polling_roundtrip(monkeypatch, tmp_path):
+    config_dir = tmp_path / "config"
+    monkeypatch.setattr(
+        config.platformdirs, "user_config_path",
+        lambda *args, **kwargs: config_dir)
+    saved = Settings(
+        background_poll_enabled=True,
+        background_poll_cached_interval_min=30,
+        background_car_refresh_enabled=True,
+        background_car_refresh_hours=24,
+    )
+    saved.save()
+    assert Settings.load() == saved
+
+
+def test_settings_load_clamps_invalid_cached_interval(monkeypatch, tmp_path):
+    """A hand-edited settings.json must not push polling below the safe floor."""
+    config_dir = tmp_path / "config"
+    monkeypatch.setattr(
+        config.platformdirs, "user_config_path",
+        lambda *args, **kwargs: config_dir)
+    path = config.settings_file()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        '{"background_poll_cached_interval_min": 1}',
+        encoding="utf-8",
+    )
+    loaded = Settings.load()
+    assert loaded.background_poll_cached_interval_min == 10
+
+
+def test_settings_load_clamps_invalid_car_refresh_hours(monkeypatch, tmp_path):
+    config_dir = tmp_path / "config"
+    monkeypatch.setattr(
+        config.platformdirs, "user_config_path",
+        lambda *args, **kwargs: config_dir)
+    path = config.settings_file()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        '{"background_car_refresh_hours": 1}',
+        encoding="utf-8",
+    )
+    loaded = Settings.load()
+    assert loaded.background_car_refresh_hours == 12
+
+
+def test_settings_load_keeps_allowed_polling_values(monkeypatch, tmp_path):
+    config_dir = tmp_path / "config"
+    monkeypatch.setattr(
+        config.platformdirs, "user_config_path",
+        lambda *args, **kwargs: config_dir)
+    path = config.settings_file()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        '{"background_poll_cached_interval_min": 60, '
+        '"background_car_refresh_hours": 6}',
+        encoding="utf-8",
+    )
+    loaded = Settings.load()
+    assert loaded.background_poll_cached_interval_min == 60
+    assert loaded.background_car_refresh_hours == 6
+
+
+def test_settings_notification_defaults():
+    s = Settings()
+    assert s.notify_charge_started is False
+    assert s.notify_charge_stopped is True
+    assert s.notify_climate_started is False
+    assert s.notify_climate_stopped is False
+    assert s.notify_door_unlocked is False
+    assert s.notify_battery_low_pct == 0
+    assert s.notify_warning_lit is False
+
+
+def test_settings_notification_roundtrip(monkeypatch, tmp_path):
+    config_dir = tmp_path / "config"
+    monkeypatch.setattr(
+        config.platformdirs, "user_config_path",
+        lambda *args, **kwargs: config_dir)
+    saved = Settings(
+        notify_charge_stopped=False,
+        notify_door_unlocked=True,
+        notify_battery_low_pct=20,
+        notify_warning_lit=True,
+    )
+    saved.save()
+    assert Settings.load() == saved
+
+
+def test_settings_load_clamps_battery_threshold_above_100(monkeypatch, tmp_path):
+    config_dir = tmp_path / "config"
+    monkeypatch.setattr(
+        config.platformdirs, "user_config_path",
+        lambda *args, **kwargs: config_dir)
+    path = config.settings_file()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text('{"notify_battery_low_pct": 500}', encoding="utf-8")
+    loaded = Settings.load()
+    assert loaded.notify_battery_low_pct == 100
+
+
+def test_settings_load_clamps_battery_threshold_below_zero(monkeypatch, tmp_path):
+    config_dir = tmp_path / "config"
+    monkeypatch.setattr(
+        config.platformdirs, "user_config_path",
+        lambda *args, **kwargs: config_dir)
+    path = config.settings_file()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text('{"notify_battery_low_pct": -5}', encoding="utf-8")
+    loaded = Settings.load()
+    assert loaded.notify_battery_low_pct == 0

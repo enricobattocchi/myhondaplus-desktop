@@ -4,7 +4,7 @@ import logging
 import sys
 
 from pymyhondaplus import HondaAPI
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
     QApplication,
@@ -23,11 +23,14 @@ from PyQt6.QtWidgets import (
 )
 
 from . import __version__
+from .background_poll import BackgroundPoller
 from .config import Settings
-from .i18n import active_language, available_languages, load_language, t
+from .i18n import load_language, t
 from .icons import icon, link_color_hex, pixmap
 from .main_screen_controller import MainScreenController
+from .notifications import NotificationDispatcher
 from .session import AppSession
+from .tray import TrayController
 from .widgets.car_finder import CarFinderDialog
 from .widgets.dashboard import DashboardWidget, _dms_to_decimal
 from .widgets.geofence import GeofenceWidget
@@ -38,24 +41,22 @@ from .widgets.schedules import (
     ClimateScheduleDialog,
     ClimateSettingsDialog,
 )
+from .widgets.settings import SettingsWidget
 from .widgets.status_bar import StatusBarWidget
 from .widgets.trips import TripsWidget
 from .widgets.vehicle import VehicleWidget
 
 logger = logging.getLogger(__name__)
 
-
 REPO_URL = "https://github.com/enricobattocchi/myhondaplus-desktop"
 LIB_URL = "https://github.com/enricobattocchi/pymyhondaplus"
 
 
 class AboutDialog(QDialog):
-    def __init__(self, parent=None, update_info: tuple = None,
-                 settings: Settings = None):
+    def __init__(self, parent=None, update_info: tuple = None):
         super().__init__(parent)
         self.setWindowTitle(t("app.about"))
         self.setFixedWidth(400)
-        self._settings = settings
         layout = QVBoxLayout(self)
         layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
@@ -99,68 +100,9 @@ class AboutDialog(QDialog):
         disclaimer.setWordWrap(True)
         layout.addWidget(disclaimer)
 
-        # Language + theme selectors
-        if self._settings is not None:
-            lang_layout = QHBoxLayout()
-            lang_layout.addStretch()
-            lang_label = QLabel(t("app.language"))
-            lang_layout.addWidget(lang_label)
-            lang_combo = QComboBox()
-            langs = available_languages()
-            current_lang = active_language()
-            for lang_code in langs:
-                lang_combo.addItem(lang_code, lang_code)
-            idx = lang_combo.findData(current_lang)
-            if idx >= 0:
-                lang_combo.setCurrentIndex(idx)
-            lang_combo.currentIndexChanged.connect(
-                lambda i: self._on_language_changed(lang_combo.currentData()))
-            lang_layout.addWidget(lang_combo)
-            lang_layout.addStretch()
-            layout.addLayout(lang_layout)
-
-            theme_layout = QHBoxLayout()
-            theme_layout.addStretch()
-            theme_label = QLabel(t("app.theme"))
-            theme_layout.addWidget(theme_label)
-            theme_combo = QComboBox()
-            for value, label_key in (
-                ("system", "app.theme_system"),
-                ("light", "app.theme_light"),
-                ("dark", "app.theme_dark"),
-            ):
-                theme_combo.addItem(t(label_key), value)
-            idx = theme_combo.findData(self._settings.theme or "system")
-            if idx >= 0:
-                theme_combo.setCurrentIndex(idx)
-            theme_combo.currentIndexChanged.connect(
-                lambda i: self._on_theme_changed(theme_combo.currentData()))
-            theme_layout.addWidget(theme_combo)
-            theme_layout.addStretch()
-            layout.addLayout(theme_layout)
-
-            self._restart_label = QLabel(t("app.restart_required"))
-            self._restart_label.setStyleSheet(
-                "color: gray; font-size: 11px;")
-            self._restart_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            self._restart_label.setVisible(False)
-            layout.addWidget(self._restart_label)
-
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
         buttons.rejected.connect(self.accept)
         layout.addWidget(buttons)
-
-    def _on_language_changed(self, lang_code: str):
-        if self._settings is not None:
-            self._settings.language = lang_code
-            self._settings.save()
-            self._restart_label.setVisible(True)
-
-    def _on_theme_changed(self, theme: str):
-        if self._settings is not None:
-            self._settings.theme = theme
-            self._settings.save()
-            self._restart_label.setVisible(True)
 
 
 def _profile_row(label_text: str, value: str) -> QHBoxLayout:
@@ -245,6 +187,16 @@ def _vehicle_label(v) -> str:
 class MainScreen(QWidget):
     """Main screen with dashboard + commands."""
 
+    # Emitted after every successful dashboard load. Lets the host
+    # (MainWindow) update the tray tooltip when the user can't see the UI.
+    # The payload is a dict-like status (EVStatus, supports .get()); we type
+    # the signal as `object` because EVStatus is not a real dict.
+    dashboard_loaded = pyqtSignal(object)
+
+    # Emitted after the vehicle list has been refreshed. Lets the host
+    # rebuild the tray's "Vehicle" submenu.
+    vehicles_changed = pyqtSignal(list, str)
+
     def __init__(self, api: HondaAPI, settings: Settings, on_logout):
         super().__init__()
         self._api = api
@@ -285,8 +237,7 @@ class MainScreen(QWidget):
         about_btn.setToolTip(t("app.about"))
         about_btn.clicked.connect(
             lambda: AboutDialog(
-                self, update_info=self._update_info,
-                settings=self._settings).exec())
+                self, update_info=self._update_info).exec())
         top.addWidget(about_btn)
 
         layout.addLayout(top)
@@ -359,6 +310,10 @@ class MainScreen(QWidget):
         )
         self._tabs.addTab(self._trips, icon("route"), t("app.trips"))
 
+        # Settings tab (always visible, doesn't depend on capabilities)
+        self._settings_tab = SettingsWidget(settings)
+        self._tabs.addTab(self._settings_tab, icon("settings"), t("app.settings"))
+
         layout.addWidget(self._tabs)
 
         # Status bar
@@ -388,8 +343,12 @@ class MainScreen(QWidget):
         QShortcut(QKeySequence("Ctrl+Shift+R"), self).activated.connect(
             lambda: self._controller.handle_refresh_current_tab(fresh=True)
         )
+        # Ctrl+Q is an explicit quit shortcut; bypass close_to_tray so users
+        # who deliberately hit it actually leave the app instead of hiding it.
         QShortcut(QKeySequence("Ctrl+Q"), self).activated.connect(
-            lambda: self.window().close()
+            lambda: (self.window().request_quit()
+                     if hasattr(self.window(), "request_quit")
+                     else self.window().close())
         )
 
     def activate(self):
@@ -398,6 +357,41 @@ class MainScreen(QWidget):
     def set_api(self, api: HondaAPI):
         self._api = api
         self._controller.set_api(api)
+
+    def refresh(self, fresh: bool = False) -> None:
+        """Public entry for refresh requests (used by background polling)."""
+        logger.info("MainScreen.refresh(fresh=%s)", fresh)
+        self._controller.refresh(fresh=fresh)
+
+    def show_settings_tab(self) -> None:
+        """Switch the tab view to Settings (used by the gear button and tray)."""
+        self._tabs.setCurrentWidget(self._settings_tab)
+
+    def notify_dashboard_loaded(self, status) -> None:
+        """Called by the controller after a successful refresh.
+
+        ``status`` is a dict-like (typically ``EVStatus``) with ``.get()``.
+        We forward the object as-is; the receiver uses ``.get()``.
+        """
+        self.dashboard_loaded.emit(status)
+
+    def notify_vehicles_changed(self, vehicles: list, current_vin: str) -> None:
+        """Called by the controller after the vehicle list changes."""
+        self.vehicles_changed.emit(list(vehicles), current_vin)
+
+    def select_vehicle(self, vin: str) -> None:
+        """Programmatically switch to the given VIN (used by tray submenu)."""
+        for i, v in enumerate(self._vehicles):
+            if v.get("vin") == vin:
+                self._vin_combo.setCurrentIndex(i)
+                return
+
+    def current_vehicle_label(self) -> str:
+        idx = self._vin_combo.currentIndex()
+        if 0 <= idx < len(self._vehicles):
+            v = self._vehicles[idx]
+            return v.get("name") or v.get("vin", "")
+        return ""
 
     def vehicles(self) -> list[dict]:
         return self._vehicles
@@ -565,8 +559,69 @@ class MainWindow(QMainWindow):
             self._api, self._settings, on_logout=self._logout)
         self._stack.addWidget(self._main)
 
+        # System tray (None when disabled in settings or unavailable on this DE).
+        self._tray: TrayController | None = None
+        if self._settings.tray_enabled:
+            self._tray = TrayController(self)
+            if self._tray.available:
+                self._tray.show_window_requested.connect(self._tray_toggle_window)
+                self._tray.settings_requested.connect(self._tray_open_settings)
+                self._tray.quit_requested.connect(self.request_quit)
+                self._tray.show()
+
+        # Background polling (only started after a successful login; the
+        # signal handlers no-op while the window is visible).
+        self._poller = BackgroundPoller(self._settings, self)
+        self._poller.cached_refresh_requested.connect(
+            self._on_background_cached_refresh)
+        self._poller.car_refresh_requested.connect(
+            self._on_background_car_refresh)
+
+        # Forward dashboard updates from the main screen to the tray so the
+        # tooltip reflects the latest state (especially useful while hidden).
+        self._main.dashboard_loaded.connect(self._on_main_dashboard_loaded)
+
+        # Keep the tray's "Vehicle" submenu in sync with the loaded list.
+        self._main.vehicles_changed.connect(self._on_main_vehicles_changed)
+        if self._tray is not None:
+            self._tray.vehicle_selected.connect(self._main.select_vehicle)
+
+        # Desktop notifications driven by edge detection on consecutive
+        # dashboard snapshots.
+        self._notifier = NotificationDispatcher(self._settings)
+        self._previous_status = None
+
         if self._session.restore_authenticated_session():
             self._show_main_screen()
+
+    def has_tray(self) -> bool:
+        """True if a tray icon was successfully created on this platform."""
+        return self._tray is not None and self._tray.available
+
+    def _tray_toggle_window(self):
+        """Show/raise the window, or hide it if it's already visible on top."""
+        if self.isVisible() and not self.isMinimized() and self.isActiveWindow():
+            self.hide()
+        else:
+            self.showNormal()
+            self.raise_()
+            self.activateWindow()
+
+    def _tray_open_settings(self):
+        """Bring up the window and switch to the Settings tab."""
+        self.showNormal()
+        self.raise_()
+        self.activateWindow()
+        if self._main is not None:
+            self._main.show_settings_tab()
+
+    def request_quit(self):
+        """Explicit quit, bypassing close_to_tray. Wired to tray menu and Ctrl+Q."""
+        self._session.save_settings()
+        QApplication.quit()
+
+    # Backwards-compat alias for any internal caller still using the old name.
+    _quit_app = request_quit
 
     def _sync_session_refs(self):
         self._settings = self._session.settings
@@ -576,6 +631,8 @@ class MainWindow(QMainWindow):
     def _show_main_screen(self):
         self._stack.setCurrentWidget(self._main)
         self._main.activate()
+        # Start background polling now that we have a usable session.
+        self._poller.start()
 
     def _on_login_success(self, tokens: dict, email: str, password: str):
         self._session.apply_login_tokens(tokens)
@@ -583,19 +640,89 @@ class MainWindow(QMainWindow):
         self._show_main_screen()
 
     def _logout(self):
+        self._poller.stop()
+        # Reset edge-detection state so the first snapshot of the next
+        # session doesn't get compared against the previous one (and
+        # spuriously fire notifications for transitions that already
+        # happened or didn't happen at all).
+        self._previous_status = None
+        if self._tray is not None and self._tray.available:
+            self._tray.set_status_summary()
         self._session.reset()
         self._sync_session_refs()
         self._main.set_api(self._api)
         self._stack.setCurrentWidget(self._login)
+
+    def _on_background_cached_refresh(self):
+        """Background tick: refresh cached dashboard only if we're hidden."""
+        if self.isVisible():
+            logger.info("Background tick (cached): window visible, skipping")
+            return
+        logger.info("Background tick (cached): triggering refresh")
+        self._main.refresh(fresh=False)
+
+    def _on_background_car_refresh(self):
+        """Background tick: wake the TCU only if we're hidden."""
+        if self.isVisible():
+            logger.info("Background tick (car refresh): window visible, skipping")
+            return
+        logger.info("Background tick (car refresh): triggering refresh")
+        self._main.refresh(fresh=True)
+
+    def _on_main_vehicles_changed(self, vehicles: list, current_vin: str):
+        """Push the latest vehicle list into the tray submenu."""
+        if self._tray is not None and self._tray.available:
+            self._tray.set_vehicles(vehicles, current_vin)
+
+    def _on_main_dashboard_loaded(self, status):
+        """Refresh the tray tooltip after every dashboard load (live update).
+
+        ``status`` is dict-like (typically ``EVStatus``); use ``.get()``.
+        """
+        battery = status.get("battery_level")
+        locked = status.get("doors_locked")
+        logger.info(
+            "Dashboard loaded: battery=%s%% locked=%s", battery, locked)
+        if self._tray is not None and self._tray.available:
+            self._tray.set_status_summary(
+                vehicle_name=self._main.current_vehicle_label(),
+                battery_pct=battery,
+                locked=locked,
+            )
+        # Evaluate edge-detection notification rules; never fires for the
+        # very first snapshot of the session (no "previous" to compare).
+        notifications = self._notifier.evaluate(
+            self._previous_status, status,
+            vehicle_name=self._main.current_vehicle_label(),
+        )
+        for title, body in notifications:
+            logger.info("Notification: %s — %s", title, body)
+            if self._tray is not None and self._tray.available:
+                self._tray.show_notification(title, body)
+        self._previous_status = status
 
     def showEvent(self, event):
         super().showEvent(event)
         # Lock to the natural size after layout is computed
         self.adjustSize()
         self.setMinimumSize(self.size())
+        if self._tray is not None:
+            self._tray.set_window_visible(True)
+
+    def hideEvent(self, event):
+        super().hideEvent(event)
+        if self._tray is not None:
+            self._tray.set_window_visible(False)
 
     def closeEvent(self, event):
         self._session.save_settings()
+        # If the user opted into "close to tray" and we have a working tray,
+        # hide the window instead of quitting the app. The tray menu's Quit
+        # action is the explicit way out.
+        if self.has_tray() and self._settings.close_to_tray:
+            event.ignore()
+            self.hide()
+            return
         super().closeEvent(event)
 
 
@@ -674,5 +801,19 @@ def main():
     app.setWindowIcon(icon("app-icon"))
     _force_palette(app, explicit or _detect_system_theme(app))
     window = MainWindow()
-    window.show()
+    # With close_to_tray, ignoring the window's closeEvent must not trigger
+    # Qt's "last window closed → quit" path. The tray menu's Quit action and
+    # Ctrl+Q stay as the explicit exits.
+    if window.has_tray() and settings.close_to_tray:
+        app.setQuitOnLastWindowClosed(False)
+    # `--minimized` CLI flag forces a tray-only start regardless of the saved
+    # Settings, for autostart entries (XDG .desktop, Windows Startup, etc.)
+    # that want the choice to live next to the launcher itself.
+    cli_minimized = "--minimized" in sys.argv
+    if cli_minimized and window.has_tray():
+        app.setQuitOnLastWindowClosed(False)
+    start_hidden = (
+        (settings.start_minimized or cli_minimized) and window.has_tray())
+    if not start_hidden:
+        window.show()
     sys.exit(app.exec())

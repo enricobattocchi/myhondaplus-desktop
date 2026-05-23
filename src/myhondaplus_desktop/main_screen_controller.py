@@ -56,6 +56,14 @@ class MainScreenController:
         self._fetch_vehicles()
         self._check_update()
 
+    def refresh(self, fresh: bool = False) -> None:
+        """Public entry for refresh requests from outside the controller.
+
+        Used by the background poller; equivalent to the user pressing
+        Refresh (or Refresh from car when ``fresh=True``).
+        """
+        self._load_dashboard(fresh=fresh)
+
     def handle_vin_changed(self, vin: str):
         if not vin:
             return
@@ -332,6 +340,9 @@ class MainScreenController:
             self._view.update_dashboard_vin(vin)
             self._apply_vehicle_details(vin)
             self._load_dashboard()
+        # Let the view propagate to anyone listening (e.g. the tray submenu).
+        if hasattr(self._view, "notify_vehicles_changed"):
+            self._view.notify_vehicles_changed(vehicles, vin)
 
     def _reset_schedule_cache(self):
         self._cached_climate_schedule = None
@@ -370,6 +381,9 @@ class MainScreenController:
             self._view.show_warning(t("app.refresh_stale"))
         else:
             self._view.show_success(t("app.status_loaded"))
+        # Let the view propagate to anyone listening (e.g. the tray).
+        if hasattr(self._view, "notify_dashboard_loaded"):
+            self._view.notify_dashboard_loaded(status)
 
     def _on_dashboard_error(self, message: str):
         self._view.set_refresh_enabled(True)
