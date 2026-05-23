@@ -8,7 +8,6 @@ from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
     QApplication,
-    QCheckBox,
     QComboBox,
     QDialog,
     QDialogButtonBox,
@@ -18,7 +17,6 @@ from PyQt6.QtWidgets import (
     QMainWindow,
     QPushButton,
     QStackedWidget,
-    QSystemTrayIcon,
     QTabWidget,
     QVBoxLayout,
     QWidget,
@@ -26,14 +24,11 @@ from PyQt6.QtWidgets import (
 
 from . import __version__
 from .background_poll import BackgroundPoller
-from .config import (
-    ALLOWED_CACHED_INTERVALS,
-    ALLOWED_CAR_REFRESH_HOURS,
-    Settings,
-)
-from .i18n import active_language, available_languages, load_language, t
+from .config import Settings
+from .i18n import load_language, t
 from .icons import icon, link_color_hex, pixmap
 from .main_screen_controller import MainScreenController
+from .notifications import NotificationDispatcher
 from .session import AppSession
 from .tray import TrayController
 from .widgets.car_finder import CarFinderDialog
@@ -46,12 +41,12 @@ from .widgets.schedules import (
     ClimateScheduleDialog,
     ClimateSettingsDialog,
 )
+from .widgets.settings import SettingsWidget
 from .widgets.status_bar import StatusBarWidget
 from .widgets.trips import TripsWidget
 from .widgets.vehicle import VehicleWidget
 
 logger = logging.getLogger(__name__)
-
 
 REPO_URL = "https://github.com/enricobattocchi/myhondaplus-desktop"
 LIB_URL = "https://github.com/enricobattocchi/pymyhondaplus"
@@ -108,212 +103,6 @@ class AboutDialog(QDialog):
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
         buttons.rejected.connect(self.accept)
         layout.addWidget(buttons)
-
-
-class SettingsDialog(QDialog):
-    """User-facing settings: language, theme, system tray behaviour."""
-
-    def __init__(self, parent=None, settings: Settings = None):
-        super().__init__(parent)
-        self.setWindowTitle(t("app.settings"))
-        self.setMinimumWidth(420)
-        self._settings = settings
-        layout = QVBoxLayout(self)
-
-        title = QLabel(t("app.settings"))
-        title.setStyleSheet("font-size: 16px; font-weight: bold;")
-        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(title)
-
-        if self._settings is None:
-            # Defensive: if we ever open without a settings object, just show
-            # the close button so the dialog is dismissable.
-            buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
-            buttons.rejected.connect(self.accept)
-            layout.addWidget(buttons)
-            return
-
-        # Language
-        lang_layout = QHBoxLayout()
-        lang_layout.addStretch()
-        lang_layout.addWidget(QLabel(t("app.language")))
-        lang_combo = QComboBox()
-        langs = available_languages()
-        current_lang = active_language()
-        for lang_code in langs:
-            lang_combo.addItem(lang_code, lang_code)
-        idx = lang_combo.findData(current_lang)
-        if idx >= 0:
-            lang_combo.setCurrentIndex(idx)
-        lang_combo.currentIndexChanged.connect(
-            lambda i: self._on_language_changed(lang_combo.currentData()))
-        lang_layout.addWidget(lang_combo)
-        lang_layout.addStretch()
-        layout.addLayout(lang_layout)
-
-        # Theme
-        theme_layout = QHBoxLayout()
-        theme_layout.addStretch()
-        theme_layout.addWidget(QLabel(t("app.theme")))
-        theme_combo = QComboBox()
-        for value, label_key in (
-            ("system", "app.theme_system"),
-            ("light", "app.theme_light"),
-            ("dark", "app.theme_dark"),
-        ):
-            theme_combo.addItem(t(label_key), value)
-        idx = theme_combo.findData(self._settings.theme or "system")
-        if idx >= 0:
-            theme_combo.setCurrentIndex(idx)
-        theme_combo.currentIndexChanged.connect(
-            lambda i: self._on_theme_changed(theme_combo.currentData()))
-        theme_layout.addWidget(theme_combo)
-        theme_layout.addStretch()
-        layout.addLayout(theme_layout)
-
-        # Tray section
-        tray_heading = QLabel(t("settings.tray.heading"))
-        tray_heading.setStyleSheet("font-weight: bold; margin-top: 10px;")
-        layout.addWidget(tray_heading)
-
-        self._tray_enabled_cb = QCheckBox(t("settings.tray.enable"))
-        self._tray_enabled_cb.setChecked(self._settings.tray_enabled)
-        self._tray_enabled_cb.toggled.connect(self._on_tray_enabled_toggled)
-        layout.addWidget(self._tray_enabled_cb)
-
-        self._close_to_tray_cb = QCheckBox(t("settings.tray.close_to_tray"))
-        self._close_to_tray_cb.setChecked(self._settings.close_to_tray)
-        self._close_to_tray_cb.toggled.connect(self._on_close_to_tray_toggled)
-        layout.addWidget(self._close_to_tray_cb)
-
-        self._start_minimized_cb = QCheckBox(
-            t("settings.tray.start_minimized"))
-        self._start_minimized_cb.setChecked(self._settings.start_minimized)
-        self._start_minimized_cb.toggled.connect(
-            self._on_start_minimized_toggled)
-        layout.addWidget(self._start_minimized_cb)
-
-        if not QSystemTrayIcon.isSystemTrayAvailable():
-            tray_hint = QLabel(t("settings.tray.unavailable_hint"))
-            tray_hint.setStyleSheet("color: gray; font-size: 11px;")
-            tray_hint.setWordWrap(True)
-            layout.addWidget(tray_hint)
-
-        # Background polling section
-        poll_heading = QLabel(t("settings.polling.heading"))
-        poll_heading.setStyleSheet("font-weight: bold; margin-top: 10px;")
-        layout.addWidget(poll_heading)
-
-        self._poll_enabled_cb = QCheckBox(t("settings.polling.enable"))
-        self._poll_enabled_cb.setChecked(self._settings.background_poll_enabled)
-        self._poll_enabled_cb.toggled.connect(self._on_poll_enabled_toggled)
-        layout.addWidget(self._poll_enabled_cb)
-
-        poll_interval_row = QHBoxLayout()
-        poll_interval_row.addWidget(QLabel(t("settings.polling.interval")))
-        self._poll_interval_combo = QComboBox()
-        for minutes in ALLOWED_CACHED_INTERVALS:
-            self._poll_interval_combo.addItem(
-                t("settings.polling.minutes", minutes=minutes), minutes)
-        idx = self._poll_interval_combo.findData(
-            self._settings.background_poll_cached_interval_min)
-        if idx >= 0:
-            self._poll_interval_combo.setCurrentIndex(idx)
-        self._poll_interval_combo.currentIndexChanged.connect(
-            lambda i: self._on_poll_interval_changed(
-                self._poll_interval_combo.currentData()))
-        poll_interval_row.addWidget(self._poll_interval_combo)
-        poll_interval_row.addStretch()
-        layout.addLayout(poll_interval_row)
-
-        self._car_refresh_enabled_cb = QCheckBox(
-            t("settings.polling.car_refresh_enable"))
-        self._car_refresh_enabled_cb.setChecked(
-            self._settings.background_car_refresh_enabled)
-        self._car_refresh_enabled_cb.toggled.connect(
-            self._on_car_refresh_enabled_toggled)
-        layout.addWidget(self._car_refresh_enabled_cb)
-
-        car_refresh_row = QHBoxLayout()
-        car_refresh_row.addWidget(QLabel(t("settings.polling.car_refresh_interval")))
-        self._car_refresh_combo = QComboBox()
-        for hours in ALLOWED_CAR_REFRESH_HOURS:
-            self._car_refresh_combo.addItem(
-                t("settings.polling.hours", hours=hours), hours)
-        idx = self._car_refresh_combo.findData(
-            self._settings.background_car_refresh_hours)
-        if idx >= 0:
-            self._car_refresh_combo.setCurrentIndex(idx)
-        self._car_refresh_combo.currentIndexChanged.connect(
-            lambda i: self._on_car_refresh_interval_changed(
-                self._car_refresh_combo.currentData()))
-        car_refresh_row.addWidget(self._car_refresh_combo)
-        car_refresh_row.addStretch()
-        layout.addLayout(car_refresh_row)
-
-        poll_warning = QLabel(t("settings.polling.warning"))
-        poll_warning.setStyleSheet("color: gray; font-size: 11px;")
-        poll_warning.setWordWrap(True)
-        layout.addWidget(poll_warning)
-
-        self._restart_label = QLabel(t("app.restart_required"))
-        self._restart_label.setStyleSheet("color: gray; font-size: 11px;")
-        self._restart_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._restart_label.setVisible(False)
-        layout.addWidget(self._restart_label)
-
-        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
-        buttons.rejected.connect(self.accept)
-        layout.addWidget(buttons)
-
-    def _on_language_changed(self, lang_code: str):
-        self._settings.language = lang_code
-        self._settings.save()
-        self._restart_label.setVisible(True)
-
-    def _on_theme_changed(self, theme: str):
-        self._settings.theme = theme
-        self._settings.save()
-        self._restart_label.setVisible(True)
-
-    def _on_tray_enabled_toggled(self, checked: bool):
-        self._settings.tray_enabled = checked
-        self._settings.save()
-        self._restart_label.setVisible(True)
-
-    def _on_close_to_tray_toggled(self, checked: bool):
-        self._settings.close_to_tray = checked
-        self._settings.save()
-        # No restart needed: closeEvent reads the live value each time.
-
-    def _on_start_minimized_toggled(self, checked: bool):
-        self._settings.start_minimized = checked
-        self._settings.save()
-        self._restart_label.setVisible(True)
-
-    def _on_poll_enabled_toggled(self, checked: bool):
-        self._settings.background_poll_enabled = checked
-        self._settings.save()
-        self._restart_label.setVisible(True)
-
-    def _on_poll_interval_changed(self, minutes: int):
-        if minutes is None:
-            return
-        self._settings.background_poll_cached_interval_min = int(minutes)
-        self._settings.save()
-        self._restart_label.setVisible(True)
-
-    def _on_car_refresh_enabled_toggled(self, checked: bool):
-        self._settings.background_car_refresh_enabled = checked
-        self._settings.save()
-        self._restart_label.setVisible(True)
-
-    def _on_car_refresh_interval_changed(self, hours: int):
-        if hours is None:
-            return
-        self._settings.background_car_refresh_hours = int(hours)
-        self._settings.save()
-        self._restart_label.setVisible(True)
 
 
 def _profile_row(label_text: str, value: str) -> QHBoxLayout:
@@ -439,13 +228,6 @@ class MainScreen(QWidget):
             lambda: self._controller.load_profile())
         top.addWidget(profile_btn)
 
-        settings_btn = QPushButton(icon("settings"), "")
-        settings_btn.setFixedWidth(32)
-        settings_btn.setToolTip(t("app.settings"))
-        settings_btn.clicked.connect(
-            lambda: SettingsDialog(self, settings=self._settings).exec())
-        top.addWidget(settings_btn)
-
         about_btn = QPushButton(icon("info"), "")
         about_btn.setFixedWidth(32)
         about_btn.setToolTip(t("app.about"))
@@ -524,6 +306,10 @@ class MainScreen(QWidget):
         )
         self._tabs.addTab(self._trips, icon("route"), t("app.trips"))
 
+        # Settings tab (always visible, doesn't depend on capabilities)
+        self._settings_tab = SettingsWidget(settings)
+        self._tabs.addTab(self._settings_tab, icon("settings"), t("app.settings"))
+
         layout.addWidget(self._tabs)
 
         # Status bar
@@ -572,6 +358,10 @@ class MainScreen(QWidget):
         """Public entry for refresh requests (used by background polling)."""
         logger.info("MainScreen.refresh(fresh=%s)", fresh)
         self._controller.refresh(fresh=fresh)
+
+    def show_settings_tab(self) -> None:
+        """Switch the tab view to Settings (used by the gear button and tray)."""
+        self._tabs.setCurrentWidget(self._settings_tab)
 
     def notify_dashboard_loaded(self, status) -> None:
         """Called by the controller after a successful refresh.
@@ -776,6 +566,11 @@ class MainWindow(QMainWindow):
         # tooltip reflects the latest state (especially useful while hidden).
         self._main.dashboard_loaded.connect(self._on_main_dashboard_loaded)
 
+        # Desktop notifications driven by edge detection on consecutive
+        # dashboard snapshots.
+        self._notifier = NotificationDispatcher(self._settings)
+        self._previous_status = None
+
         if self._session.restore_authenticated_session():
             self._show_main_screen()
 
@@ -793,11 +588,12 @@ class MainWindow(QMainWindow):
             self.activateWindow()
 
     def _tray_open_settings(self):
-        """Bring up the window and open the settings dialog."""
+        """Bring up the window and switch to the Settings tab."""
         self.showNormal()
         self.raise_()
         self.activateWindow()
-        SettingsDialog(self, settings=self._settings).exec()
+        if self._main is not None:
+            self._main.show_settings_tab()
 
     def request_quit(self):
         """Explicit quit, bypassing close_to_tray. Wired to tray menu and Ctrl+Q."""
@@ -861,6 +657,17 @@ class MainWindow(QMainWindow):
                 battery_pct=battery,
                 locked=locked,
             )
+        # Evaluate edge-detection notification rules; never fires for the
+        # very first snapshot of the session (no "previous" to compare).
+        notifications = self._notifier.evaluate(
+            self._previous_status, status,
+            vehicle_name=self._main.current_vehicle_label(),
+        )
+        for title, body in notifications:
+            logger.info("Notification: %s — %s", title, body)
+            if self._tray is not None and self._tray.available:
+                self._tray.show_notification(title, body)
+        self._previous_status = status
 
     def showEvent(self, event):
         super().showEvent(event)

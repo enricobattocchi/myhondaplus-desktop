@@ -163,3 +163,53 @@ def test_settings_load_keeps_allowed_polling_values(monkeypatch, tmp_path):
     loaded = Settings.load()
     assert loaded.background_poll_cached_interval_min == 60
     assert loaded.background_car_refresh_hours == 6
+
+
+def test_settings_notification_defaults():
+    s = Settings()
+    assert s.notify_charge_started is False
+    assert s.notify_charge_stopped is True
+    assert s.notify_climate_started is False
+    assert s.notify_climate_stopped is False
+    assert s.notify_door_unlocked is False
+    assert s.notify_battery_low_pct == 0
+    assert s.notify_warning_lit is False
+
+
+def test_settings_notification_roundtrip(monkeypatch, tmp_path):
+    config_dir = tmp_path / "config"
+    monkeypatch.setattr(
+        config.platformdirs, "user_config_path",
+        lambda *args, **kwargs: config_dir)
+    saved = Settings(
+        notify_charge_stopped=False,
+        notify_door_unlocked=True,
+        notify_battery_low_pct=20,
+        notify_warning_lit=True,
+    )
+    saved.save()
+    assert Settings.load() == saved
+
+
+def test_settings_load_clamps_battery_threshold_above_100(monkeypatch, tmp_path):
+    config_dir = tmp_path / "config"
+    monkeypatch.setattr(
+        config.platformdirs, "user_config_path",
+        lambda *args, **kwargs: config_dir)
+    path = config.settings_file()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text('{"notify_battery_low_pct": 500}', encoding="utf-8")
+    loaded = Settings.load()
+    assert loaded.notify_battery_low_pct == 100
+
+
+def test_settings_load_clamps_battery_threshold_below_zero(monkeypatch, tmp_path):
+    config_dir = tmp_path / "config"
+    monkeypatch.setattr(
+        config.platformdirs, "user_config_path",
+        lambda *args, **kwargs: config_dir)
+    path = config.settings_file()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text('{"notify_battery_low_pct": -5}', encoding="utf-8")
+    loaded = Settings.load()
+    assert loaded.notify_battery_low_pct == 0

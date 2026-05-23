@@ -94,6 +94,23 @@ class TrayController(QObject):
             parts.append(t("dashboard.unlocked"))
         self._tray.setToolTip(" • ".join(parts))
 
+    def show_notification(self, title: str, body: str,
+                          duration_ms: int = 30000) -> bool:
+        """Fire a desktop notification via the tray.
+
+        Returns True on success, False if the platform doesn't support
+        balloon messages (some Linux DEs, macOS without bundle, etc.) or
+        if the tray itself isn't available.
+        """
+        if self._tray is None:
+            return False
+        if not self._tray.supportsMessages():
+            logger.debug("Tray does not support showMessage; skipping notification")
+            return False
+        self._tray.showMessage(
+            title, body, QSystemTrayIcon.MessageIcon.Information, duration_ms)
+        return True
+
     def set_window_visible(self, visible: bool) -> None:
         """Update the toggle action label to mirror window visibility."""
         if self._toggle_action is None:

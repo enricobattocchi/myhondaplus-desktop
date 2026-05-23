@@ -58,6 +58,18 @@ class Settings:
     background_poll_cached_interval_min: int = DEFAULT_CACHED_INTERVAL
     background_car_refresh_enabled: bool = False
     background_car_refresh_hours: int = DEFAULT_CAR_REFRESH_HOURS
+    # Desktop notifications, evaluated on every dashboard-loaded snapshot.
+    # The library normalises Honda's chargeStatus to {charging, stopped,
+    # unknown}: there is no separate "complete" value, so we cannot tell
+    # apart "finished at 100%", "reached the configured charge limit", and
+    # "interrupted mid-session" — they all surface as `stopped`.
+    notify_charge_started: bool = False
+    notify_charge_stopped: bool = True
+    notify_climate_started: bool = False
+    notify_climate_stopped: bool = False
+    notify_door_unlocked: bool = False
+    notify_battery_low_pct: int = 0  # 0 disables; valid range 1..100
+    notify_warning_lit: bool = False
 
     def save(self):
         path = settings_file()
@@ -81,4 +93,11 @@ class Settings:
             loaded.background_poll_cached_interval_min = DEFAULT_CACHED_INTERVAL
         if loaded.background_car_refresh_hours not in ALLOWED_CAR_REFRESH_HOURS:
             loaded.background_car_refresh_hours = DEFAULT_CAR_REFRESH_HOURS
+        # Clamp the battery-low threshold: 0 means disabled, otherwise 1..100.
+        if not isinstance(loaded.notify_battery_low_pct, int):
+            loaded.notify_battery_low_pct = 0
+        elif loaded.notify_battery_low_pct < 0:
+            loaded.notify_battery_low_pct = 0
+        elif loaded.notify_battery_low_pct > 100:
+            loaded.notify_battery_low_pct = 100
         return loaded
