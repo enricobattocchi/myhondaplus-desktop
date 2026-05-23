@@ -1,6 +1,7 @@
 {
   "app.name": "My Honda+ för skrivbord",
   "app.about": "Om",
+  "app.settings": "Inställningar",
   "app.refresh": "Uppdatera",
   "app.refresh_car": "Uppdatera från bilen",
   "app.logout": "Logga ut",

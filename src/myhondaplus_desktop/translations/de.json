@@ -1,6 +1,7 @@
 {
   "app.name": "My Honda+ für Desktop",
   "app.about": "Über",
+  "app.settings": "Einstellungen",
   "app.refresh": "Aktualisieren",
   "app.refresh_car": "Vom Auto aktualisieren",
   "app.logout": "Abmelden",

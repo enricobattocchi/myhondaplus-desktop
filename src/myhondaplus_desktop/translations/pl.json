@@ -1,6 +1,7 @@
 {
   "app.name": "My Honda+ na komputer",
   "app.about": "O aplikacji",
+  "app.settings": "Ustawienia",
   "app.refresh": "Odśwież",
   "app.refresh_car": "Odśwież z auta",
   "app.logout": "Wyloguj",

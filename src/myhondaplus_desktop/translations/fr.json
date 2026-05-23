@@ -1,6 +1,7 @@
 {
   "app.name": "My Honda+ pour bureau",
   "app.about": "À propos",
+  "app.settings": "Paramètres",
   "app.refresh": "Actualiser",
   "app.refresh_car": "Actualiser depuis la voiture",
   "app.logout": "Déconnexion",

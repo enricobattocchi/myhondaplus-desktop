@@ -1,6 +1,7 @@
 {
   "app.name": "My Honda+ asztali verzió",
   "app.about": "Névjegy",
+  "app.settings": "Beállítások",
   "app.refresh": "Frissítés",
   "app.refresh_car": "Frissítés az autóból",
   "app.logout": "Kijelentkezés",

@@ -53,12 +53,10 @@ LIB_URL = "https://github.com/enricobattocchi/pymyhondaplus"
 
 
 class AboutDialog(QDialog):
-    def __init__(self, parent=None, update_info: tuple = None,
-                 settings: Settings = None):
+    def __init__(self, parent=None, update_info: tuple = None):
         super().__init__(parent)
         self.setWindowTitle(t("app.about"))
         self.setFixedWidth(400)
-        self._settings = settings
         layout = QVBoxLayout(self)
         layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
@@ -102,117 +100,134 @@ class AboutDialog(QDialog):
         disclaimer.setWordWrap(True)
         layout.addWidget(disclaimer)
 
-        # Language + theme selectors
-        if self._settings is not None:
-            lang_layout = QHBoxLayout()
-            lang_layout.addStretch()
-            lang_label = QLabel(t("app.language"))
-            lang_layout.addWidget(lang_label)
-            lang_combo = QComboBox()
-            langs = available_languages()
-            current_lang = active_language()
-            for lang_code in langs:
-                lang_combo.addItem(lang_code, lang_code)
-            idx = lang_combo.findData(current_lang)
-            if idx >= 0:
-                lang_combo.setCurrentIndex(idx)
-            lang_combo.currentIndexChanged.connect(
-                lambda i: self._on_language_changed(lang_combo.currentData()))
-            lang_layout.addWidget(lang_combo)
-            lang_layout.addStretch()
-            layout.addLayout(lang_layout)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+        buttons.rejected.connect(self.accept)
+        layout.addWidget(buttons)
 
-            theme_layout = QHBoxLayout()
-            theme_layout.addStretch()
-            theme_label = QLabel(t("app.theme"))
-            theme_layout.addWidget(theme_label)
-            theme_combo = QComboBox()
-            for value, label_key in (
-                ("system", "app.theme_system"),
-                ("light", "app.theme_light"),
-                ("dark", "app.theme_dark"),
-            ):
-                theme_combo.addItem(t(label_key), value)
-            idx = theme_combo.findData(self._settings.theme or "system")
-            if idx >= 0:
-                theme_combo.setCurrentIndex(idx)
-            theme_combo.currentIndexChanged.connect(
-                lambda i: self._on_theme_changed(theme_combo.currentData()))
-            theme_layout.addWidget(theme_combo)
-            theme_layout.addStretch()
-            layout.addLayout(theme_layout)
 
-            # Tray settings (require restart, like language and theme)
-            tray_heading = QLabel(t("settings.tray.heading"))
-            tray_heading.setStyleSheet("font-weight: bold; margin-top: 10px;")
-            tray_heading.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            layout.addWidget(tray_heading)
+class SettingsDialog(QDialog):
+    """User-facing settings: language, theme, system tray behaviour."""
 
-            self._tray_enabled_cb = QCheckBox(t("settings.tray.enable"))
-            self._tray_enabled_cb.setChecked(self._settings.tray_enabled)
-            self._tray_enabled_cb.toggled.connect(self._on_tray_enabled_toggled)
-            layout.addWidget(self._tray_enabled_cb)
+    def __init__(self, parent=None, settings: Settings = None):
+        super().__init__(parent)
+        self.setWindowTitle(t("app.settings"))
+        self.setMinimumWidth(420)
+        self._settings = settings
+        layout = QVBoxLayout(self)
 
-            self._close_to_tray_cb = QCheckBox(t("settings.tray.close_to_tray"))
-            self._close_to_tray_cb.setChecked(self._settings.close_to_tray)
-            self._close_to_tray_cb.toggled.connect(self._on_close_to_tray_toggled)
-            layout.addWidget(self._close_to_tray_cb)
+        title = QLabel(t("app.settings"))
+        title.setStyleSheet("font-size: 16px; font-weight: bold;")
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(title)
 
-            self._start_minimized_cb = QCheckBox(
-                t("settings.tray.start_minimized"))
-            self._start_minimized_cb.setChecked(self._settings.start_minimized)
-            self._start_minimized_cb.toggled.connect(
-                self._on_start_minimized_toggled)
-            layout.addWidget(self._start_minimized_cb)
+        if self._settings is None:
+            # Defensive: if we ever open without a settings object, just show
+            # the close button so the dialog is dismissable.
+            buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+            buttons.rejected.connect(self.accept)
+            layout.addWidget(buttons)
+            return
 
-            if not QSystemTrayIcon.isSystemTrayAvailable():
-                tray_hint = QLabel(t("settings.tray.unavailable_hint"))
-                tray_hint.setStyleSheet("color: gray; font-size: 11px;")
-                tray_hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                tray_hint.setWordWrap(True)
-                layout.addWidget(tray_hint)
+        # Language
+        lang_layout = QHBoxLayout()
+        lang_layout.addStretch()
+        lang_layout.addWidget(QLabel(t("app.language")))
+        lang_combo = QComboBox()
+        langs = available_languages()
+        current_lang = active_language()
+        for lang_code in langs:
+            lang_combo.addItem(lang_code, lang_code)
+        idx = lang_combo.findData(current_lang)
+        if idx >= 0:
+            lang_combo.setCurrentIndex(idx)
+        lang_combo.currentIndexChanged.connect(
+            lambda i: self._on_language_changed(lang_combo.currentData()))
+        lang_layout.addWidget(lang_combo)
+        lang_layout.addStretch()
+        layout.addLayout(lang_layout)
 
-            self._restart_label = QLabel(t("app.restart_required"))
-            self._restart_label.setStyleSheet(
-                "color: gray; font-size: 11px;")
-            self._restart_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            self._restart_label.setVisible(False)
-            layout.addWidget(self._restart_label)
+        # Theme
+        theme_layout = QHBoxLayout()
+        theme_layout.addStretch()
+        theme_layout.addWidget(QLabel(t("app.theme")))
+        theme_combo = QComboBox()
+        for value, label_key in (
+            ("system", "app.theme_system"),
+            ("light", "app.theme_light"),
+            ("dark", "app.theme_dark"),
+        ):
+            theme_combo.addItem(t(label_key), value)
+        idx = theme_combo.findData(self._settings.theme or "system")
+        if idx >= 0:
+            theme_combo.setCurrentIndex(idx)
+        theme_combo.currentIndexChanged.connect(
+            lambda i: self._on_theme_changed(theme_combo.currentData()))
+        theme_layout.addWidget(theme_combo)
+        theme_layout.addStretch()
+        layout.addLayout(theme_layout)
+
+        # Tray section
+        tray_heading = QLabel(t("settings.tray.heading"))
+        tray_heading.setStyleSheet("font-weight: bold; margin-top: 10px;")
+        layout.addWidget(tray_heading)
+
+        self._tray_enabled_cb = QCheckBox(t("settings.tray.enable"))
+        self._tray_enabled_cb.setChecked(self._settings.tray_enabled)
+        self._tray_enabled_cb.toggled.connect(self._on_tray_enabled_toggled)
+        layout.addWidget(self._tray_enabled_cb)
+
+        self._close_to_tray_cb = QCheckBox(t("settings.tray.close_to_tray"))
+        self._close_to_tray_cb.setChecked(self._settings.close_to_tray)
+        self._close_to_tray_cb.toggled.connect(self._on_close_to_tray_toggled)
+        layout.addWidget(self._close_to_tray_cb)
+
+        self._start_minimized_cb = QCheckBox(
+            t("settings.tray.start_minimized"))
+        self._start_minimized_cb.setChecked(self._settings.start_minimized)
+        self._start_minimized_cb.toggled.connect(
+            self._on_start_minimized_toggled)
+        layout.addWidget(self._start_minimized_cb)
+
+        if not QSystemTrayIcon.isSystemTrayAvailable():
+            tray_hint = QLabel(t("settings.tray.unavailable_hint"))
+            tray_hint.setStyleSheet("color: gray; font-size: 11px;")
+            tray_hint.setWordWrap(True)
+            layout.addWidget(tray_hint)
+
+        self._restart_label = QLabel(t("app.restart_required"))
+        self._restart_label.setStyleSheet("color: gray; font-size: 11px;")
+        self._restart_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._restart_label.setVisible(False)
+        layout.addWidget(self._restart_label)
 
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
         buttons.rejected.connect(self.accept)
         layout.addWidget(buttons)
 
     def _on_language_changed(self, lang_code: str):
-        if self._settings is not None:
-            self._settings.language = lang_code
-            self._settings.save()
-            self._restart_label.setVisible(True)
+        self._settings.language = lang_code
+        self._settings.save()
+        self._restart_label.setVisible(True)
 
     def _on_theme_changed(self, theme: str):
-        if self._settings is not None:
-            self._settings.theme = theme
-            self._settings.save()
-            self._restart_label.setVisible(True)
+        self._settings.theme = theme
+        self._settings.save()
+        self._restart_label.setVisible(True)
 
     def _on_tray_enabled_toggled(self, checked: bool):
-        if self._settings is not None:
-            self._settings.tray_enabled = checked
-            self._settings.save()
-            self._restart_label.setVisible(True)
+        self._settings.tray_enabled = checked
+        self._settings.save()
+        self._restart_label.setVisible(True)
 
     def _on_close_to_tray_toggled(self, checked: bool):
-        if self._settings is not None:
-            self._settings.close_to_tray = checked
-            self._settings.save()
-            # No restart needed for this one; closeEvent reads the live value.
+        self._settings.close_to_tray = checked
+        self._settings.save()
+        # No restart needed: closeEvent reads the live value each time.
 
     def _on_start_minimized_toggled(self, checked: bool):
-        if self._settings is not None:
-            self._settings.start_minimized = checked
-            self._settings.save()
-            # Takes effect at next launch — flag it so the user knows.
-            self._restart_label.setVisible(True)
+        self._settings.start_minimized = checked
+        self._settings.save()
+        self._restart_label.setVisible(True)
 
 
 def _profile_row(label_text: str, value: str) -> QHBoxLayout:
@@ -332,13 +347,19 @@ class MainScreen(QWidget):
             lambda: self._controller.load_profile())
         top.addWidget(profile_btn)
 
+        settings_btn = QPushButton(icon("settings"), "")
+        settings_btn.setFixedWidth(32)
+        settings_btn.setToolTip(t("app.settings"))
+        settings_btn.clicked.connect(
+            lambda: SettingsDialog(self, settings=self._settings).exec())
+        top.addWidget(settings_btn)
+
         about_btn = QPushButton(icon("info"), "")
         about_btn.setFixedWidth(32)
         about_btn.setToolTip(t("app.about"))
         about_btn.clicked.connect(
             lambda: AboutDialog(
-                self, update_info=self._update_info,
-                settings=self._settings).exec())
+                self, update_info=self._update_info).exec())
         top.addWidget(about_btn)
 
         layout.addLayout(top)
@@ -648,11 +669,11 @@ class MainWindow(QMainWindow):
             self.activateWindow()
 
     def _tray_open_settings(self):
-        """Bring up the window and open the settings (About) dialog."""
+        """Bring up the window and open the settings dialog."""
         self.showNormal()
         self.raise_()
         self.activateWindow()
-        AboutDialog(self, settings=self._settings).exec()
+        SettingsDialog(self, settings=self._settings).exec()
 
     def request_quit(self):
         """Explicit quit, bypassing close_to_tray. Wired to tray menu and Ctrl+Q."""

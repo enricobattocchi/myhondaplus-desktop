@@ -1,6 +1,7 @@
 {
   "app.name": "My Honda+ pro počítač",
   "app.about": "O aplikaci",
+  "app.settings": "Nastavení",
   "app.refresh": "Obnovit",
   "app.refresh_car": "Obnovit z auta",
   "app.logout": "Odhlásit se",

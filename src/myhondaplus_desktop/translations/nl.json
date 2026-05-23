@@ -1,6 +1,7 @@
 {
   "app.name": "My Honda+ voor desktop",
   "app.about": "Over",
+  "app.settings": "Instellingen",
   "app.refresh": "Vernieuwen",
   "app.refresh_car": "Vernieuwen vanuit auto",
   "app.logout": "Uitloggen",

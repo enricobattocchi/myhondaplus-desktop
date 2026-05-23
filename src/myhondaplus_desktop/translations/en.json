@@ -1,6 +1,7 @@
 {
   "app.name": "My Honda+ for desktop",
   "app.about": "About",
+  "app.settings": "Settings",
   "app.refresh": "Refresh",
   "app.refresh_car": "Refresh from Car",
   "app.logout": "Logout",
