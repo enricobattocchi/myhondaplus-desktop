@@ -38,7 +38,7 @@ This project is **unofficial** and **not affiliated with, endorsed by, or connec
 - **Persistent login** — auto-refresh on expiry, no need to re-enter credentials
 - **Lucide SVG icons** — crisp, theme-aware icons throughout the UI
 - **Light/dark theme** — auto-detects the system color scheme, or pick explicitly from Settings (System / Light / Dark). `--light` / `--dark` CLI flags still override.
-- **System tray** — coloured battery bar on the tray icon (green ≥ 50%, yellow 20-49%, red below); tooltip with name and lock status; optional "close to tray" and "start minimized".
+- **System tray** — battery bar on the tray icon (coloured on Linux/Windows: green ≥ 50%, yellow 20-49%, red below; monochrome template on macOS with a "!" glyph below the user's low-battery threshold); tooltip with name and lock status; optional "close to tray" and "start minimized".
 - **Background polling** — optional periodic dashboard refresh while the window is hidden (off by default; defaults match the HA integration when enabled).
 - **Desktop notifications** — alerts for charging started / stopped, climate started / stopped, car unlocked, battery below a configurable threshold, warning light on.
 - **Multi-language** — 13 languages included, [easy to add more](TRANSLATING.md)
@@ -125,7 +125,7 @@ Most setting changes take effect on restart; the label below the panels makes th
 
 ### System tray
 
-When the OS exposes a tray (most Linux DEs, Windows, macOS menu bar) the app shows an icon with a battery bar drawn along the bottom, colour-coded by charge level. The tooltip shows the vehicle name, battery percentage, and lock state and refreshes after every dashboard load.
+When the OS exposes a tray (most Linux DEs, Windows, macOS menu bar) the app shows an icon with a battery bar drawn along the bottom. Linux and Windows render the bar in traffic-light colours; macOS uses a monochrome template (so the menu bar can tint it for light and dark themes) and overlays a "!" glyph when the battery falls below the user's low-battery threshold. The tooltip shows the vehicle name, battery percentage, and lock state and refreshes after every dashboard load.
 
 The tray menu has **Show window**, **Settings** (jumps to the Settings tab), **Exit**, and a **Veicolo** submenu when the account has more than one vehicle.
 

@@ -688,6 +688,7 @@ class MainWindow(QMainWindow):
                 vehicle_name=self._main.current_vehicle_label(),
                 battery_pct=battery,
                 locked=locked,
+                low_pct=self._settings.notify_battery_low_pct,
             )
         # Evaluate edge-detection notification rules; never fires for the
         # very first snapshot of the session (no "previous" to compare).

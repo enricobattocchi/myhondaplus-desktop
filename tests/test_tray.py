@@ -156,3 +156,127 @@ def test_activated_ignores_non_trigger_reasons(monkeypatch):
     controller._on_activated(QSystemTrayIcon.ActivationReason.MiddleClick)
     controller._on_activated(QSystemTrayIcon.ActivationReason.DoubleClick)
     assert events == []
+
+
+def test_battery_template_icon_is_mask_flagged():
+    icon = tray_mod._battery_template_icon(50, low=False)
+    assert icon.isMask() is True
+    assert not icon.isNull()
+
+
+def test_tray_icon_name_picks_silhouette_on_macos(monkeypatch):
+    """`app-icon.svg` has an opaque rounded-square background, which
+    breaks macOS template images (the alpha is opaque everywhere, so
+    the menu bar paints a solid filled rectangle). The macOS path must
+    pick the alpha-clean Lucide car silhouette instead."""
+    monkeypatch.setattr(tray_mod, "is_macos", lambda: True)
+    assert tray_mod._tray_icon_name() == "car"
+    monkeypatch.setattr(tray_mod, "is_macos", lambda: False)
+    assert tray_mod._tray_icon_name() == "app-icon"
+
+
+def test_build_icon_on_macos_uses_silhouette_and_flags_mask(monkeypatch):
+    monkeypatch.setattr(
+        QSystemTrayIcon, "isSystemTrayAvailable", staticmethod(lambda: True))
+    monkeypatch.setattr(tray_mod, "is_macos", lambda: True)
+    requested: list[str] = []
+    real_load = tray_mod.load_icon
+
+    def spy_load(name):
+        requested.append(name)
+        return real_load(name)
+
+    monkeypatch.setattr(tray_mod, "load_icon", spy_load)
+    controller = TrayController()
+    assert "car" in requested
+    assert "app-icon" not in requested
+    assert controller._tray.icon().isMask() is True
+
+
+def test_battery_template_low_glyph_adds_opaque_pixels():
+    """The exclamation glyph should add opaque pixels to the canvas;
+    counting (rather than per-pixel probing) avoids picking a pixel that
+    might be inside the base car icon's footprint."""
+    size = 64
+    normal = tray_mod._render_battery_template(50, size, low=False).toImage()
+    low = tray_mod._render_battery_template(50, size, low=True).toImage()
+
+    def opaque_count(img):
+        return sum(
+            img.pixelColor(x, y).alpha() == 255
+            for x in range(img.width())
+            for y in range(img.height())
+        )
+
+    # The glyph is well over a dozen opaque pixels at this size.
+    assert opaque_count(low) > opaque_count(normal) + 10
+
+
+def _fake_icon():
+    from PyQt6.QtGui import QIcon
+    return QIcon()
+
+
+def _tripwire_factory(label):
+    def boom(*_a, **_kw):
+        raise AssertionError(f"{label} should not run on this platform")
+    return boom
+
+
+def test_set_status_summary_uses_template_icon_on_macos(monkeypatch):
+    monkeypatch.setattr(
+        QSystemTrayIcon, "isSystemTrayAvailable", staticmethod(lambda: True))
+    monkeypatch.setattr(tray_mod, "is_macos", lambda: True)
+    template_calls: list[tuple[int, bool]] = []
+
+    def fake_template(pct, low):
+        template_calls.append((pct, low))
+        return _fake_icon()
+
+    monkeypatch.setattr(tray_mod, "_battery_template_icon", fake_template)
+    monkeypatch.setattr(
+        tray_mod, "_battery_bar_icon",
+        _tripwire_factory("colored bar"))
+    controller = TrayController()
+    controller.set_status_summary(battery_pct=15, low_pct=20)
+    controller.set_status_summary(battery_pct=80, low_pct=20)
+    assert template_calls == [(15, True), (80, False)]
+
+
+def test_set_status_summary_uses_colored_bar_on_linux(monkeypatch):
+    monkeypatch.setattr(
+        QSystemTrayIcon, "isSystemTrayAvailable", staticmethod(lambda: True))
+    monkeypatch.setattr(tray_mod, "is_macos", lambda: False)
+    bar_calls: list[int] = []
+
+    def fake_bar(pct):
+        bar_calls.append(pct)
+        return _fake_icon()
+
+    monkeypatch.setattr(tray_mod, "_battery_bar_icon", fake_bar)
+    monkeypatch.setattr(
+        tray_mod, "_battery_template_icon",
+        _tripwire_factory("template icon"))
+    controller = TrayController()
+    controller.set_status_summary(battery_pct=42, low_pct=20)
+    assert bar_calls == [42]
+
+
+def test_set_status_summary_no_low_glyph_when_threshold_disabled(monkeypatch):
+    """low_pct=0 (notifications off) must never trigger the low glyph."""
+    monkeypatch.setattr(
+        QSystemTrayIcon, "isSystemTrayAvailable", staticmethod(lambda: True))
+    monkeypatch.setattr(tray_mod, "is_macos", lambda: True)
+    calls: list[tuple[int, bool]] = []
+
+    def fake_template(pct, low):
+        calls.append((pct, low))
+        return _fake_icon()
+
+    monkeypatch.setattr(tray_mod, "_battery_template_icon", fake_template)
+    monkeypatch.setattr(
+        tray_mod, "_battery_bar_icon",
+        _tripwire_factory("colored bar"))
+    controller = TrayController()
+    controller.set_status_summary(battery_pct=5, low_pct=0)
+    assert calls == [(5, False)]
