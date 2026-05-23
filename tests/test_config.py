@@ -51,3 +51,44 @@ def test_settings_load_ignores_unknown_fields(monkeypatch, tmp_path):
     )
 
     assert Settings.load() == Settings(vin="VIN123", language="en")
+
+
+def test_settings_tray_defaults():
+    s = Settings()
+    assert s.tray_enabled is True
+    assert s.close_to_tray is False
+    assert s.start_minimized is False
+
+
+def test_settings_tray_roundtrip(monkeypatch, tmp_path):
+    config_dir = tmp_path / "config"
+    monkeypatch.setattr(
+        config.platformdirs, "user_config_path",
+        lambda *args, **kwargs: config_dir)
+    saved = Settings(
+        vin="VIN1",
+        tray_enabled=False,
+        close_to_tray=True,
+        start_minimized=True,
+    )
+    saved.save()
+    assert Settings.load() == saved
+
+
+def test_settings_load_handles_missing_tray_fields(monkeypatch, tmp_path):
+    """Old settings.json files predate the tray fields; defaults must apply."""
+    config_dir = tmp_path / "config"
+    monkeypatch.setattr(
+        config.platformdirs, "user_config_path",
+        lambda *args, **kwargs: config_dir)
+    path = config.settings_file()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        '{"vin": "VIN1", "language": "it", "theme": "dark"}',
+        encoding="utf-8",
+    )
+    loaded = Settings.load()
+    assert loaded.vin == "VIN1"
+    assert loaded.tray_enabled is True
+    assert loaded.close_to_tray is False
+    assert loaded.start_minimized is False

@@ -8,6 +8,7 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
     QApplication,
+    QCheckBox,
     QComboBox,
     QDialog,
     QDialogButtonBox,
@@ -17,6 +18,7 @@ from PyQt6.QtWidgets import (
     QMainWindow,
     QPushButton,
     QStackedWidget,
+    QSystemTrayIcon,
     QTabWidget,
     QVBoxLayout,
     QWidget,
@@ -28,6 +30,7 @@ from .i18n import active_language, available_languages, load_language, t
 from .icons import icon, link_color_hex, pixmap
 from .main_screen_controller import MainScreenController
 from .session import AppSession
+from .tray import TrayController
 from .widgets.car_finder import CarFinderDialog
 from .widgets.dashboard import DashboardWidget, _dms_to_decimal
 from .widgets.geofence import GeofenceWidget
@@ -139,6 +142,36 @@ class AboutDialog(QDialog):
             theme_layout.addStretch()
             layout.addLayout(theme_layout)
 
+            # Tray settings (require restart, like language and theme)
+            tray_heading = QLabel(t("settings.tray.heading"))
+            tray_heading.setStyleSheet("font-weight: bold; margin-top: 10px;")
+            tray_heading.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            layout.addWidget(tray_heading)
+
+            self._tray_enabled_cb = QCheckBox(t("settings.tray.enable"))
+            self._tray_enabled_cb.setChecked(self._settings.tray_enabled)
+            self._tray_enabled_cb.toggled.connect(self._on_tray_enabled_toggled)
+            layout.addWidget(self._tray_enabled_cb)
+
+            self._close_to_tray_cb = QCheckBox(t("settings.tray.close_to_tray"))
+            self._close_to_tray_cb.setChecked(self._settings.close_to_tray)
+            self._close_to_tray_cb.toggled.connect(self._on_close_to_tray_toggled)
+            layout.addWidget(self._close_to_tray_cb)
+
+            self._start_minimized_cb = QCheckBox(
+                t("settings.tray.start_minimized"))
+            self._start_minimized_cb.setChecked(self._settings.start_minimized)
+            self._start_minimized_cb.toggled.connect(
+                self._on_start_minimized_toggled)
+            layout.addWidget(self._start_minimized_cb)
+
+            if not QSystemTrayIcon.isSystemTrayAvailable():
+                tray_hint = QLabel(t("settings.tray.unavailable_hint"))
+                tray_hint.setStyleSheet("color: gray; font-size: 11px;")
+                tray_hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                tray_hint.setWordWrap(True)
+                layout.addWidget(tray_hint)
+
             self._restart_label = QLabel(t("app.restart_required"))
             self._restart_label.setStyleSheet(
                 "color: gray; font-size: 11px;")
@@ -160,6 +193,25 @@ class AboutDialog(QDialog):
         if self._settings is not None:
             self._settings.theme = theme
             self._settings.save()
+            self._restart_label.setVisible(True)
+
+    def _on_tray_enabled_toggled(self, checked: bool):
+        if self._settings is not None:
+            self._settings.tray_enabled = checked
+            self._settings.save()
+            self._restart_label.setVisible(True)
+
+    def _on_close_to_tray_toggled(self, checked: bool):
+        if self._settings is not None:
+            self._settings.close_to_tray = checked
+            self._settings.save()
+            # No restart needed for this one; closeEvent reads the live value.
+
+    def _on_start_minimized_toggled(self, checked: bool):
+        if self._settings is not None:
+            self._settings.start_minimized = checked
+            self._settings.save()
+            # Takes effect at next launch — flag it so the user knows.
             self._restart_label.setVisible(True)
 
 
@@ -388,8 +440,12 @@ class MainScreen(QWidget):
         QShortcut(QKeySequence("Ctrl+Shift+R"), self).activated.connect(
             lambda: self._controller.handle_refresh_current_tab(fresh=True)
         )
+        # Ctrl+Q is an explicit quit shortcut; bypass close_to_tray so users
+        # who deliberately hit it actually leave the app instead of hiding it.
         QShortcut(QKeySequence("Ctrl+Q"), self).activated.connect(
-            lambda: self.window().close()
+            lambda: (self.window().request_quit()
+                     if hasattr(self.window(), "request_quit")
+                     else self.window().close())
         )
 
     def activate(self):
@@ -565,8 +621,46 @@ class MainWindow(QMainWindow):
             self._api, self._settings, on_logout=self._logout)
         self._stack.addWidget(self._main)
 
+        # System tray (None when disabled in settings or unavailable on this DE).
+        self._tray: TrayController | None = None
+        if self._settings.tray_enabled:
+            self._tray = TrayController(self)
+            if self._tray.available:
+                self._tray.show_window_requested.connect(self._tray_toggle_window)
+                self._tray.settings_requested.connect(self._tray_open_settings)
+                self._tray.quit_requested.connect(self.request_quit)
+                self._tray.show()
+
         if self._session.restore_authenticated_session():
             self._show_main_screen()
+
+    def has_tray(self) -> bool:
+        """True if a tray icon was successfully created on this platform."""
+        return self._tray is not None and self._tray.available
+
+    def _tray_toggle_window(self):
+        """Show/raise the window, or hide it if it's already visible on top."""
+        if self.isVisible() and not self.isMinimized() and self.isActiveWindow():
+            self.hide()
+        else:
+            self.showNormal()
+            self.raise_()
+            self.activateWindow()
+
+    def _tray_open_settings(self):
+        """Bring up the window and open the settings (About) dialog."""
+        self.showNormal()
+        self.raise_()
+        self.activateWindow()
+        AboutDialog(self, settings=self._settings).exec()
+
+    def request_quit(self):
+        """Explicit quit, bypassing close_to_tray. Wired to tray menu and Ctrl+Q."""
+        self._session.save_settings()
+        QApplication.quit()
+
+    # Backwards-compat alias for any internal caller still using the old name.
+    _quit_app = request_quit
 
     def _sync_session_refs(self):
         self._settings = self._session.settings
@@ -593,9 +687,23 @@ class MainWindow(QMainWindow):
         # Lock to the natural size after layout is computed
         self.adjustSize()
         self.setMinimumSize(self.size())
+        if self._tray is not None:
+            self._tray.set_window_visible(True)
+
+    def hideEvent(self, event):
+        super().hideEvent(event)
+        if self._tray is not None:
+            self._tray.set_window_visible(False)
 
     def closeEvent(self, event):
         self._session.save_settings()
+        # If the user opted into "close to tray" and we have a working tray,
+        # hide the window instead of quitting the app. The tray menu's Quit
+        # action is the explicit way out.
+        if self.has_tray() and self._settings.close_to_tray:
+            event.ignore()
+            self.hide()
+            return
         super().closeEvent(event)
 
 
@@ -674,5 +782,12 @@ def main():
     app.setWindowIcon(icon("app-icon"))
     _force_palette(app, explicit or _detect_system_theme(app))
     window = MainWindow()
-    window.show()
+    # With close_to_tray, ignoring the window's closeEvent must not trigger
+    # Qt's "last window closed → quit" path. The tray menu's Quit action and
+    # Ctrl+Q stay as the explicit exits.
+    if window.has_tray() and settings.close_to_tray:
+        app.setQuitOnLastWindowClosed(False)
+    # Honour start_minimized only when there's actually a tray to come back from.
+    if not (settings.start_minimized and window.has_tray()):
+        window.show()
     sys.exit(app.exec())

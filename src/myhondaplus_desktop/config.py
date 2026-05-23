@@ -38,6 +38,10 @@ class Settings:
     vin: str = ""
     language: str = ""  # empty = auto-detect from system locale
     theme: str = "system"  # one of "system", "light", "dark"
+    # System tray
+    tray_enabled: bool = True
+    close_to_tray: bool = False
+    start_minimized: bool = False
 
     def save(self):
         path = settings_file()
