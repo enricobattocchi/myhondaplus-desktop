@@ -94,7 +94,10 @@ class Settings:
         if loaded.background_car_refresh_hours not in ALLOWED_CAR_REFRESH_HOURS:
             loaded.background_car_refresh_hours = DEFAULT_CAR_REFRESH_HOURS
         # Clamp the battery-low threshold: 0 means disabled, otherwise 1..100.
-        if not isinstance(loaded.notify_battery_low_pct, int):
+        # `bool` is a subclass of `int`; reject it explicitly so a hand-edited
+        # `true` doesn't quietly enable a 1% threshold.
+        if (not isinstance(loaded.notify_battery_low_pct, int)
+                or isinstance(loaded.notify_battery_low_pct, bool)):
             loaded.notify_battery_low_pct = 0
         elif loaded.notify_battery_low_pct < 0:
             loaded.notify_battery_low_pct = 0

@@ -100,7 +100,14 @@ class TrayController(QObject):
         elif locked is False:
             parts.append(t("dashboard.unlocked"))
         self._tray.setToolTip(" • ".join(parts))
-        if battery_pct is not None and not is_macos():
+        if is_macos():
+            # macOS keeps the static template icon either way.
+            return
+        if battery_pct is None:
+            # Restore the static icon so a previous battery bar isn't left
+            # stranded across snapshots that omit battery_level.
+            self._tray.setIcon(load_icon("app-icon"))
+        else:
             self._tray.setIcon(_battery_bar_icon(battery_pct))
 
     def set_vehicles(self, vehicles: list[dict], current_vin: str) -> None:

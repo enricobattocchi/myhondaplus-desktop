@@ -641,6 +641,13 @@ class MainWindow(QMainWindow):
 
     def _logout(self):
         self._poller.stop()
+        # Reset edge-detection state so the first snapshot of the next
+        # session doesn't get compared against the previous one (and
+        # spuriously fire notifications for transitions that already
+        # happened or didn't happen at all).
+        self._previous_status = None
+        if self._tray is not None and self._tray.available:
+            self._tray.set_status_summary()
         self._session.reset()
         self._sync_session_refs()
         self._main.set_api(self._api)
