@@ -31,6 +31,27 @@ HIDDEN_IMPORTS = [
     "pymyhondaplus.api",
     "pymyhondaplus.auth",
     "pymyhondaplus.storage",
+    # Keyring + its platform backends. Without these explicit hidden
+    # imports PyInstaller misses the dynamically-loaded backends, the
+    # bundle falls back to EncryptedFileStorage, and the resulting Fernet
+    # key diverges from the one used when running the same code from a
+    # system Python (which sees the keyring). That divergence is what
+    # makes a token written by the AppImage unreadable from a dev
+    # install of the same account.
+    "keyring",
+    "keyring.backend",
+    "keyring.backends",
+    "keyring.backends.fail",
+    "keyring.backends.SecretService",  # Linux (gnome-keyring, KDE Secret Service)
+    "keyring.backends.libsecret",      # Linux (libsecret)
+    "keyring.backends.kwallet",        # Linux (KDE Wallet via D-Bus)
+    "keyring.backends.macOS",          # macOS Keychain
+    "keyring.backends.Windows",        # Windows Credential Locker
+    # SecretService backend transitive deps (D-Bus client).
+    "secretstorage",
+    "jeepney",
+    "jeepney.io",
+    "jeepney.io.blocking",
 ]
 
 
