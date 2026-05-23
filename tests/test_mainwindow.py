@@ -1,5 +1,6 @@
 """Tests for main window bootstrap and session flow."""
 
+from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QApplication, QWidget
 
 from myhondaplus_desktop.app import MainWindow
@@ -17,6 +18,8 @@ class DummyLoginWidget(QWidget):
 
 
 class DummyMainScreen(QWidget):
+    dashboard_loaded = pyqtSignal(dict)
+
     def __init__(self, api, settings, on_logout):
         super().__init__()
         self._api = api

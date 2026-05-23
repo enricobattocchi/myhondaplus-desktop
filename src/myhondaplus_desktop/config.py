@@ -33,6 +33,17 @@ def image_cache_dir() -> Path:
     return storage_dir() / "image_cache"
 
 
+# Background polling: allowed intervals.
+# These are the values the Settings UI exposes; out-of-range values loaded
+# from a hand-edited settings.json (or from a future version with different
+# defaults) get clamped back to the safe default to avoid hammering the
+# Honda backend.
+ALLOWED_CACHED_INTERVALS = (5, 10, 15, 30, 60)
+DEFAULT_CACHED_INTERVAL = 10
+ALLOWED_CAR_REFRESH_HOURS = (6, 12, 24)
+DEFAULT_CAR_REFRESH_HOURS = 12
+
+
 @dataclass
 class Settings:
     vin: str = ""
@@ -42,6 +53,11 @@ class Settings:
     tray_enabled: bool = True
     close_to_tray: bool = False
     start_minimized: bool = False
+    # Background polling (only runs while the window is hidden / minimized)
+    background_poll_enabled: bool = False
+    background_poll_cached_interval_min: int = DEFAULT_CACHED_INTERVAL
+    background_car_refresh_enabled: bool = False
+    background_car_refresh_hours: int = DEFAULT_CAR_REFRESH_HOURS
 
     def save(self):
         path = settings_file()
@@ -55,6 +71,14 @@ class Settings:
             return cls()
         try:
             data = json.loads(path.read_text(encoding="utf-8"))
-            return cls(**{k: v for k, v in data.items() if k in cls.__dataclass_fields__})
+            loaded = cls(**{k: v for k, v in data.items()
+                            if k in cls.__dataclass_fields__})
         except (json.JSONDecodeError, TypeError):
             return cls()
+        # Clamp polling intervals to allowed values. We never want a
+        # corrupted or hand-edited file to push polling below 5 minutes.
+        if loaded.background_poll_cached_interval_min not in ALLOWED_CACHED_INTERVALS:
+            loaded.background_poll_cached_interval_min = DEFAULT_CACHED_INTERVAL
+        if loaded.background_car_refresh_hours not in ALLOWED_CAR_REFRESH_HOURS:
+            loaded.background_car_refresh_hours = DEFAULT_CAR_REFRESH_HOURS
+        return loaded

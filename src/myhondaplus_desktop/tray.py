@@ -71,6 +71,29 @@ class TrayController(QObject):
         self._vehicle_name = name or ""
         self._refresh_tooltip()
 
+    def set_status_summary(
+        self,
+        vehicle_name: str = "",
+        battery_pct: int | None = None,
+        locked: bool | None = None,
+    ) -> None:
+        """Update the tooltip with the latest glanceable vehicle state.
+
+        Used by the background poller to show that data has refreshed
+        even while the window is hidden. Missing fields are skipped.
+        """
+        if self._tray is None:
+            return
+        self._vehicle_name = vehicle_name or self._vehicle_name
+        parts = [self._vehicle_name or t("app.name")]
+        if battery_pct is not None:
+            parts.append(f"{battery_pct}%")
+        if locked is True:
+            parts.append(t("dashboard.locked"))
+        elif locked is False:
+            parts.append(t("dashboard.unlocked"))
+        self._tray.setToolTip(" • ".join(parts))
+
     def set_window_visible(self, visible: bool) -> None:
         """Update the toggle action label to mirror window visibility."""
         if self._toggle_action is None:

@@ -4,7 +4,7 @@ import logging
 import sys
 
 from pymyhondaplus import HondaAPI
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
     QApplication,
@@ -25,7 +25,12 @@ from PyQt6.QtWidgets import (
 )
 
 from . import __version__
-from .config import Settings
+from .background_poll import BackgroundPoller
+from .config import (
+    ALLOWED_CACHED_INTERVALS,
+    ALLOWED_CAR_REFRESH_HOURS,
+    Settings,
+)
 from .i18n import active_language, available_languages, load_language, t
 from .icons import icon, link_color_hex, pixmap
 from .main_screen_controller import MainScreenController
@@ -194,6 +199,63 @@ class SettingsDialog(QDialog):
             tray_hint.setWordWrap(True)
             layout.addWidget(tray_hint)
 
+        # Background polling section
+        poll_heading = QLabel(t("settings.polling.heading"))
+        poll_heading.setStyleSheet("font-weight: bold; margin-top: 10px;")
+        layout.addWidget(poll_heading)
+
+        self._poll_enabled_cb = QCheckBox(t("settings.polling.enable"))
+        self._poll_enabled_cb.setChecked(self._settings.background_poll_enabled)
+        self._poll_enabled_cb.toggled.connect(self._on_poll_enabled_toggled)
+        layout.addWidget(self._poll_enabled_cb)
+
+        poll_interval_row = QHBoxLayout()
+        poll_interval_row.addWidget(QLabel(t("settings.polling.interval")))
+        self._poll_interval_combo = QComboBox()
+        for minutes in ALLOWED_CACHED_INTERVALS:
+            self._poll_interval_combo.addItem(
+                t("settings.polling.minutes", minutes=minutes), minutes)
+        idx = self._poll_interval_combo.findData(
+            self._settings.background_poll_cached_interval_min)
+        if idx >= 0:
+            self._poll_interval_combo.setCurrentIndex(idx)
+        self._poll_interval_combo.currentIndexChanged.connect(
+            lambda i: self._on_poll_interval_changed(
+                self._poll_interval_combo.currentData()))
+        poll_interval_row.addWidget(self._poll_interval_combo)
+        poll_interval_row.addStretch()
+        layout.addLayout(poll_interval_row)
+
+        self._car_refresh_enabled_cb = QCheckBox(
+            t("settings.polling.car_refresh_enable"))
+        self._car_refresh_enabled_cb.setChecked(
+            self._settings.background_car_refresh_enabled)
+        self._car_refresh_enabled_cb.toggled.connect(
+            self._on_car_refresh_enabled_toggled)
+        layout.addWidget(self._car_refresh_enabled_cb)
+
+        car_refresh_row = QHBoxLayout()
+        car_refresh_row.addWidget(QLabel(t("settings.polling.car_refresh_interval")))
+        self._car_refresh_combo = QComboBox()
+        for hours in ALLOWED_CAR_REFRESH_HOURS:
+            self._car_refresh_combo.addItem(
+                t("settings.polling.hours", hours=hours), hours)
+        idx = self._car_refresh_combo.findData(
+            self._settings.background_car_refresh_hours)
+        if idx >= 0:
+            self._car_refresh_combo.setCurrentIndex(idx)
+        self._car_refresh_combo.currentIndexChanged.connect(
+            lambda i: self._on_car_refresh_interval_changed(
+                self._car_refresh_combo.currentData()))
+        car_refresh_row.addWidget(self._car_refresh_combo)
+        car_refresh_row.addStretch()
+        layout.addLayout(car_refresh_row)
+
+        poll_warning = QLabel(t("settings.polling.warning"))
+        poll_warning.setStyleSheet("color: gray; font-size: 11px;")
+        poll_warning.setWordWrap(True)
+        layout.addWidget(poll_warning)
+
         self._restart_label = QLabel(t("app.restart_required"))
         self._restart_label.setStyleSheet("color: gray; font-size: 11px;")
         self._restart_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -226,6 +288,30 @@ class SettingsDialog(QDialog):
 
     def _on_start_minimized_toggled(self, checked: bool):
         self._settings.start_minimized = checked
+        self._settings.save()
+        self._restart_label.setVisible(True)
+
+    def _on_poll_enabled_toggled(self, checked: bool):
+        self._settings.background_poll_enabled = checked
+        self._settings.save()
+        self._restart_label.setVisible(True)
+
+    def _on_poll_interval_changed(self, minutes: int):
+        if minutes is None:
+            return
+        self._settings.background_poll_cached_interval_min = int(minutes)
+        self._settings.save()
+        self._restart_label.setVisible(True)
+
+    def _on_car_refresh_enabled_toggled(self, checked: bool):
+        self._settings.background_car_refresh_enabled = checked
+        self._settings.save()
+        self._restart_label.setVisible(True)
+
+    def _on_car_refresh_interval_changed(self, hours: int):
+        if hours is None:
+            return
+        self._settings.background_car_refresh_hours = int(hours)
         self._settings.save()
         self._restart_label.setVisible(True)
 
@@ -311,6 +397,12 @@ def _vehicle_label(v) -> str:
 
 class MainScreen(QWidget):
     """Main screen with dashboard + commands."""
+
+    # Emitted after every successful dashboard load. Lets the host
+    # (MainWindow) update the tray tooltip when the user can't see the UI.
+    # The payload is a dict-like status (EVStatus, supports .get()); we type
+    # the signal as `object` because EVStatus is not a real dict.
+    dashboard_loaded = pyqtSignal(object)
 
     def __init__(self, api: HondaAPI, settings: Settings, on_logout):
         super().__init__()
@@ -475,6 +567,26 @@ class MainScreen(QWidget):
     def set_api(self, api: HondaAPI):
         self._api = api
         self._controller.set_api(api)
+
+    def refresh(self, fresh: bool = False) -> None:
+        """Public entry for refresh requests (used by background polling)."""
+        logger.info("MainScreen.refresh(fresh=%s)", fresh)
+        self._controller.refresh(fresh=fresh)
+
+    def notify_dashboard_loaded(self, status) -> None:
+        """Called by the controller after a successful refresh.
+
+        ``status`` is a dict-like (typically ``EVStatus``) with ``.get()``.
+        We forward the object as-is; the receiver uses ``.get()``.
+        """
+        self.dashboard_loaded.emit(status)
+
+    def current_vehicle_label(self) -> str:
+        idx = self._vin_combo.currentIndex()
+        if 0 <= idx < len(self._vehicles):
+            v = self._vehicles[idx]
+            return v.get("name") or v.get("vin", "")
+        return ""
 
     def vehicles(self) -> list[dict]:
         return self._vehicles
@@ -652,6 +764,18 @@ class MainWindow(QMainWindow):
                 self._tray.quit_requested.connect(self.request_quit)
                 self._tray.show()
 
+        # Background polling (only started after a successful login; the
+        # signal handlers no-op while the window is visible).
+        self._poller = BackgroundPoller(self._settings, self)
+        self._poller.cached_refresh_requested.connect(
+            self._on_background_cached_refresh)
+        self._poller.car_refresh_requested.connect(
+            self._on_background_car_refresh)
+
+        # Forward dashboard updates from the main screen to the tray so the
+        # tooltip reflects the latest state (especially useful while hidden).
+        self._main.dashboard_loaded.connect(self._on_main_dashboard_loaded)
+
         if self._session.restore_authenticated_session():
             self._show_main_screen()
 
@@ -691,6 +815,8 @@ class MainWindow(QMainWindow):
     def _show_main_screen(self):
         self._stack.setCurrentWidget(self._main)
         self._main.activate()
+        # Start background polling now that we have a usable session.
+        self._poller.start()
 
     def _on_login_success(self, tokens: dict, email: str, password: str):
         self._session.apply_login_tokens(tokens)
@@ -698,10 +824,43 @@ class MainWindow(QMainWindow):
         self._show_main_screen()
 
     def _logout(self):
+        self._poller.stop()
         self._session.reset()
         self._sync_session_refs()
         self._main.set_api(self._api)
         self._stack.setCurrentWidget(self._login)
+
+    def _on_background_cached_refresh(self):
+        """Background tick: refresh cached dashboard only if we're hidden."""
+        if self.isVisible():
+            logger.info("Background tick (cached): window visible, skipping")
+            return
+        logger.info("Background tick (cached): triggering refresh")
+        self._main.refresh(fresh=False)
+
+    def _on_background_car_refresh(self):
+        """Background tick: wake the TCU only if we're hidden."""
+        if self.isVisible():
+            logger.info("Background tick (car refresh): window visible, skipping")
+            return
+        logger.info("Background tick (car refresh): triggering refresh")
+        self._main.refresh(fresh=True)
+
+    def _on_main_dashboard_loaded(self, status):
+        """Refresh the tray tooltip after every dashboard load (live update).
+
+        ``status`` is dict-like (typically ``EVStatus``); use ``.get()``.
+        """
+        battery = status.get("battery_level")
+        locked = status.get("doors_locked")
+        logger.info(
+            "Dashboard loaded: battery=%s%% locked=%s", battery, locked)
+        if self._tray is not None and self._tray.available:
+            self._tray.set_status_summary(
+                vehicle_name=self._main.current_vehicle_label(),
+                battery_pct=battery,
+                locked=locked,
+            )
 
     def showEvent(self, event):
         super().showEvent(event)

@@ -92,3 +92,74 @@ def test_settings_load_handles_missing_tray_fields(monkeypatch, tmp_path):
     assert loaded.tray_enabled is True
     assert loaded.close_to_tray is False
     assert loaded.start_minimized is False
+
+
+def test_settings_polling_defaults():
+    s = Settings()
+    assert s.background_poll_enabled is False
+    assert s.background_poll_cached_interval_min == 10
+    assert s.background_car_refresh_enabled is False
+    assert s.background_car_refresh_hours == 12
+
+
+def test_settings_polling_roundtrip(monkeypatch, tmp_path):
+    config_dir = tmp_path / "config"
+    monkeypatch.setattr(
+        config.platformdirs, "user_config_path",
+        lambda *args, **kwargs: config_dir)
+    saved = Settings(
+        background_poll_enabled=True,
+        background_poll_cached_interval_min=30,
+        background_car_refresh_enabled=True,
+        background_car_refresh_hours=24,
+    )
+    saved.save()
+    assert Settings.load() == saved
+
+
+def test_settings_load_clamps_invalid_cached_interval(monkeypatch, tmp_path):
+    """A hand-edited settings.json must not push polling below the safe floor."""
+    config_dir = tmp_path / "config"
+    monkeypatch.setattr(
+        config.platformdirs, "user_config_path",
+        lambda *args, **kwargs: config_dir)
+    path = config.settings_file()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        '{"background_poll_cached_interval_min": 1}',
+        encoding="utf-8",
+    )
+    loaded = Settings.load()
+    assert loaded.background_poll_cached_interval_min == 10
+
+
+def test_settings_load_clamps_invalid_car_refresh_hours(monkeypatch, tmp_path):
+    config_dir = tmp_path / "config"
+    monkeypatch.setattr(
+        config.platformdirs, "user_config_path",
+        lambda *args, **kwargs: config_dir)
+    path = config.settings_file()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        '{"background_car_refresh_hours": 1}',
+        encoding="utf-8",
+    )
+    loaded = Settings.load()
+    assert loaded.background_car_refresh_hours == 12
+
+
+def test_settings_load_keeps_allowed_polling_values(monkeypatch, tmp_path):
+    config_dir = tmp_path / "config"
+    monkeypatch.setattr(
+        config.platformdirs, "user_config_path",
+        lambda *args, **kwargs: config_dir)
+    path = config.settings_file()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        '{"background_poll_cached_interval_min": 60, '
+        '"background_car_refresh_hours": 6}',
+        encoding="utf-8",
+    )
+    loaded = Settings.load()
+    assert loaded.background_poll_cached_interval_min == 60
+    assert loaded.background_car_refresh_hours == 6
