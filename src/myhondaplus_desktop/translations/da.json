@@ -31,7 +31,7 @@
   "tray.quit": "Afslut",
   "settings.tray.heading": "Systembakke",
   "settings.tray.enable": "Vis ikon i systembakken",
-  "settings.tray.close_to_tray": "Luk vinduet for at skjule til bakken",
+  "settings.tray.close_to_tray": "Når vinduet lukkes, skjules det i systembakken",
   "settings.tray.start_minimized": "Start minimeret til bakken",
   "settings.tray.unavailable_hint": "Systembakke ikke fundet på dette skrivebord. På GNOME, installer udvidelsen AppIndicator / KStatusNotifierItem Support.",
   "settings.polling.heading": "Baggrundsopdatering",
