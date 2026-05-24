@@ -16,6 +16,7 @@ from PyQt6.QtWidgets import (
 )
 
 from ..i18n import t
+from ..icons import secondary_text_color, warning_color_hex
 
 DAY_KEYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
 
@@ -165,7 +166,7 @@ class ClimateSettingsDialog(QDialog):
         self._layout.addRow(self._defrost)
 
         self._status_label = QLabel("")
-        self._status_label.setStyleSheet("color: gray; font-style: italic;")
+        self._status_label.setStyleSheet(f"color: {secondary_text_color()}; font-style: italic;")
         self._status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._status_label.setVisible(False)
         self._layout.addRow(self._status_label)
@@ -235,7 +236,7 @@ class ChargeLimitDialog(QDialog):
         self._layout.addRow(t("commands.away"), self._away)
 
         self._status_label = QLabel("")
-        self._status_label.setStyleSheet("color: gray; font-style: italic;")
+        self._status_label.setStyleSheet(f"color: {secondary_text_color()}; font-style: italic;")
         self._status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._status_label.setVisible(False)
         self._layout.addRow(self._status_label)
@@ -292,12 +293,12 @@ class ClimateScheduleDialog(QDialog):
         if plugin_warning:
             warn = QLabel(t("schedules.plugin_warning"))
             warn.setStyleSheet(
-                "color: #e67e22; font-style: italic; padding: 4px;")
+                f"color: {warning_color_hex()}; font-style: italic; padding: 4px;")
             warn.setWordWrap(True)
             self._layout.addWidget(warn)
 
         self._status_label = QLabel("")
-        self._status_label.setStyleSheet("color: gray; font-style: italic;")
+        self._status_label.setStyleSheet(f"color: {secondary_text_color()}; font-style: italic;")
         self._status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._status_label.setVisible(False)
         self._layout.addWidget(self._status_label)
@@ -338,7 +339,7 @@ class ClimateScheduleDialog(QDialog):
         h = QHBoxLayout()
         num = QLabel(f"{index + 1}.")
         num.setFixedWidth(20)
-        num.setStyleSheet("color: gray;")
+        num.setStyleSheet(f"color: {secondary_text_color()};")
         h.addWidget(num)
         label = QPushButton(t("schedules.not_set"))
         label.setFlat(True)
@@ -357,7 +358,9 @@ class ClimateScheduleDialog(QDialog):
                 row["button"].setStyleSheet("text-align: left; padding: 4px;")
             else:
                 row["button"].setText(t("schedules.not_set"))
-                row["button"].setStyleSheet("text-align: left; padding: 4px; color: gray;")
+                row["button"].setStyleSheet(
+                    "text-align: left; padding: 4px; "
+                    f"color: {secondary_text_color()};")
 
     def _edit_slot(self, idx: int):
         existing = None
@@ -405,12 +408,12 @@ class ChargeScheduleDialog(QDialog):
         self._layout = QVBoxLayout(self)
 
         note = QLabel(t("schedules.charge_note"))
-        note.setStyleSheet("color: gray; font-style: italic;")
+        note.setStyleSheet(f"color: {secondary_text_color()}; font-style: italic;")
         note.setWordWrap(True)
         self._layout.addWidget(note)
 
         self._status_label = QLabel("")
-        self._status_label.setStyleSheet("color: gray; font-style: italic;")
+        self._status_label.setStyleSheet(f"color: {secondary_text_color()}; font-style: italic;")
         self._status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._status_label.setVisible(False)
         self._layout.addWidget(self._status_label)
@@ -451,7 +454,7 @@ class ChargeScheduleDialog(QDialog):
         h = QHBoxLayout()
         num = QLabel(f"{index + 1}.")
         num.setFixedWidth(20)
-        num.setStyleSheet("color: gray;")
+        num.setStyleSheet(f"color: {secondary_text_color()};")
         h.addWidget(num)
         label = QPushButton(t("schedules.not_set"))
         label.setFlat(True)
@@ -472,7 +475,9 @@ class ChargeScheduleDialog(QDialog):
                 row["button"].setStyleSheet("text-align: left; padding: 4px;")
             else:
                 row["button"].setText(t("schedules.not_set"))
-                row["button"].setStyleSheet("text-align: left; padding: 4px; color: gray;")
+                row["button"].setStyleSheet(
+                    "text-align: left; padding: 4px; "
+                    f"color: {secondary_text_color()};")
 
     def _edit_rule(self, idx: int):
         existing = None

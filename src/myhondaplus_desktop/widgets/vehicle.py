@@ -20,7 +20,7 @@ from ..i18n import (
     t,
     t_lib,
 )
-from ..icons import pixmap
+from ..icons import pixmap, secondary_text_color
 
 
 def _card(title: str, icon_name: str) -> tuple[QGroupBox, QVBoxLayout]:
@@ -53,7 +53,7 @@ def _row(icon_name: str, label: str, value: str = "") -> tuple[QHBoxLayout, QLab
     icon_lbl.setPixmap(pixmap(icon_name, 14))
     icon_lbl.setFixedWidth(20)
     lbl = QLabel(label)
-    lbl.setStyleSheet("color: gray;")
+    lbl.setStyleSheet(f"color: {secondary_text_color()};")
     val = _selectable(QLabel(value))
     h.addWidget(icon_lbl)
     h.addWidget(lbl)
@@ -120,8 +120,8 @@ class VehicleWidget(QWidget):
         self._cap_button = QPushButton(t("dashboard.capabilities"))
         self._cap_button.setFlat(True)
         self._cap_button.setStyleSheet(
-            "QPushButton { text-align: left; color: gray; font-weight: bold; "
-            "border: none; padding: 0; } "
+            f"QPushButton {{ text-align: left; color: {secondary_text_color()}; "
+            "font-weight: bold; border: none; padding: 0; } "
             "QPushButton:hover { text-decoration: underline; }"
         )
         self._cap_button.clicked.connect(self._show_capabilities_dialog)
@@ -169,8 +169,8 @@ class VehicleWidget(QWidget):
         self._sub_services_button = QPushButton()
         self._sub_services_button.setFlat(True)
         self._sub_services_button.setStyleSheet(
-            "QPushButton { text-align: left; color: gray; font-weight: bold; "
-            "border: none; padding: 0; } "
+            f"QPushButton {{ text-align: left; color: {secondary_text_color()}; "
+            "font-weight: bold; border: none; padding: 0; } "
             "QPushButton:hover { text-decoration: underline; }"
         )
         self._sub_services_button.clicked.connect(self._show_services_dialog)
@@ -389,7 +389,9 @@ class _ServicesDialog(QDialog):
             inner_layout.addWidget(lbl)
             if code and description and code != description:
                 sub = _selectable(QLabel(code))
-                sub.setStyleSheet("color: gray; font-size: 10px; padding-left: 12px;")
+                sub.setStyleSheet(
+                    f"color: {secondary_text_color()}; font-size: 10px; "
+                    "padding-left: 12px;")
                 inner_layout.addWidget(sub)
         inner_layout.addStretch()
 

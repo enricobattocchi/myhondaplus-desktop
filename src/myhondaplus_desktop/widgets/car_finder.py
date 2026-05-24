@@ -10,7 +10,7 @@ from PyQt6.QtWidgets import (
 )
 
 from ..i18n import t
-from ..icons import link_color_hex
+from ..icons import link_color_hex, secondary_text_color
 from .geofence import _TileMapView
 
 
@@ -78,7 +78,7 @@ class CarFinderDialog(QDialog):
         layout.addLayout(form)
 
         note = QLabel(t("car_finder.note"))
-        note.setStyleSheet("color: gray; font-size: 11px;")
+        note.setStyleSheet(f"color: {secondary_text_color()}; font-size: 11px;")
         note.setWordWrap(True)
         note.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(note)

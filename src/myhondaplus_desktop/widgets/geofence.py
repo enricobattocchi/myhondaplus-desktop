@@ -21,7 +21,12 @@ from PyQt6.QtWidgets import (
 )
 
 from ..i18n import t, t_lib
-from ..icons import icon
+from ..icons import (
+    icon,
+    positive_color_hex,
+    secondary_text_color,
+    warning_color_hex,
+)
 
 _TILE_SIZE = 256
 
@@ -405,7 +410,7 @@ class GeofenceWidget(QWidget):
         info.addWidget(self._radius_spin)
 
         self._coord_label = QLabel("")
-        self._coord_label.setStyleSheet("color: gray;")
+        self._coord_label.setStyleSheet(f"color: {secondary_text_color()};")
         info.addWidget(self._coord_label)
 
         info.addStretch()
@@ -492,7 +497,7 @@ class GeofenceWidget(QWidget):
         if geofence is None:
             self._status_label.setText(t("geofence.none"))
             self._status_label.setStyleSheet(
-                "color: gray; font-weight: bold;")
+                f"color: {secondary_text_color()}; font-weight: bold;")
             self._map.clear_marker()
             self._coord_label.setText("")
             return
@@ -505,18 +510,18 @@ class GeofenceWidget(QWidget):
         if geofence.waiting_activate:
             self._status_label.setText(t_lib("geofence_state_activating"))
             self._status_label.setStyleSheet(
-                "color: #e67e22; font-weight: bold;")
+                f"color: {warning_color_hex()}; font-weight: bold;")
         elif geofence.waiting_deactivate:
             self._status_label.setText(t_lib("geofence_state_deactivating"))
             self._status_label.setStyleSheet(
-                "color: #e67e22; font-weight: bold;")
+                f"color: {warning_color_hex()}; font-weight: bold;")
         elif geofence.active:
             self._status_label.setText(t_lib("geofence_state_active"))
             self._status_label.setStyleSheet(
-                "color: green; font-weight: bold;")
+                f"color: {positive_color_hex()}; font-weight: bold;")
         else:
             self._status_label.setText(t_lib("geofence_state_inactive"))
             self._status_label.setStyleSheet(
-                "color: gray; font-weight: bold;")
+                f"color: {secondary_text_color()}; font-weight: bold;")
         radius = geofence.radius or 1.0
         self._map.set_marker(geofence.latitude, geofence.longitude, radius)

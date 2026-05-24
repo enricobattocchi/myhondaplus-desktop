@@ -29,12 +29,13 @@ from ..config import (
     Settings,
 )
 from ..i18n import active_language, available_languages, t
+from ..icons import secondary_text_color
 
 
 def _hint_label(text: str) -> QLabel:
     """A small grey wrap-friendly note used under groups."""
     lbl = QLabel(text)
-    lbl.setStyleSheet("color: gray; font-size: 11px;")
+    lbl.setStyleSheet(f"color: {secondary_text_color()}; font-size: 11px;")
     lbl.setWordWrap(True)
     return lbl
 
@@ -71,7 +72,8 @@ class SettingsWidget(QWidget):
         right.addStretch(1)
 
         self._restart_label = QLabel(t("app.restart_required"))
-        self._restart_label.setStyleSheet("color: gray; font-size: 11px;")
+        self._restart_label.setStyleSheet(
+            f"color: {secondary_text_color()}; font-size: 11px;")
         self._restart_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._restart_label.setVisible(False)
         root.addWidget(self._restart_label)
