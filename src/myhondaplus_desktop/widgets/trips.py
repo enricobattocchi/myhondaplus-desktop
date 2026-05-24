@@ -19,7 +19,7 @@ from PyQt6.QtWidgets import (
 )
 
 from ..i18n import active_language, t
-from ..icons import icon, pixmap
+from ..icons import icon, pixmap, secondary_text_color
 from ..workers import TripsWorker, retire_worker
 
 
@@ -47,7 +47,7 @@ def _stat_card(icon_name: str, label: str, value: str = "") -> tuple[QVBoxLayout
     val_lbl.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
     layout.addWidget(val_lbl)
     desc_lbl = QLabel(label)
-    desc_lbl.setStyleSheet("color: gray; font-size: 11px;")
+    desc_lbl.setStyleSheet(f"color: {secondary_text_color()}; font-size: 11px;")
     desc_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
     layout.addWidget(desc_lbl)
     return layout, val_lbl
@@ -122,7 +122,8 @@ class TripsWidget(QWidget):
 
         # Period label
         self._period_label = QLabel("")
-        self._period_label.setStyleSheet("color: gray; font-size: 11px;")
+        self._period_label.setStyleSheet(
+            f"color: {secondary_text_color()}; font-size: 11px;")
         self._period_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self._period_label)
 

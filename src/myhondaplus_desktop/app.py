@@ -26,7 +26,7 @@ from . import __version__
 from .background_poll import BackgroundPoller
 from .config import Settings
 from .i18n import load_language, t
-from .icons import icon, link_color_hex, pixmap
+from .icons import icon, link_color_hex, pixmap, secondary_text_color
 from .main_screen_controller import MainScreenController
 from .notifications import NotificationDispatcher
 from .session import AppSession
@@ -71,18 +71,18 @@ class AboutDialog(QDialog):
         layout.addWidget(title)
 
         version = QLabel(t("app.version", version=__version__))
-        version.setStyleSheet("color: gray;")
+        version.setStyleSheet(f"color: {secondary_text_color()};")
         version.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(version)
 
         if update_info:
             new_ver, release_url = update_info
             update_lbl = QLabel(
-                f'<a href="{release_url}">'
+                f'<a href="{release_url}" style="color: {link_color_hex()};">'
                 f'{t("app.version_available", version=new_ver)}</a>')
             update_lbl.setOpenExternalLinks(True)
             update_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            update_lbl.setStyleSheet("color: #3498db; font-weight: bold;")
+            update_lbl.setStyleSheet("font-weight: bold;")
             layout.addWidget(update_lbl)
 
         _lc = link_color_hex()
@@ -95,7 +95,8 @@ class AboutDialog(QDialog):
         layout.addWidget(links)
 
         disclaimer = QLabel(t("app.disclaimer"))
-        disclaimer.setStyleSheet("color: gray; font-size: 11px; margin-top: 10px;")
+        disclaimer.setStyleSheet(
+            f"color: {secondary_text_color()}; font-size: 11px; margin-top: 10px;")
         disclaimer.setAlignment(Qt.AlignmentFlag.AlignCenter)
         disclaimer.setWordWrap(True)
         layout.addWidget(disclaimer)
@@ -108,7 +109,7 @@ class AboutDialog(QDialog):
 def _profile_row(label_text: str, value: str) -> QHBoxLayout:
     h = QHBoxLayout()
     lbl = QLabel(label_text)
-    lbl.setStyleSheet("color: gray;")
+    lbl.setStyleSheet(f"color: {secondary_text_color()};")
     lbl.setFixedWidth(120)
     val = QLabel(value)
     val.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)

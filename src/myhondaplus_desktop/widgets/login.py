@@ -13,6 +13,7 @@ from PyQt6.QtWidgets import (
 )
 
 from ..i18n import t
+from ..icons import secondary_text_color
 from ..workers import (
     DeviceRegistrationWorker,
     LoginWorker,
@@ -70,7 +71,8 @@ class LoginWidget(QWidget):
         form_layout.addWidget(self._login_btn)
 
         help_text = QLabel(t("login.help_text"))
-        help_text.setStyleSheet("color: gray; font-size: 11px; margin-top: 4px;")
+        help_text.setStyleSheet(
+            f"color: {secondary_text_color()}; font-size: 11px; margin-top: 4px;")
         help_text.setAlignment(Qt.AlignmentFlag.AlignCenter)
         help_text.setWordWrap(True)
         form_layout.addWidget(help_text)
@@ -84,7 +86,8 @@ class LoginWidget(QWidget):
 
         from .. import __version__
         version_lbl = QLabel(f"v{__version__}")
-        version_lbl.setStyleSheet("color: gray; font-size: 11px; margin-top: 10px;")
+        version_lbl.setStyleSheet(
+            f"color: {secondary_text_color()}; font-size: 11px; margin-top: 10px;")
         version_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(version_lbl)
 

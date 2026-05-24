@@ -4,6 +4,12 @@ from PyQt6.QtCore import QTimer
 from PyQt6.QtWidgets import QHBoxLayout, QLabel, QWidget
 
 from ..i18n import t
+from ..icons import (
+    negative_color_hex,
+    positive_color_hex,
+    secondary_text_color,
+    warning_color_hex,
+)
 
 
 class StatusBarWidget(QWidget):
@@ -18,7 +24,7 @@ class StatusBarWidget(QWidget):
         layout.addStretch()
 
         self._timestamp = QLabel("")
-        self._timestamp.setStyleSheet("color: gray;")
+        self._timestamp.setStyleSheet(f"color: {secondary_text_color()};")
         layout.addWidget(self._timestamp)
 
         self._reset_timer = QTimer(self)
@@ -33,18 +39,19 @@ class StatusBarWidget(QWidget):
     def set_success(self, text: str):
         self._reset_timer.stop()
         self._status.setText(text)
-        self._status.setStyleSheet("color: green; font-weight: bold;")
+        self._status.setStyleSheet(
+            f"color: {positive_color_hex()}; font-weight: bold;")
         self._reset_timer.start(5000)
 
     def set_warning(self, text: str):
         self._reset_timer.stop()
         self._status.setText(text)
-        self._status.setStyleSheet("color: orange;")
+        self._status.setStyleSheet(f"color: {warning_color_hex()};")
 
     def set_error(self, text: str):
         self._reset_timer.stop()
         self._status.setText(text)
-        self._status.setStyleSheet("color: red;")
+        self._status.setStyleSheet(f"color: {negative_color_hex()};")
 
     def set_timestamp(self, text: str):
         self._timestamp.setText(text)

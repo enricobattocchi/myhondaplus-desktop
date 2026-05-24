@@ -16,7 +16,14 @@ from PyQt6.QtWidgets import (
 )
 
 from ..i18n import t
-from ..icons import icon, link_color_hex, pixmap
+from ..icons import (
+    icon,
+    link_color_hex,
+    negative_color_hex,
+    pixmap,
+    positive_color_hex,
+    secondary_text_color,
+)
 
 
 def _dms_to_decimal(dms: str) -> float | None:
@@ -61,7 +68,7 @@ def _row(icon_name: str, label: str, value: str = "") -> tuple[QHBoxLayout, QLab
     icon_lbl.setPixmap(pixmap(icon_name, 14))
     icon_lbl.setFixedWidth(20)
     lbl = QLabel(label)
-    lbl.setStyleSheet("color: gray;")
+    lbl.setStyleSheet(f"color: {secondary_text_color()};")
     val = _selectable(QLabel(value))
     h.addWidget(icon_lbl)
     h.addWidget(lbl)
@@ -124,12 +131,19 @@ class DashboardWidget(QWidget):
         # macOS' native QProgressBar style ignores setTextVisible, so render
         # the percentage ourselves in a sibling label for cross-platform parity.
         self._battery_bar.setTextVisible(False)
+        # Lightning glyph shown only while charging, next to the percentage.
+        self._charging_glyph = QLabel()
+        self._charging_glyph.setFixedWidth(18)
+        self._charging_glyph.setAlignment(
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        self._charging_glyph.hide()
         self._battery_pct = QLabel("0%")
         self._battery_pct.setStyleSheet("font-weight: bold;")
         self._battery_pct.setMinimumWidth(40)
         self._battery_pct.setAlignment(
             Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
         bat_bar_row.addWidget(self._battery_bar, 1)
+        bat_bar_row.addWidget(self._charging_glyph)
         bat_bar_row.addWidget(self._battery_pct)
         bat_layout.addLayout(bat_bar_row)
         for key in ("range_climate_on", "range_climate_off", "total_range", "charge_status",
@@ -182,7 +196,7 @@ class DashboardWidget(QWidget):
         loc_icon.setPixmap(pixmap("map-pin", 14))
         loc_icon.setFixedWidth(20)
         loc_lbl = QLabel(t("dashboard.coordinates"))
-        loc_lbl.setStyleSheet("color: gray;")
+        loc_lbl.setStyleSheet(f"color: {secondary_text_color()};")
         self._location_link = QLabel("")
         self._location_link.setOpenExternalLinks(True)
         self._location_link.setTextFormat(Qt.TextFormat.RichText)
@@ -246,7 +260,8 @@ class DashboardWidget(QWidget):
         # Timestamp
         self._timestamp = _selectable(QLabel(""))
         self._timestamp.setAlignment(Qt.AlignmentFlag.AlignRight)
-        self._timestamp.setStyleSheet("color: gray; font-size: 11px;")
+        self._timestamp.setStyleSheet(
+            f"color: {secondary_text_color()}; font-size: 11px;")
         grid.addWidget(self._timestamp, 3, 0, 1, 2)
 
     def _call(self, action_name: str):
@@ -358,8 +373,8 @@ class DashboardWidget(QWidget):
         if "doors_locked" in self._labels:
             locked = status.get("doors_locked", False)
             self._labels["doors_locked"].setStyleSheet(
-                "color: green; font-weight: bold;" if locked
-                else "color: red; font-weight: bold;")
+                f"color: {positive_color_hex()}; font-weight: bold;" if locked
+                else f"color: {negative_color_hex()}; font-weight: bold;")
 
         # Update toggle buttons
         locked = status.get("doors_locked", False)
@@ -371,12 +386,27 @@ class DashboardWidget(QWidget):
             self._lock_btn.setIcon(icon("lock"))
 
         charge_status = status.get("charge_status", "")
-        if charge_status == "charging":
+        charging = charge_status == "charging"
+        if charging:
             self._charge_btn.setText(t("commands.charge_off"))
             self._charge_btn.setIcon(icon("square"))
         else:
             self._charge_btn.setText(t("commands.charge_on"))
             self._charge_btn.setIcon(icon("zap"))
+
+        # Highlight the charging state with a green percentage and a lightning
+        # glyph next to it. Theme-aware text/icon, so it renders identically on
+        # every platform.
+        if charging:
+            green = positive_color_hex()
+            self._battery_pct.setStyleSheet(
+                f"color: {green}; font-weight: bold;")
+            self._charging_glyph.setPixmap(pixmap("zap", 16, green))
+            self._charging_glyph.show()
+        else:
+            self._battery_pct.setStyleSheet("font-weight: bold;")
+            self._charging_glyph.clear()
+            self._charging_glyph.hide()
 
         if status.get("climate_active", False):
             self._climate_btn.setText(t("commands.climate_off"))
