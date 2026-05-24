@@ -42,6 +42,7 @@ _MIN_CONTRAST = 4.8
 _POSITIVE_BASE = (22, 163, 74)   # green
 _NEGATIVE_BASE = (220, 38, 38)   # red
 _WARNING_BASE = (217, 119, 6)    # amber
+_COOL_BASE = (37, 99, 235)       # blue
 
 _RGB = tuple[int, int, int]
 
@@ -174,6 +175,11 @@ def warning_color_hex() -> str:
 def negative_color_hex() -> str:
     """Accessible red for negative status (unlocked, errors)."""
     return _status_color(_NEGATIVE_BASE)
+
+
+def cool_color_hex() -> str:
+    """Accessible blue for the cooling climate mode."""
+    return _status_color(_COOL_BASE)
 
 
 def _load_svg_bytes(name: str) -> bytes:
