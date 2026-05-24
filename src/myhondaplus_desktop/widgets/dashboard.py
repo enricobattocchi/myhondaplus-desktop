@@ -394,21 +394,16 @@ class DashboardWidget(QWidget):
             self._charge_btn.setText(t("commands.charge_on"))
             self._charge_btn.setIcon(icon("zap"))
 
-        # Highlight the charging state: green bold value + percentage, plus a
-        # lightning glyph next to the percentage. All theme-aware text/icon,
-        # so it renders identically on every platform.
-        green = positive_color_hex()
+        # Highlight the charging state with a green percentage and a lightning
+        # glyph next to it. Theme-aware text/icon, so it renders identically on
+        # every platform.
         if charging:
-            if "charge_status" in self._labels:
-                self._labels["charge_status"].setStyleSheet(
-                    f"color: {green}; font-weight: bold;")
+            green = positive_color_hex()
             self._battery_pct.setStyleSheet(
                 f"color: {green}; font-weight: bold;")
             self._charging_glyph.setPixmap(pixmap("zap", 16, green))
             self._charging_glyph.show()
         else:
-            if "charge_status" in self._labels:
-                self._labels["charge_status"].setStyleSheet("")
             self._battery_pct.setStyleSheet("font-weight: bold;")
             self._charging_glyph.clear()
             self._charging_glyph.hide()
