@@ -16,7 +16,7 @@ from PyQt6.QtWidgets import (
 )
 
 from ..i18n import t
-from ..icons import secondary_text_color, warning_color_hex
+from ..icons import icon, secondary_text_color, warning_color_hex
 
 DAY_KEYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
 
@@ -145,9 +145,20 @@ class ClimateSettingsDialog(QDialog):
         self._layout = QFormLayout(self)
 
         self._temp = QComboBox()
-        for val, key in [("cooler", "commands.cooler"), ("normal", "commands.normal"),
-                         ("hotter", "commands.hotter")]:
-            self._temp.addItem(t(key), val)
+        for val, key, glyph in [("cooler", "commands.cooler", "snowflake"),
+                                ("normal", "commands.normal", "fan"),
+                                ("hotter", "commands.hotter", "flame")]:
+            self._temp.addItem(icon(glyph), t(key), val)
+        # Icons eat horizontal space; reserve room for the icon plus the longest
+        # label (in the active language) so neither the closed combo nor the
+        # popup clips the text (was showing e.g. "...co"). A form layout would
+        # otherwise pin the combo to its minimum width.
+        fm = self._temp.fontMetrics()
+        widest = max(fm.horizontalAdvance(self._temp.itemText(i))
+                     for i in range(self._temp.count()))
+        needed = widest + self._temp.iconSize().width() + 48
+        self._temp.setMinimumWidth(needed)
+        self._temp.view().setMinimumWidth(needed)
         idx = self._temp.findData(temp)
         if idx >= 0:
             self._temp.setCurrentIndex(idx)

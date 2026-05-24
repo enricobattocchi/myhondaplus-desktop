@@ -17,12 +17,14 @@ from PyQt6.QtWidgets import (
 
 from ..i18n import t
 from ..icons import (
+    cool_color_hex,
     icon,
     link_color_hex,
     negative_color_hex,
     pixmap,
     positive_color_hex,
     secondary_text_color,
+    warning_color_hex,
 )
 
 
@@ -229,6 +231,16 @@ class DashboardWidget(QWidget):
             clim_layout.addLayout(h)
             self._labels[key] = val
             self._rows[key] = h
+        # Glyph beside the climate status, shown only while active; its shape
+        # reflects the temperature mode (snowflake = cooler, fan = normal,
+        # flame = hotter). Inserted just left of the status value.
+        self._climate_glyph = QLabel()
+        self._climate_glyph.setFixedWidth(18)
+        self._climate_glyph.setAlignment(
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        self._climate_glyph.hide()
+        clim_row = self._rows["climate_active"]
+        clim_row.insertWidget(clim_row.count() - 1, self._climate_glyph)
         # Climate actions
         clim_actions = QHBoxLayout()
         self._climate_btn = QPushButton(icon("snowflake"), t("commands.climate_on"))
@@ -407,6 +419,25 @@ class DashboardWidget(QWidget):
             self._battery_pct.setStyleSheet("font-weight: bold;")
             self._charging_glyph.clear()
             self._charging_glyph.hide()
+
+        # Highlight active climate like charging: bold status text plus a mode
+        # glyph, both tinted by the temperature mode (snowflake/blue = cooler,
+        # fan/green = normal, flame/amber = hotter). Theme-aware colours and
+        # icon, so it renders identically everywhere.
+        if status.get("climate_active", False):
+            mode = status.get("climate_temp", "normal")
+            glyph, colour = {
+                "cooler": ("snowflake", cool_color_hex()),
+                "hotter": ("flame", warning_color_hex()),
+            }.get(mode, ("fan", positive_color_hex()))
+            self._labels["climate_active"].setStyleSheet(
+                f"color: {colour}; font-weight: bold;")
+            self._climate_glyph.setPixmap(pixmap(glyph, 16, colour))
+            self._climate_glyph.show()
+        else:
+            self._labels["climate_active"].setStyleSheet("")
+            self._climate_glyph.clear()
+            self._climate_glyph.hide()
 
         if status.get("climate_active", False):
             self._climate_btn.setText(t("commands.climate_off"))

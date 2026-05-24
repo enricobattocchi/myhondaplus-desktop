@@ -11,6 +11,7 @@ from PyQt6.QtGui import QColor, QPalette
 from PyQt6.QtWidgets import QApplication
 
 from myhondaplus_desktop.icons import (
+    cool_color_hex,
     negative_color_hex,
     pixmap,
     positive_color_hex,
@@ -62,6 +63,7 @@ _GETTERS = (
     positive_color_hex,
     negative_color_hex,
     warning_color_hex,
+    cool_color_hex,
 )
 
 
