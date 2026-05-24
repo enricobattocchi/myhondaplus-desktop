@@ -1,3 +1,3 @@
 """My Honda+ for desktop — unofficial GUI for Honda Connect Europe."""
 
-__version__ = "2.10.0"
+__version__ = "2.11.0"
