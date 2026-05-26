@@ -72,6 +72,8 @@
   "login.email_placeholder": "anvandare@exempel.se",
   "login.password": "Lösenord:",
   "login.password_placeholder": "Lösenord",
+  "login.show_password": "Visa lösenord",
+  "login.hide_password": "Dölj lösenord",
   "login.button": "Logga in",
   "login.enter_credentials": "Ange e-post och lösenord",
   "login.logging_in": "Loggar in...",

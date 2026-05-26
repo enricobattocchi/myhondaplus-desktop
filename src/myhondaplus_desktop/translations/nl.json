@@ -72,6 +72,8 @@
   "login.email_placeholder": "gebruiker@voorbeeld.nl",
   "login.password": "Wachtwoord:",
   "login.password_placeholder": "Wachtwoord",
+  "login.show_password": "Wachtwoord tonen",
+  "login.hide_password": "Wachtwoord verbergen",
   "login.button": "Log in",
   "login.enter_credentials": "Voer e-mail en wachtwoord in",
   "login.logging_in": "Inloggen...",

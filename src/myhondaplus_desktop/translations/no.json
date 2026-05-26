@@ -72,6 +72,8 @@
   "login.email_placeholder": "bruker@eksempel.no",
   "login.password": "Passord:",
   "login.password_placeholder": "Passord",
+  "login.show_password": "Vis passord",
+  "login.hide_password": "Skjul passord",
   "login.button": "Logg inn",
   "login.enter_credentials": "Skriv inn e-post og passord",
   "login.logging_in": "Logger inn...",

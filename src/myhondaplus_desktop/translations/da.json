@@ -72,6 +72,8 @@
   "login.email_placeholder": "bruger@eksempel.dk",
   "login.password": "Adgangskode:",
   "login.password_placeholder": "Adgangskode",
+  "login.show_password": "Vis adgangskode",
+  "login.hide_password": "Skjul adgangskode",
   "login.button": "Log på",
   "login.enter_credentials": "Indtast e-mail og adgangskode",
   "login.logging_in": "Logger ind...",
