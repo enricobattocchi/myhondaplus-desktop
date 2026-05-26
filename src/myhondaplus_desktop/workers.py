@@ -440,13 +440,18 @@ class UpdateCheckWorker(QThread):
 
     def run(self):
         try:
-            import json
-            import urllib.request
-            req = urllib.request.Request(
+            import requests
+            # Use requests (with certifi's CA bundle) rather than urllib:
+            # in the frozen macOS app urllib's ssl can't verify the GitHub
+            # certificate, so the check failed silently and no update banner
+            # ever showed. requests is already a dependency and works inside
+            # the bundle, as the Honda API calls do.
+            resp = requests.get(
                 self.RELEASES_URL,
-                headers={"Accept": "application/vnd.github+json"})
-            with urllib.request.urlopen(req, timeout=10) as resp:
-                data = json.loads(resp.read())
+                headers={"Accept": "application/vnd.github+json"},
+                timeout=10)
+            resp.raise_for_status()
+            data = resp.json()
             tag = data.get("tag_name", "")
             url = data.get("html_url", "")
             if tag and self._parse_version(tag) > self._parse_version(self._current):

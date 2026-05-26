@@ -1,6 +1,5 @@
 """Tests for worker threads."""
 
-import json
 from unittest.mock import MagicMock
 
 import pytest
@@ -112,20 +111,20 @@ def test_command_worker_auth_error(mock_api):
     assert results["error"] is None
 
 
+class _FakeResponse:
+    def __init__(self, payload):
+        self._payload = payload
+
+    def raise_for_status(self):
+        return None
+
+    def json(self):
+        return self._payload
+
+
 def test_update_check_worker_emits_when_newer_release_available(monkeypatch):
     payload = {"tag_name": "v2.2.0", "html_url": "https://example.com/release"}
-
-    class _Response:
-        def __enter__(self):
-            return self
-
-        def __exit__(self, exc_type, exc, tb):
-            return False
-
-        def read(self):
-            return json.dumps(payload).encode("utf-8")
-
-    monkeypatch.setattr("urllib.request.urlopen", lambda *args, **kwargs: _Response())
+    monkeypatch.setattr("requests.get", lambda *args, **kwargs: _FakeResponse(payload))
 
     worker = UpdateCheckWorker("2.1.1")
     results = _run_worker(worker)
@@ -135,18 +134,7 @@ def test_update_check_worker_emits_when_newer_release_available(monkeypatch):
 
 def test_update_check_worker_ignores_older_or_equal_release(monkeypatch):
     payload = {"tag_name": "v2.1.1", "html_url": "https://example.com/release"}
-
-    class _Response:
-        def __enter__(self):
-            return self
-
-        def __exit__(self, exc_type, exc, tb):
-            return False
-
-        def read(self):
-            return json.dumps(payload).encode("utf-8")
-
-    monkeypatch.setattr("urllib.request.urlopen", lambda *args, **kwargs: _Response())
+    monkeypatch.setattr("requests.get", lambda *args, **kwargs: _FakeResponse(payload))
 
     worker = UpdateCheckWorker("2.1.1")
     results = _run_worker(worker)
@@ -155,9 +143,10 @@ def test_update_check_worker_ignores_older_or_equal_release(monkeypatch):
 
 
 def test_update_check_worker_logs_debug_on_failure(monkeypatch, caplog):
-    monkeypatch.setattr("urllib.request.urlopen", lambda *args, **kwargs: (_ for _ in ()).throw(
-        RuntimeError("network down")
-    ))
+    def _boom(*args, **kwargs):
+        raise RuntimeError("network down")
+
+    monkeypatch.setattr("requests.get", _boom)
 
     worker = UpdateCheckWorker("2.1.1")
     with caplog.at_level("DEBUG"):
