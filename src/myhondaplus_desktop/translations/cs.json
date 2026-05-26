@@ -72,6 +72,8 @@
   "login.email_placeholder": "uzivatel@priklad.cz",
   "login.password": "Heslo:",
   "login.password_placeholder": "Heslo",
+  "login.show_password": "Zobrazit heslo",
+  "login.hide_password": "Skrýt heslo",
   "login.button": "Přihlásit se",
   "login.enter_credentials": "Zadejte e-mail a heslo",
   "login.logging_in": "Přihlašování...",

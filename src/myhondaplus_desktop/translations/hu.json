@@ -72,6 +72,8 @@
   "login.email_placeholder": "felhasznalo@pelda.hu",
   "login.password": "Jelszó:",
   "login.password_placeholder": "Jelszó",
+  "login.show_password": "Jelszó megjelenítése",
+  "login.hide_password": "Jelszó elrejtése",
   "login.button": "Belépés",
   "login.enter_credentials": "Adja meg az e-mail címet és jelszót",
   "login.logging_in": "Bejelentkezés...",

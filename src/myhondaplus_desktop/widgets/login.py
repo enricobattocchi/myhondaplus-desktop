@@ -13,7 +13,7 @@ from PyQt6.QtWidgets import (
 )
 
 from ..i18n import t
-from ..icons import secondary_text_color
+from ..icons import icon, secondary_text_color
 from ..workers import (
     DeviceRegistrationWorker,
     LoginWorker,
@@ -61,6 +61,12 @@ class LoginWidget(QWidget):
         self._password = QLineEdit()
         self._password.setEchoMode(QLineEdit.EchoMode.Password)
         self._password.setPlaceholderText(t("login.password_placeholder"))
+        # Reveal/hide toggle inside the field: the eye means "click to show",
+        # the crossed-out eye "click to hide".
+        self._password_toggle = self._password.addAction(
+            icon("eye"), QLineEdit.ActionPosition.TrailingPosition)
+        self._password_toggle.setToolTip(t("login.show_password"))
+        self._password_toggle.triggered.connect(self._toggle_password_visibility)
         form.addRow(t("login.password"), self._password)
 
         form_layout.addLayout(form)
@@ -92,6 +98,16 @@ class LoginWidget(QWidget):
         layout.addWidget(version_lbl)
 
         self._password.returnPressed.connect(self._do_login)
+
+    def _toggle_password_visibility(self):
+        if self._password.echoMode() == QLineEdit.EchoMode.Password:
+            self._password.setEchoMode(QLineEdit.EchoMode.Normal)
+            self._password_toggle.setIcon(icon("eye-off"))
+            self._password_toggle.setToolTip(t("login.hide_password"))
+        else:
+            self._password.setEchoMode(QLineEdit.EchoMode.Password)
+            self._password_toggle.setIcon(icon("eye"))
+            self._password_toggle.setToolTip(t("login.show_password"))
 
     def _do_login(self):
         email = self._email.text().strip()

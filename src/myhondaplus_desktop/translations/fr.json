@@ -72,6 +72,8 @@
   "login.email_placeholder": "utilisateur@exemple.com",
   "login.password": "Mot de passe :",
   "login.password_placeholder": "Mot de passe",
+  "login.show_password": "Afficher le mot de passe",
+  "login.hide_password": "Masquer le mot de passe",
   "login.button": "Connexion",
   "login.enter_credentials": "Entrez votre e-mail et votre mot de passe",
   "login.logging_in": "Connexion en cours...",

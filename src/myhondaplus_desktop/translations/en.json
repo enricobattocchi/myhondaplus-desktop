@@ -72,6 +72,8 @@
   "login.email_placeholder": "user@example.com",
   "login.password": "Password:",
   "login.password_placeholder": "Password",
+  "login.show_password": "Show password",
+  "login.hide_password": "Hide password",
   "login.button": "Login",
   "login.enter_credentials": "Enter email and password",
   "login.logging_in": "Logging in...",
