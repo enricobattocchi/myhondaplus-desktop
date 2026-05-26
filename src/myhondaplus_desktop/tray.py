@@ -11,15 +11,23 @@ check ``available`` before relying on tray-driven behaviour.
 """
 
 import logging
+import os
 
-from PyQt6.QtCore import QObject, QRectF, Qt, pyqtSignal
+from PyQt6.QtCore import (
+    QMetaType,
+    QObject,
+    QRectF,
+    QStandardPaths,
+    Qt,
+    pyqtSignal,
+)
 from PyQt6.QtGui import QAction, QActionGroup, QColor, QIcon, QPainter, QPixmap
 from PyQt6.QtWidgets import QMenu, QSystemTrayIcon
 
 from .i18n import t
 from .icons import icon as load_icon
 from .icons import pixmap as load_pixmap
-from .platform_support import click_opens_menu, is_macos
+from .platform_support import click_opens_menu, is_linux, is_macos
 
 logger = logging.getLogger(__name__)
 
@@ -174,13 +182,29 @@ class TrayController(QObject):
         balloon messages (some Linux DEs, macOS without bundle, etc.) or
         if the tray itself isn't available.
         """
+        # On Linux, Qt's X11 balloon pins the icon to a small fixed size and
+        # ignores large pixmaps, so the app logo shows as a tiny square in a
+        # lot of empty space. Talk to the freedesktop daemon directly, which
+        # scales the icon to its proper notification size. Fall through to
+        # the Qt balloon if no daemon answers.
+        if is_linux() and _dbus_notify(
+                t("app.name"), title, body,
+                _notification_icon_path(), duration_ms):
+            return True
         if self._tray is None:
             return False
         if not self._tray.supportsMessages():
             logger.debug("Tray does not support showMessage; skipping notification")
             return False
-        self._tray.showMessage(
-            title, body, QSystemTrayIcon.MessageIcon.Information, duration_ms)
+        # Windows/macOS: pass the full app logo as the balloon icon instead
+        # of the generic system "information" glyph. Always the colored
+        # app-icon (not the macOS "car" template variant): on Windows the
+        # daemon renders this QIcon; on macOS the overload is ignored and
+        # Notification Center shows the .app bundle icon anyway.
+        balloon_icon = QIcon()
+        for sz in (64, 128, 256):
+            balloon_icon.addPixmap(load_pixmap(_TRAY_ICON_NAME_DEFAULT, sz))
+        self._tray.showMessage(title, body, balloon_icon, duration_ms)
         return True
 
     def set_window_visible(self, visible: bool) -> None:
@@ -238,6 +262,83 @@ class TrayController(QObject):
         if reason != QSystemTrayIcon.ActivationReason.Trigger:
             return
         self.show_window_requested.emit()
+
+
+# -- freedesktop (Linux) notifications --------------------------------------
+
+_NOTIFY_ICON_PATH: str | None = None
+
+
+def _notification_icon_path() -> str | None:
+    """Render the app logo to a cached PNG for freedesktop notifications.
+
+    Passed as the ``image-path`` hint, which the daemon scales to its own
+    notification-image size, so we render the SVG large (256px) once per
+    process and reuse the file. Returns None if the cache can't be written
+    (the notification still fires, just without a custom icon).
+    """
+    global _NOTIFY_ICON_PATH
+    if _NOTIFY_ICON_PATH is not None:
+        return _NOTIFY_ICON_PATH or None
+    _NOTIFY_ICON_PATH = ""  # sentinel: tried; don't retry on later calls
+    cache_dir = QStandardPaths.writableLocation(
+        QStandardPaths.StandardLocation.CacheLocation)
+    if not cache_dir:
+        return None
+    try:
+        os.makedirs(cache_dir, exist_ok=True)
+        path = os.path.join(cache_dir, "notification-icon.png")
+        if load_pixmap(_TRAY_ICON_NAME_DEFAULT, 256).save(path, "PNG"):
+            _NOTIFY_ICON_PATH = path
+            return path
+    except OSError as exc:
+        logger.debug("Could not cache notification icon: %s", exc)
+    return None
+
+
+def _dbus_notify(app_name: str, title: str, body: str,
+                 icon_path: str | None, duration_ms: int) -> bool:
+    """Fire a notification via org.freedesktop.Notifications (Linux only).
+
+    Returns True if the daemon accepted the call, False if the session bus
+    or the daemon isn't reachable so the caller can fall back to Qt's own
+    balloon. ``replaces_id`` (uint) and ``actions`` (string array) are
+    built explicitly because PyQt's type inference would otherwise marshal
+    them as the wrong D-Bus types and the call would be rejected.
+    """
+    from PyQt6.QtDBus import QDBusArgument, QDBusConnection, QDBusMessage
+
+    bus = QDBusConnection.sessionBus()
+    if not bus.isConnected():
+        return False
+    replaces_id = QDBusArgument()
+    replaces_id.add(0, QMetaType.Type.UInt.value)
+    actions = QDBusArgument()
+    actions.beginArray(QMetaType.Type.QString.value)
+    actions.endArray()
+    # The icon goes in the hints as the notification image, NOT in the
+    # app_icon parameter: daemons render app_icon as a small application
+    # badge but the image hint at the full notification-image size. Set
+    # both the spec 1.2 ("image-path") and 1.1 ("image_path") spellings so
+    # it works regardless of which version the daemon implements.
+    hints: dict = {}
+    if icon_path:
+        hints = {"image-path": icon_path, "image_path": icon_path}
+    # Build the call as a raw QDBusMessage rather than via QDBusInterface:
+    # QDBusInterface introspects the remote object on construction, and that
+    # blocking round-trip, run from inside the app's event loop (where Qt is
+    # already servicing the bus for the tray icon), intermittently reports
+    # the interface invalid from the second call on, dropping us to the tiny
+    # Qt balloon. createMethodCall does no introspection and is stable.
+    msg = QDBusMessage.createMethodCall(
+        "org.freedesktop.Notifications",
+        "/org/freedesktop/Notifications",
+        "org.freedesktop.Notifications", "Notify")
+    msg.setArguments([app_name, replaces_id, "", title, body,
+                      actions, hints, int(duration_ms)])
+    reply = bus.call(msg)
+    return (reply.type() == QDBusMessage.MessageType.ReplyMessage
+            and not reply.errorName())
 
 
 # -- dynamic battery-bar icon ------------------------------------------------

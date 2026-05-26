@@ -158,6 +158,73 @@ def test_activated_ignores_non_trigger_reasons(monkeypatch):
     assert events == []
 
 
+def test_show_notification_qt_path_uses_app_logo_not_system_glyph(monkeypatch):
+    # On the Qt balloon path (Windows/macOS) the message must carry the
+    # app's own icon, not the generic system "information" glyph.
+    from PyQt6.QtGui import QIcon
+    monkeypatch.setattr(tray_mod, "is_linux", lambda: False)
+    monkeypatch.setattr(
+        QSystemTrayIcon, "isSystemTrayAvailable", staticmethod(lambda: True))
+    controller = TrayController()
+    captured: list = []
+    monkeypatch.setattr(controller._tray, "supportsMessages", lambda: True)
+    monkeypatch.setattr(
+        controller._tray, "showMessage",
+        lambda *args: captured.append(args))
+    assert controller.show_notification("Title", "Body", 5000) is True
+    title, body, icon, msecs = captured[0]
+    assert (title, body, msecs) == ("Title", "Body", 5000)
+    assert isinstance(icon, QIcon) and not icon.isNull()
+    # Must offer a notification-sized pixmap, not just the small menu/tray
+    # sizes, or it renders as a tiny square in the larger balloon slot.
+    assert max(s.width() for s in icon.availableSizes()) >= 128
+
+
+def test_show_notification_linux_uses_dbus(monkeypatch):
+    # On Linux the freedesktop daemon renders the icon at full size, so we
+    # send there directly instead of through Qt's small fixed-size balloon.
+    monkeypatch.setattr(tray_mod, "is_linux", lambda: True)
+    captured: list = []
+    monkeypatch.setattr(
+        tray_mod, "_dbus_notify",
+        lambda *args: captured.append(args) or True)
+    monkeypatch.setattr(
+        QSystemTrayIcon, "isSystemTrayAvailable", staticmethod(lambda: True))
+    controller = TrayController()
+    fired: list = []
+    monkeypatch.setattr(controller._tray, "supportsMessages", lambda: True)
+    monkeypatch.setattr(
+        controller._tray, "showMessage", lambda *a: fired.append(a))
+    assert controller.show_notification("Title", "Body", 5000) is True
+    assert fired == []  # Qt balloon not used when the daemon answers
+    app_name, title, body, _icon, msecs = captured[0]
+    assert (title, body, msecs) == ("Title", "Body", 5000)
+
+
+def test_show_notification_falls_back_to_qt_when_dbus_unavailable(monkeypatch):
+    # No reachable daemon (e.g. minimal Linux session): use Qt's balloon.
+    monkeypatch.setattr(tray_mod, "is_linux", lambda: True)
+    monkeypatch.setattr(tray_mod, "_dbus_notify", lambda *args: False)
+    monkeypatch.setattr(
+        QSystemTrayIcon, "isSystemTrayAvailable", staticmethod(lambda: True))
+    controller = TrayController()
+    fired: list = []
+    monkeypatch.setattr(controller._tray, "supportsMessages", lambda: True)
+    monkeypatch.setattr(
+        controller._tray, "showMessage", lambda *a: fired.append(a))
+    assert controller.show_notification("Title", "Body", 5000) is True
+    assert len(fired) == 1
+
+
+def test_show_notification_skips_when_messages_unsupported(monkeypatch):
+    monkeypatch.setattr(tray_mod, "is_linux", lambda: False)
+    monkeypatch.setattr(
+        QSystemTrayIcon, "isSystemTrayAvailable", staticmethod(lambda: True))
+    controller = TrayController()
+    monkeypatch.setattr(controller._tray, "supportsMessages", lambda: False)
+    assert controller.show_notification("Title", "Body") is False
+
+
 def test_battery_template_icon_is_mask_flagged():
     icon = tray_mod._battery_template_icon(50, low=False)
     assert icon.isMask() is True
