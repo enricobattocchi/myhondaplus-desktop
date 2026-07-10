@@ -491,3 +491,33 @@ def test_handle_vin_changed_sets_capabilities_and_info(monkeypatch):
     assert view.capabilities_calls[0] is vehicle.capabilities
     assert len(view.vehicle_info_calls) == 1
     assert view.vehicle_info_calls[0] is vehicle
+
+
+def test_save_geofence_passes_float_radius_to_api(monkeypatch):
+    captured = {}
+
+    class CapturingWorker(FakeWorker):
+        def __init__(self, fn, *args, **kwargs):
+            super().__init__()
+            captured["fn"] = fn
+            captured["args"] = args
+            captured["kwargs"] = kwargs
+
+    api = FakeAPI()
+    view = FakeView()
+    view._current_vin = "VIN123"
+    settings = FakeSettings(vin="VIN123")
+
+    monkeypatch.setattr(
+        "myhondaplus_desktop.main_screen_controller.ApiWorker",
+        CapturingWorker,
+    )
+
+    controller = MainScreenController(view, api, settings, lambda: None)
+    controller.save_geofence(45.0, 10.0, 16.1, "Home")
+
+    # Args: (vin, lat, lon, radius, name)
+    assert captured["args"] == ("VIN123", 45.0, 10.0, 16.1, "Home")
+    radius = captured["args"][3]
+    assert isinstance(radius, float)
+    assert radius == 16.1
