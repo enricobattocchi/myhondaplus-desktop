@@ -222,7 +222,7 @@ class MainScreenController:
         self._view.set_geofence_controls_enabled(False)
         retire_worker(self._geofence_worker, self._retired_workers)
         self._geofence_worker = ApiWorker(
-            self._set_and_wait_geofence, vin, lat, lon, int(radius), name)
+            self._set_and_wait_geofence, vin, lat, lon, float(radius), name)
         self._geofence_worker.result_ready.connect(self._on_geofence_saved)
         self._geofence_worker.error.connect(self._on_geofence_error)
         self._geofence_worker.start()

@@ -6,16 +6,15 @@ from PyQt6.QtCore import QPointF, Qt, QUrl
 from PyQt6.QtGui import QBrush, QColor, QPainter, QPen, QPixmap
 from PyQt6.QtNetwork import QNetworkAccessManager, QNetworkRequest
 from PyQt6.QtWidgets import (
+    QComboBox,
     QGraphicsEllipseItem,
     QGraphicsPixmapItem,
     QGraphicsScene,
     QGraphicsView,
     QHBoxLayout,
     QLabel,
-    QLineEdit,
     QMessageBox,
     QPushButton,
-    QSpinBox,
     QVBoxLayout,
     QWidget,
 )
@@ -29,6 +28,12 @@ from ..icons import (
 )
 
 _TILE_SIZE = 256
+_KM_PER_MILE = 1.609344
+# Fixed radius choices mirroring the official app: the km list is used as-is,
+# the mile list is converted to km (1-decimal rounding) before hitting the API.
+_RADIUS_OPTIONS_KM = [1.0, 5.0, 10.0, 20.0, 30.0]
+_RADIUS_OPTIONS_MI = [0.5, 1.0, 5.0, 10.0, 20.0]
+_RADIUS_MATCH_TOLERANCE_KM = 0.05
 
 
 def _lat_lon_to_tile(lat, lon, zoom):
@@ -85,7 +90,6 @@ class _TileMapView(QGraphicsView):
     _ZOOM_MIN = 2
     _ZOOM_MAX = 18
     _MARKER_RADIUS = 7
-    _DRAG_THRESHOLD = 4
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -113,12 +117,8 @@ class _TileMapView(QGraphicsView):
         self._marker_lon = 0.0
         self._radius_km = 1.0
 
-        self._dragging_marker = False
         self._panning = False
         self._press_pos = QPointF()
-        self._press_scene_pos = QPointF()
-
-        self.on_marker_moved = None  # callback(lat, lon)
 
         # Attribution overlay
         self._attr_label = QLabel(
@@ -267,40 +267,20 @@ class _TileMapView(QGraphicsView):
         self._marker_lat = 0.0
         self._marker_lon = 0.0
 
-    # -- Mouse interactions --
+    def has_marker(self):
+        return self._marker_item is not None
 
-    def _marker_hit(self, scene_pos):
-        if self._marker_item is None:
-            return False
-        mc = self._marker_item.rect().center()
-        dx = scene_pos.x() - mc.x()
-        dy = scene_pos.y() - mc.y()
-        return (dx * dx + dy * dy) < (self._MARKER_RADIUS + 8) ** 2
+    # -- Mouse interactions (pan/zoom only; the marker is not movable) --
 
     def mousePressEvent(self, event):
         if event.button() != Qt.MouseButton.LeftButton:
             return super().mousePressEvent(event)
         self._press_pos = event.position()
-        self._press_scene_pos = self.mapToScene(event.position().toPoint())
-        if self._marker_hit(self._press_scene_pos):
-            self._dragging_marker = True
-            self.setCursor(Qt.CursorShape.ClosedHandCursor)
-        else:
-            self._panning = True
-            self.setCursor(Qt.CursorShape.ClosedHandCursor)
+        self._panning = True
+        self.setCursor(Qt.CursorShape.ClosedHandCursor)
 
     def mouseMoveEvent(self, event):
-        if self._dragging_marker:
-            sp = self.mapToScene(event.position().toPoint())
-            cx, cy = sp.x(), sp.y()
-            r = self._MARKER_RADIUS
-            self._marker_item.setRect(cx - r, cy - r, r * 2, r * 2)
-            if self._circle_item:
-                rpx = _km_to_scene_pixels(
-                    self._marker_lat, self._radius_km, self._zoom)
-                self._circle_item.setRect(
-                    cx - rpx, cy - rpx, rpx * 2, rpx * 2)
-        elif self._panning:
+        if self._panning:
             delta = event.position() - self._press_pos
             self._press_pos = event.position()
             hs = self.horizontalScrollBar()
@@ -314,46 +294,13 @@ class _TileMapView(QGraphicsView):
     def mouseReleaseEvent(self, event):
         if event.button() != Qt.MouseButton.LeftButton:
             return super().mouseReleaseEvent(event)
-        release_pos = event.position()
-        was_dragging = self._dragging_marker
         was_panning = self._panning
-        self._dragging_marker = False
         self._panning = False
         self.setCursor(Qt.CursorShape.ArrowCursor)
-
-        if was_dragging:
-            sp = self.mapToScene(release_pos.toPoint())
-            lat, lon = _scene_to_lat_lon(sp.x(), sp.y(), self._zoom)
-            self._marker_lat = lat
-            self._marker_lon = lon
-            if self.on_marker_moved:
-                self.on_marker_moved(lat, lon)
-        elif was_panning:
+        if was_panning:
             self._load_visible_tiles()
-            # Check if it was actually a click (minimal movement)
-            sp_release = self.mapToScene(release_pos.toPoint())
-            dx = sp_release.x() - self._press_scene_pos.x()
-            dy = sp_release.y() - self._press_scene_pos.y()
-            if abs(dx) < self._DRAG_THRESHOLD and abs(dy) < self._DRAG_THRESHOLD:
-                self._place_marker_at(sp_release)
         else:
             super().mouseReleaseEvent(event)
-
-    def _place_marker_at(self, scene_pos):
-        lat, lon = _scene_to_lat_lon(
-            scene_pos.x(), scene_pos.y(), self._zoom)
-        self._marker_lat = lat
-        self._marker_lon = lon
-        # Remove old overlay items
-        if self._marker_item:
-            self._scene.removeItem(self._marker_item)
-            self._marker_item = None
-        if self._circle_item:
-            self._scene.removeItem(self._circle_item)
-            self._circle_item = None
-        self._update_overlay()
-        if self.on_marker_moved:
-            self.on_marker_moved(lat, lon)
 
     def wheelEvent(self, event):
         # Preserve the current viewport center across zoom changes
@@ -381,33 +328,26 @@ class GeofenceWidget(QWidget):
     def __init__(self, actions: dict = None):
         super().__init__()
         self._actions = actions or {}
-        self._marker_lat = 0.0
-        self._marker_lon = 0.0
         self._car_lat = None
         self._car_lon = None
         self._geofence = None
+        self._distance_unit = "km"
+        self._controls_enabled = True
 
         layout = QVBoxLayout(self)
 
         # Map
         self._map = _TileMapView(self)
-        self._map.on_marker_moved = self._on_marker_moved
         layout.addWidget(self._map, 1)
 
         # Info bar
         info = QHBoxLayout()
-        info.addWidget(QLabel(t("geofence.name")))
-        self._name_input = QLineEdit("Geofence")
-        self._name_input.setMaximumWidth(150)
-        info.addWidget(self._name_input)
-
         info.addWidget(QLabel(t("geofence.radius")))
-        self._radius_spin = QSpinBox()
-        self._radius_spin.setRange(1, 50)
-        self._radius_spin.setValue(1)
-        self._radius_spin.setSuffix(" km")
-        self._radius_spin.valueChanged.connect(self._on_radius_changed)
-        info.addWidget(self._radius_spin)
+        self._radius_combo = QComboBox()
+        self._rebuild_radius_options()
+        self._radius_combo.currentIndexChanged.connect(
+            self._on_radius_changed)
+        info.addWidget(self._radius_combo)
 
         self._coord_label = QLabel("")
         self._coord_label.setStyleSheet(f"color: {secondary_text_color()};")
@@ -423,10 +363,6 @@ class GeofenceWidget(QWidget):
 
         # Buttons
         buttons = QHBoxLayout()
-        self._car_btn = QPushButton(icon("map-pin"), t("geofence.use_car"))
-        self._car_btn.clicked.connect(self._on_use_car)
-        buttons.addWidget(self._car_btn)
-
         self._save_btn = QPushButton(icon("download"), t("geofence.save"))
         self._save_btn.clicked.connect(self._on_save)
         buttons.addWidget(self._save_btn)
@@ -443,33 +379,77 @@ class GeofenceWidget(QWidget):
         buttons.addStretch()
         layout.addLayout(buttons)
 
-    def _on_marker_moved(self, lat, lon):
-        self._marker_lat = lat
-        self._marker_lon = lon
-        self._coord_label.setText(f"{lat:.6f}, {lon:.6f}")
+        self._update_save_enabled()
 
     def _call(self, name, *args):
         cb = self._actions.get(name)
         if cb:
             cb(*args)
 
-    def _on_radius_changed(self, value):
-        self._map.set_radius(value)
+    # -- Radius options (fixed lists, mirroring the official app) --
 
-    def _on_use_car(self):
-        if self._car_lat is not None and self._car_lon is not None:
-            self._marker_lat = self._car_lat
-            self._marker_lon = self._car_lon
-            self._coord_label.setText(
-                f"{self._car_lat:.6f}, {self._car_lon:.6f}")
-            radius = self._radius_spin.value()
-            self._map.set_marker(self._car_lat, self._car_lon, radius)
+    def _radius_options(self):
+        """(label, km_value) pairs for the active distance unit."""
+        if self._distance_unit == "miles":
+            return [(f"{mi:g} mi", round(mi * _KM_PER_MILE, 1))
+                    for mi in _RADIUS_OPTIONS_MI]
+        return [(f"{km:g} km", km) for km in _RADIUS_OPTIONS_KM]
+
+    def _format_custom_label(self, km):
+        if self._distance_unit == "miles":
+            return f"{round(km / _KM_PER_MILE, 2):g} mi"
+        return f"{round(km, 2):g} km"
+
+    def _match_option_index(self, km):
+        for i, (_, option_km) in enumerate(self._radius_options()):
+            if abs(option_km - km) <= _RADIUS_MATCH_TOLERANCE_KM:
+                return i
+        return None
+
+    def _rebuild_radius_options(self, selected_km=None):
+        """Repopulate the combo; a non-standard radius gets a custom entry."""
+        self._radius_combo.blockSignals(True)
+        self._radius_combo.clear()
+        for label, km in self._radius_options():
+            self._radius_combo.addItem(label, km)
+        index = 0
+        if selected_km is not None:
+            index = self._match_option_index(selected_km)
+            if index is None:
+                self._radius_combo.addItem(
+                    self._format_custom_label(selected_km), selected_km)
+                index = self._radius_combo.count() - 1
+        self._radius_combo.setCurrentIndex(index)
+        self._radius_combo.blockSignals(False)
+
+    def _radius_km(self):
+        km = self._radius_combo.currentData()
+        return km if km is not None else _RADIUS_OPTIONS_KM[0]
+
+    def _on_radius_changed(self, _index):
+        self._map.set_radius(self._radius_km())
+
+    # -- Save / clear / refresh --
+
+    def _can_save(self):
+        return (self._geofence is not None
+                or (self._car_lat is not None and self._car_lon is not None))
+
+    def _update_save_enabled(self):
+        self._save_btn.setEnabled(self._controls_enabled and self._can_save())
 
     def _on_save(self):
-        if self._marker_lat == 0.0 and self._marker_lon == 0.0:
+        # Official-app semantics: an existing geofence keeps its center,
+        # a new one is centered on the car's current location.
+        if self._geofence is not None:
+            lat, lon = self._geofence.latitude, self._geofence.longitude
+        elif self._car_lat is not None and self._car_lon is not None:
+            lat, lon = self._car_lat, self._car_lon
+        else:
             return
-        self._call("on_save", self._marker_lat, self._marker_lon,
-                    self._radius_spin.value(), self._name_input.text())
+        # The official app always names the geofence "Geofence" (hardcoded
+        # in its request builder); mirror that.
+        self._call("on_save", lat, lon, self._radius_km(), "Geofence")
 
     def _on_clear(self):
         if QMessageBox.question(
@@ -483,14 +463,31 @@ class GeofenceWidget(QWidget):
         self._call("on_refresh")
 
     def set_car_location(self, lat, lon):
+        changed = (lat, lon) != (self._car_lat, self._car_lon)
         self._car_lat = lat
         self._car_lon = lon
+        self._update_save_enabled()
+        # With no geofence set, preview the would-be geofence around the car.
+        # The changed-guard avoids re-centering the map on every dashboard
+        # poll that reports the same position.
+        if self._geofence is None and (changed or not self._map.has_marker()):
+            self._coord_label.setText(f"{lat:.6f}, {lon:.6f}")
+            self._map.set_marker(lat, lon, self._radius_km())
+
+    def set_distance_unit(self, unit):
+        unit = "miles" if unit == "miles" else "km"
+        if unit == self._distance_unit:
+            return
+        current_km = self._radius_km()
+        self._distance_unit = unit
+        self._rebuild_radius_options(current_km)
+        self._map.set_radius(self._radius_km())
 
     def set_controls_enabled(self, enabled):
-        self._save_btn.setEnabled(enabled)
+        self._controls_enabled = enabled
         self._clear_btn.setEnabled(enabled)
-        self._car_btn.setEnabled(enabled)
         self._refresh_btn.setEnabled(enabled)
+        self._update_save_enabled()
 
     def set_geofence(self, geofence):
         self._geofence = geofence
@@ -498,13 +495,19 @@ class GeofenceWidget(QWidget):
             self._status_label.setText(t("geofence.none"))
             self._status_label.setStyleSheet(
                 f"color: {secondary_text_color()}; font-weight: bold;")
+            self._rebuild_radius_options()
             self._map.clear_marker()
-            self._coord_label.setText("")
+            if self._car_lat is not None and self._car_lon is not None:
+                self._coord_label.setText(
+                    f"{self._car_lat:.6f}, {self._car_lon:.6f}")
+                self._map.set_marker(
+                    self._car_lat, self._car_lon, self._radius_km())
+            else:
+                self._coord_label.setText("")
+            self._update_save_enabled()
             return
-        self._name_input.setText(geofence.name or "Geofence")
-        self._radius_spin.setValue(int(geofence.radius or 1))
-        self._marker_lat = geofence.latitude
-        self._marker_lon = geofence.longitude
+        radius_km = float(geofence.radius or 1.0)
+        self._rebuild_radius_options(radius_km)
         self._coord_label.setText(
             f"{geofence.latitude:.6f}, {geofence.longitude:.6f}")
         if geofence.waiting_activate:
@@ -523,5 +526,5 @@ class GeofenceWidget(QWidget):
             self._status_label.setText(t_lib("geofence_state_inactive"))
             self._status_label.setStyleSheet(
                 f"color: {secondary_text_color()}; font-weight: bold;")
-        radius = geofence.radius or 1.0
-        self._map.set_marker(geofence.latitude, geofence.longitude, radius)
+        self._map.set_marker(geofence.latitude, geofence.longitude, radius_km)
+        self._update_save_enabled()

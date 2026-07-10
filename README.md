@@ -31,7 +31,7 @@ This project is **unofficial** and **not affiliated with, endorsed by, or connec
 - **Vehicle info** — VIN, model, grade, year, fuel type, weight, odometer, production date, registration date, country
 - **Subscription details** — package, status, price, payment period, renewal, services list
 - **Vehicle capabilities** — list of supported features for your vehicle
-- **Geofence** — interactive map to set, view, and clear a geofence around your vehicle
+- **Geofence** — set, view, and clear a geofence centered on your vehicle
 - **Trip history** — monthly trip list with statistics, optional GPS locations, CSV export
 - **Multi-vehicle support** — dropdown with vehicle name and plate number, auto-populated from your account
 - **Secure storage** — tokens and device keys encrypted at rest via OS keyring or machine-derived key
@@ -110,7 +110,7 @@ The Vehicle tab shows your car's specifications, subscription services, and capa
 
 ### Geofence
 
-The Geofence tab displays an interactive map where you can place a circular geofence around your vehicle's location. Use the Save button to store the geofence on Honda's servers, or Clear to remove it.
+The Geofence tab shows a map with a circular geofence centered on your vehicle's location. Pick the radius from the dropdown (in km or miles, following your account's distance unit), then use Save to store it on Honda's servers or Clear to remove it. This mirrors the official app; for an arbitrary radius or a custom center, use the pymyhondaplus CLI.
 
 ### Settings
 

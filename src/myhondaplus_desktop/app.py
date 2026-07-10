@@ -439,7 +439,9 @@ class MainScreen(QWidget):
     def update_dashboard_status(self, status: dict):
         self._dashboard.update_status(status)
         self._vehicle_tab.update_odometer(status)
-        # Forward car location to geofence tab
+        # Forward distance unit and car location to geofence tab
+        self._geofence_tab.set_distance_unit(
+            status.get("distance_unit", "km"))
         lat = _dms_to_decimal(status.get("latitude", ""))
         lon = _dms_to_decimal(status.get("longitude", ""))
         if lat is not None and lon is not None:
