@@ -117,16 +117,20 @@ jobs:
           chmod +x AppDir/AppRun
 
           # Build AppImage
-          ARCH=x86_64 ./appimagetool-x86_64.AppImage AppDir "My-Honda-for-desktop-${{ steps.version.outputs.version }}-x86_64.AppImage"
+          ARCH=x86_64 ./appimagetool-x86_64.AppImage \
+            -u "gh-releases-zsync|enricobattocchi|myhondaplus-desktop|latest|My-Honda-Plus-for-desktop-*-x86_64.AppImage.zsync" \
+            AppDir "My-Honda-Plus-for-desktop-${{ steps.version.outputs.version }}-x86_64.AppImage"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: My Honda+ for desktop (Linux)
-          path: "My-Honda-for-desktop-${{ steps.version.outputs.version }}-x86_64.AppImage"
+          path: |
+            My-Honda-Plus-for-desktop-${{ steps.version.outputs.version }}-x86_64.AppImage
+            My-Honda-Plus-for-desktop-${{ steps.version.outputs.version }}-x86_64.AppImage.zsync
 
       - name: Attach to release
         if: github.event_name == 'release'
-        run: gh release upload "${{ github.event.release.tag_name }}" "My-Honda-for-desktop-${{ steps.version.outputs.version }}-x86_64.AppImage"
+        run: gh release upload "${{ github.event.release.tag_name }}" "My-Honda-Plus-for-desktop-${{ steps.version.outputs.version }}-x86_64.AppImage" "My-Honda-Plus-for-desktop-${{ steps.version.outputs.version }}-x86_64.AppImage.zsync"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -53,9 +53,9 @@ Pre-built binaries are available from the [latest release](https://github.com/en
 
 | Platform | File |
 |----------|------|
-| macOS | `My-Honda-for-desktop-<version>-macOS.dmg` |
-| Windows | `My-Honda-for-desktop-<version>-Windows.exe` |
-| Linux | `My-Honda-for-desktop-<version>-x86_64.AppImage` |
+| macOS | `My-Honda-Plus-for-desktop-<version>-macOS.dmg` |
+| Windows | `My-Honda-Plus-for-desktop-<version>-Windows.exe` |
+| Linux | `My-Honda-Plus-for-desktop-<version>-x86_64.AppImage` |
 
 ### Install via pip
 
