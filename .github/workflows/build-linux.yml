@@ -72,9 +72,10 @@ jobs:
           Type=Application
           Name=My Honda+ for desktop
           Comment=Unofficial GUI for Honda Connect Europe
-          Exec=My Honda+ for desktop
+          Exec=AppRun
           Icon=myhondaplus-desktop
           Categories=Utility;
+          StartupWMClass=myhondaplus-desktop
           DESKTOP
           cp AppDir/myhondaplus-desktop.desktop AppDir/usr/share/applications/
 
@@ -82,11 +83,14 @@ jobs:
           cat > AppDir/usr/share/metainfo/myhondaplus-desktop.appdata.xml << 'APPDATA'
           <?xml version="1.0" encoding="UTF-8"?>
           <component type="desktop-application">
-            <id>myhondaplus-desktop</id>
+            <id>io.github.enricobattocchi.myhondaplus-desktop</id>
             <name>My Honda+ for desktop</name>
             <summary>Unofficial GUI for Honda Connect Europe</summary>
             <metadata_license>FSFAP</metadata_license>
             <project_license>GPL-3.0-or-later</project_license>
+            <developer id="io.github.enricobattocchi">
+              <name>Enrico Battocchi</name>
+            </developer>
             <description>
               <p>
                 Unofficial desktop application for Honda Connect Europe (My Honda+).
@@ -104,9 +108,13 @@ jobs:
             <provides>
               <binary>My Honda+ for desktop</binary>
             </provides>
+            <releases>
+              <release version="${{ steps.version.outputs.version }}" date="@RELEASE_DATE@"/>
+            </releases>
             <content_rating type="oars-1.1" />
           </component>
           APPDATA
+          sed -i "s/@RELEASE_DATE@/$(date -u +%Y-%m-%d)/" AppDir/usr/share/metainfo/myhondaplus-desktop.appdata.xml
 
           # AppRun
           cat > AppDir/AppRun << 'APPRUN'
