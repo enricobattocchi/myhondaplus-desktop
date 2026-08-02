@@ -24,7 +24,7 @@ from PyQt6.QtWidgets import (
 
 from . import __version__
 from .background_poll import BackgroundPoller
-from .config import Settings
+from .config import APP_NAME, Settings
 from .i18n import load_language, t
 from .icons import icon, link_color_hex, pixmap, secondary_text_color
 from .main_screen_controller import MainScreenController
@@ -801,7 +801,11 @@ def main():
         explicit = settings.theme
     os.environ.pop("QT_QPA_PLATFORMTHEME", None)
     app = QApplication(sys.argv)
-    app.setApplicationName(t("app.name"))
+    # This feeds WM_CLASS, which is how docks and taskbars tie a window back to
+    # its launcher. It must not be translated: the .desktop ships a single
+    # StartupWMClass, so a localized name would only ever match one language.
+    # The visible name is the window title, set in MainWindow.
+    app.setApplicationName(APP_NAME)
     app.setWindowIcon(icon("app-icon"))
     _force_palette(app, explicit or _detect_system_theme(app))
     window = MainWindow()
