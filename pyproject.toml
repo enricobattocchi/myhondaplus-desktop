@@ -15,7 +15,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest", "ruff>=0.16.1,<0.17"]
+dev = ["pytest>=9.0,<10", "ruff>=0.16.1,<0.17"]
 
 [project.gui-scripts]
 myhondaplus-desktop = "myhondaplus_desktop.app:main"
