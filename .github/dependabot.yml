@@ -1,0 +1,23 @@
+version: 2
+
+updates:
+  # ruff is held to a minor line on purpose: it adds rules to the E/UP/B
+  # families in minor releases, which fails lint on code nobody touched.
+  # Dependabot is what keeps that pin from ageing in silence.
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      python-toolchain:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
