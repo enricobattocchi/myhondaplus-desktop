@@ -1,1 +1,33 @@
-IiIiVGVzdHMgZm9yIHRoZSBpY29uIGxvYWRlci4iIiIKCmltcG9ydCBzeXMKZnJvbSB1bml0dGVzdC5tb2NrIGltcG9ydCBNYWdpY01vY2sKCiMgTW9jayBRdCBtb2R1bGVzIGZvciBoZWFkbGVzcyB0ZXN0aW5nCmZvciBtb2QgaW4gWyJQeVF0Ni5RdFdpZGdldHMiLCAiUHlRdDYuUXRDb3JlIiwgIlB5UXQ2LlF0R3VpIiwgIlB5UXQ2LlF0U3ZnIl06CiAgICBpZiBtb2Qgbm90IGluIHN5cy5tb2R1bGVzOgogICAgICAgIHN5cy5tb2R1bGVzW21vZF0gPSBNYWdpY01vY2soKQoKCmRlZiB0ZXN0X2ljb25fZmlsZXNfZXhpc3QoKToKICAgICIiIlZlcmlmeSBhbGwgZXhwZWN0ZWQgaWNvbiBTVkcgZmlsZXMgYXJlIGJ1bmRsZWQuIiIiCiAgICBmcm9tIGltcG9ydGxpYi5yZXNvdXJjZXMgaW1wb3J0IGZpbGVzCiAgICBpY29uc19kaXIgPSBmaWxlcygibXlob25kYXBsdXNfZGVza3RvcCIpIC8gImljb25zIgogICAgZXhwZWN0ZWQgPSBbCiAgICAgICAgImJhdHRlcnktY2hhcmdpbmciLCAic2hpZWxkIiwgIm1hcC1waW4iLCAic25vd2ZsYWtlIiwgImNhciIsCiAgICAgICAgInRyaWFuZ2xlLWFsZXJ0IiwgImxvY2siLCAibG9jay1vcGVuIiwgInNldHRpbmdzIiwgInphcCIsCiAgICAgICAgIm1lZ2FwaG9uZSIsICJjYWxlbmRhci1jbG9jayIsICJyZWZyZXNoLWN3IiwgImxvZy1vdXQiLCAiaW5mbyIsCiAgICAgICAgImFwcC1pY29uIiwKICAgIF0KICAgIGZvciBuYW1lIGluIGV4cGVjdGVkOgogICAgICAgIHBhdGggPSBpY29uc19kaXIgLyBmIntuYW1lfS5zdmciCiAgICAgICAgYXNzZXJ0IHBhdGguaXNfZmlsZSgpLCBmIk1pc3NpbmcgaWNvbjoge25hbWV9LnN2ZyIKCgpkZWYgdGVzdF90cmFuc2xhdGlvbl9maWxlc19leGlzdCgpOgogICAgIiIiVmVyaWZ5IHRyYW5zbGF0aW9uIEpTT04gZmlsZXMgYXJlIGJ1bmRsZWQuIiIiCiAgICBmcm9tIGltcG9ydGxpYi5yZXNvdXJjZXMgaW1wb3J0IGZpbGVzCiAgICB0cmFuc19kaXIgPSBmaWxlcygibXlob25kYXBsdXNfZGVza3RvcCIpIC8gInRyYW5zbGF0aW9ucyIKICAgIGZvciBsYW5nIGluIFsiZW4iLCAiaXQiLCAiZ2wiXToKICAgICAgICBwYXRoID0gdHJhbnNfZGlyIC8gZiJ7bGFuZ30uanNvbiIKICAgICAgICBhc3NlcnQgcGF0aC5pc19maWxlKCksIGYiTWlzc2luZyB0cmFuc2xhdGlvbjoge2xhbmd9Lmpzb24iCg==
+"""Tests for the icon loader."""
+
+import sys
+from unittest.mock import MagicMock
+
+# Mock Qt modules for headless testing
+for mod in ["PyQt6.QtWidgets", "PyQt6.QtCore", "PyQt6.QtGui", "PyQt6.QtSvg"]:
+    if mod not in sys.modules:
+        sys.modules[mod] = MagicMock()
+
+
+def test_icon_files_exist():
+    """Verify all expected icon SVG files are bundled."""
+    from importlib.resources import files
+    icons_dir = files("myhondaplus_desktop") / "icons"
+    expected = [
+        "battery-charging", "shield", "map-pin", "snowflake", "car",
+        "triangle-alert", "lock", "lock-open", "settings", "zap",
+        "megaphone", "calendar-clock", "refresh-cw", "log-out", "info",
+        "app-icon",
+    ]
+    for name in expected:
+        path = icons_dir / f"{name}.svg"
+        assert path.is_file(), f"Missing icon: {name}.svg"
+
+
+def test_translation_files_exist():
+    """Verify translation JSON files are bundled."""
+    from importlib.resources import files
+    trans_dir = files("myhondaplus_desktop") / "translations"
+    for lang in ["en", "it", "gl"]:
+        path = trans_dir / f"{lang}.json"
+        assert path.is_file(), f"Missing translation: {lang}.json"
