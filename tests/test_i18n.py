@@ -1,1 +1,130 @@
-IiIiVGVzdHMgZm9yIHRoZSBpMThuIG1vZHVsZS4iIiIKCmZyb20gcHlteWhvbmRhcGx1cy5hcGkgaW1wb3J0IFZlaGljbGVDYXBhYmlsaXRpZXMKCmZyb20gbXlob25kYXBsdXNfZGVza3RvcCBpbXBvcnQgaTE4bgpmcm9tIG15aG9uZGFwbHVzX2Rlc2t0b3AuaTE4biBpbXBvcnQgKAogICAgX2RldGVjdF9sYW5ndWFnZSwKICAgIGFjdGl2ZV9jYXBhYmlsaXR5X2xhYmVscywKICAgIGFjdGl2ZV9sYW5ndWFnZSwKICAgIGF2YWlsYWJsZV9sYW5ndWFnZXMsCiAgICBsb2FkX2xhbmd1YWdlLAogICAgdCwKKQoKCmRlZiB0ZXN0X2F2YWlsYWJsZV9sYW5ndWFnZXMoKToKICAgIGxhbmdzID0gYXZhaWxhYmxlX2xhbmd1YWdlcygpCiAgICBhc3NlcnQgImVuIiBpbiBsYW5ncwogICAgYXNzZXJ0ICJpdCIgaW4gbGFuZ3MKICAgIGFzc2VydCAiZ2wiIGluIGxhbmdzCgoKZGVmIHRlc3RfbG9hZF9lbmdsaXNoKCk6CiAgICBsb2FkX2xhbmd1YWdlKCJlbiIpCiAgICBhc3NlcnQgYWN0aXZlX2xhbmd1YWdlKCkgPT0gImVuIgogICAgYXNzZXJ0IHQoImFwcC5uYW1lIikgPT0gIk15IEhvbmRhKyBmb3IgZGVza3RvcCIKCgpkZWYgdGVzdF9sb2FkX2l0YWxpYW4oKToKICAgIGxvYWRfbGFuZ3VhZ2UoIml0IikKICAgIGFzc2VydCBhY3RpdmVfbGFuZ3VhZ2UoKSA9PSAiaXQiCiAgICBhc3NlcnQgdCgiYXBwLm5hbWUiKSA9PSAiTXkgSG9uZGErIHBlciBkZXNrdG9wIgoKCmRlZiB0ZXN0X2xvYWRfZ2FsaWNpYW4oKToKICAgIGxvYWRfbGFuZ3VhZ2UoImdsIikKICAgIGFzc2VydCBhY3RpdmVfbGFuZ3VhZ2UoKSA9PSAiZ2wiCiAgICBhc3NlcnQgdCgiYXBwLm5hbWUiKSA9PSAiTXkgSG9uZGErIHBhcmEgZXNjcml0b3JpbyIKCgpkZWYgdGVzdF9mYWxsYmFja190b19lbmdsaXNoKCk6CiAgICBsb2FkX2xhbmd1YWdlKCJ4eCIpICAjIG5vbmV4aXN0ZW50IGxhbmd1YWdlCiAgICBhc3NlcnQgYWN0aXZlX2xhbmd1YWdlKCkgPT0gInh4IgogICAgIyBTaG91bGQgZmFsbCBiYWNrIHRvIEVuZ2xpc2gKICAgIGFzc2VydCB0KCJhcHAubmFtZSIpID09ICJNeSBIb25kYSsgZm9yIGRlc2t0b3AiCgoKZGVmIHRlc3RfcGxhY2Vob2xkZXJfc3Vic3RpdHV0aW9uKCk6CiAgICBsb2FkX2xhbmd1YWdlKCJlbiIpCiAgICBhc3NlcnQgdCgiYXBwLnZlcnNpb24iLCB2ZXJzaW9uPSIxLjIuMyIpID09ICJWZXJzaW9uIDEuMi4zIgoKCmRlZiB0ZXN0X3BsYWNlaG9sZGVyX3N1YnN0aXR1dGlvbl9pdGFsaWFuKCk6CiAgICBsb2FkX2xhbmd1YWdlKCJpdCIpCiAgICBhc3NlcnQgdCgiYXBwLnZlcnNpb24iLCB2ZXJzaW9uPSIxLjIuMyIpID09ICJWZXJzaW9uZSAxLjIuMyIKCgpkZWYgdGVzdF9taXNzaW5nX2tleV9yZXR1cm5zX2tleSgpOgogICAgbG9hZF9sYW5ndWFnZSgiZW4iKQogICAgYXNzZXJ0IHQoIm5vbmV4aXN0ZW50LmtleSIpID09ICJub25leGlzdGVudC5rZXkiCgoKZGVmIHRlc3RfYmFkX3BsYWNlaG9sZGVyX25vX2NyYXNoKCk6CiAgICBsb2FkX2xhbmd1YWdlKCJlbiIpCiAgICAjIE1pc3NpbmcgcGxhY2Vob2xkZXIgc2hvdWxkIG5vdCBjcmFzaAogICAgcmVzdWx0ID0gdCgiYXBwLnZlcnNpb24iKSAgIyBleHBlY3RzIHt2ZXJzaW9ufSBidXQgbm9uZSBnaXZlbgogICAgYXNzZXJ0ICJ2ZXJzaW9uIiBpbiByZXN1bHQubG93ZXIoKQoKCmRlZiB0ZXN0X2RldGVjdF9sYW5ndWFnZV9mcm9tX2xvY2FsZShtb25rZXlwYXRjaCk6CiAgICBtb25rZXlwYXRjaC5zZXRhdHRyKGkxOG4ubG9jYWxlLCAiZ2V0bG9jYWxlIiwgbGFtYmRhOiAoIml0X0lUIiwgIlVURi04IikpCiAgICBhc3NlcnQgX2RldGVjdF9sYW5ndWFnZSgpID09ICJpdCIKCgpkZWYgdGVzdF9kZXRlY3RfbGFuZ3VhZ2VfZmFsbHNfYmFja190b19lbmdsaXNoKG1vbmtleXBhdGNoKToKICAgIG1vbmtleXBhdGNoLnNldGF0dHIoaTE4bi5sb2NhbGUsICJnZXRsb2NhbGUiLCBsYW1iZGE6IChOb25lLCBOb25lKSkKICAgIGFzc2VydCBfZGV0ZWN0X2xhbmd1YWdlKCkgPT0gImVuIgoKCmRlZiB0ZXN0X2FjdGl2ZV9jYXBhYmlsaXR5X2xhYmVsc19yZXR1cm5zX3Jhd19hcGlfa2V5cygpOgogICAgY2FwcyA9IFZlaGljbGVDYXBhYmlsaXRpZXMocmF3PXsKICAgICAgICAidGVsZW1hdGljc1JlbW90ZUxvY2tVbmxvY2siOiB7ImZlYXR1cmVTdGF0dXMiOiAiYWN0aXZlIn0sCiAgICAgICAgInRlbGVtYXRpY3NSZW1vdGVDaGFyZ2UiOiB7ImZlYXR1cmVTdGF0dXMiOiAiYWN0aXZlIn0sCiAgICAgICAgInRlbGVtYXRpY3NSZW1vdGVIb3JuIjogeyJmZWF0dXJlU3RhdHVzIjogIm5vdFN1cHBvcnRlZCJ9LAogICAgfSkKICAgIGxhYmVscyA9IGFjdGl2ZV9jYXBhYmlsaXR5X2xhYmVscyhjYXBzKQogICAgYXNzZXJ0IGxhYmVscyA9PSBbInRlbGVtYXRpY3NSZW1vdGVDaGFyZ2UiLCAidGVsZW1hdGljc1JlbW90ZUxvY2tVbmxvY2siXQoKCmRlZiB0ZXN0X2FjdGl2ZV9jYXBhYmlsaXR5X2xhYmVsc19zYW1lX3JlZ2FyZGxlc3Nfb2ZfbG9jYWxlKCk6CiAgICBjYXBzID0gVmVoaWNsZUNhcGFiaWxpdGllcyhyYXc9ewogICAgICAgICJ0ZWxlbWF0aWNzUmVtb3RlTG9ja1VubG9jayI6IHsiZmVhdHVyZVN0YXR1cyI6ICJhY3RpdmUifSwKICAgIH0pCiAgICBsb2FkX2xhbmd1YWdlKCJlbiIpCiAgICBlbl9sYWJlbHMgPSBhY3RpdmVfY2FwYWJpbGl0eV9sYWJlbHMoY2FwcykKICAgIGxvYWRfbGFuZ3VhZ2UoIml0IikKICAgIGl0X2xhYmVscyA9IGFjdGl2ZV9jYXBhYmlsaXR5X2xhYmVscyhjYXBzKQogICAgbG9hZF9sYW5ndWFnZSgiZW4iKSAgIyBSZXN0b3JlIGRlZmF1bHQgc28gdGVzdCBvcmRlcmluZyBpcyBzdGFibGUuCiAgICBhc3NlcnQgZW5fbGFiZWxzID09IGl0X2xhYmVscyA9PSBbInRlbGVtYXRpY3NSZW1vdGVMb2NrVW5sb2NrIl0KCgpkZWYgdGVzdF9hY3RpdmVfY2FwYWJpbGl0eV9sYWJlbHNfZnV0dXJlX2ZsYWdzX3JlbmRlcl9yYXcoKToKICAgIGNhcHMgPSBWZWhpY2xlQ2FwYWJpbGl0aWVzKHJhdz17CiAgICAgICAgInVzZVNwZWNpZmljVGVtcGVyYXR1cmVDb250cm9sIjogeyJmZWF0dXJlU3RhdHVzIjogImFjdGl2ZSJ9LAogICAgICAgICJ0ZWxlbWF0aWNzRnV0dXJlUGhvbnlGZWF0dXJlIjogeyJmZWF0dXJlU3RhdHVzIjogImFjdGl2ZSJ9LAogICAgfSkKICAgIGxhYmVscyA9IGFjdGl2ZV9jYXBhYmlsaXR5X2xhYmVscyhjYXBzKQogICAgYXNzZXJ0IGxhYmVscyA9PSBbInRlbGVtYXRpY3NGdXR1cmVQaG9ueUZlYXR1cmUiLCAidXNlU3BlY2lmaWNUZW1wZXJhdHVyZUNvbnRyb2wiXQoKCmRlZiB0ZXN0X2FjdGl2ZV9jYXBhYmlsaXR5X2xhYmVsc19ub19hY3RpdmVzKCk6CiAgICBjYXBzID0gVmVoaWNsZUNhcGFiaWxpdGllcyhyYXc9ewogICAgICAgICJ0ZWxlbWF0aWNzUmVtb3RlTG9ja1VubG9jayI6IHsiZmVhdHVyZVN0YXR1cyI6ICJub3RTdXBwb3J0ZWQifSwKICAgIH0pCiAgICBhc3NlcnQgYWN0aXZlX2NhcGFiaWxpdHlfbGFiZWxzKGNhcHMpID09IFtdCgoKZGVmIHRlc3RfYWN0aXZlX2NhcGFiaWxpdHlfbGFiZWxzX25vX3JhdygpOgogICAgY2FwcyA9IFZlaGljbGVDYXBhYmlsaXRpZXMocmF3PXt9KQogICAgYXNzZXJ0IGFjdGl2ZV9jYXBhYmlsaXR5X2xhYmVscyhjYXBzKSA9PSBbXQoKCmRlZiB0ZXN0X2FjdGl2ZV9jYXBhYmlsaXR5X2xhYmVsc19ub25fZGljdF9lbnRyaWVzX2lnbm9yZWQoKToKICAgIGNhcHMgPSBWZWhpY2xlQ2FwYWJpbGl0aWVzKHJhdz17CiAgICAgICAgInRlbGVtYXRpY3NSZW1vdGVMb2NrVW5sb2NrIjogeyJmZWF0dXJlU3RhdHVzIjogImFjdGl2ZSJ9LAogICAgICAgICJib2d1c1N0cmluZ0VudHJ5IjogIm5vdCBhIGRpY3QiLAogICAgICAgICJhbm90aGVyV2VpcmRPbmUiOiBOb25lLAogICAgfSkKICAgIGxhYmVscyA9IGFjdGl2ZV9jYXBhYmlsaXR5X2xhYmVscyhjYXBzKQogICAgYXNzZXJ0IGxhYmVscyA9PSBbInRlbGVtYXRpY3NSZW1vdGVMb2NrVW5sb2NrIl0K
+"""Tests for the i18n module."""
+
+from pymyhondaplus.api import VehicleCapabilities
+
+from myhondaplus_desktop import i18n
+from myhondaplus_desktop.i18n import (
+    _detect_language,
+    active_capability_labels,
+    active_language,
+    available_languages,
+    load_language,
+    t,
+)
+
+
+def test_available_languages():
+    langs = available_languages()
+    assert "en" in langs
+    assert "it" in langs
+    assert "gl" in langs
+
+
+def test_load_english():
+    load_language("en")
+    assert active_language() == "en"
+    assert t("app.name") == "My Honda+ for desktop"
+
+
+def test_load_italian():
+    load_language("it")
+    assert active_language() == "it"
+    assert t("app.name") == "My Honda+ per desktop"
+
+
+def test_load_galician():
+    load_language("gl")
+    assert active_language() == "gl"
+    assert t("app.name") == "My Honda+ para escritorio"
+
+
+def test_fallback_to_english():
+    load_language("xx")  # nonexistent language
+    assert active_language() == "xx"
+    # Should fall back to English
+    assert t("app.name") == "My Honda+ for desktop"
+
+
+def test_placeholder_substitution():
+    load_language("en")
+    assert t("app.version", version="1.2.3") == "Version 1.2.3"
+
+
+def test_placeholder_substitution_italian():
+    load_language("it")
+    assert t("app.version", version="1.2.3") == "Versione 1.2.3"
+
+
+def test_missing_key_returns_key():
+    load_language("en")
+    assert t("nonexistent.key") == "nonexistent.key"
+
+
+def test_bad_placeholder_no_crash():
+    load_language("en")
+    # Missing placeholder should not crash
+    result = t("app.version")  # expects {version} but none given
+    assert "version" in result.lower()
+
+
+def test_detect_language_from_locale(monkeypatch):
+    monkeypatch.setattr(i18n.locale, "getlocale", lambda: ("it_IT", "UTF-8"))
+    assert _detect_language() == "it"
+
+
+def test_detect_language_falls_back_to_english(monkeypatch):
+    monkeypatch.setattr(i18n.locale, "getlocale", lambda: (None, None))
+    assert _detect_language() == "en"
+
+
+def test_active_capability_labels_returns_raw_api_keys():
+    caps = VehicleCapabilities(raw={
+        "telematicsRemoteLockUnlock": {"featureStatus": "active"},
+        "telematicsRemoteCharge": {"featureStatus": "active"},
+        "telematicsRemoteHorn": {"featureStatus": "notSupported"},
+    })
+    labels = active_capability_labels(caps)
+    assert labels == ["telematicsRemoteCharge", "telematicsRemoteLockUnlock"]
+
+
+def test_active_capability_labels_same_regardless_of_locale():
+    caps = VehicleCapabilities(raw={
+        "telematicsRemoteLockUnlock": {"featureStatus": "active"},
+    })
+    load_language("en")
+    en_labels = active_capability_labels(caps)
+    load_language("it")
+    it_labels = active_capability_labels(caps)
+    load_language("en")  # Restore default so test ordering is stable.
+    assert en_labels == it_labels == ["telematicsRemoteLockUnlock"]
+
+
+def test_active_capability_labels_future_flags_render_raw():
+    caps = VehicleCapabilities(raw={
+        "useSpecificTemperatureControl": {"featureStatus": "active"},
+        "telematicsFuturePhonyFeature": {"featureStatus": "active"},
+    })
+    labels = active_capability_labels(caps)
+    assert labels == ["telematicsFuturePhonyFeature", "useSpecificTemperatureControl"]
+
+
+def test_active_capability_labels_no_actives():
+    caps = VehicleCapabilities(raw={
+        "telematicsRemoteLockUnlock": {"featureStatus": "notSupported"},
+    })
+    assert active_capability_labels(caps) == []
+
+
+def test_active_capability_labels_no_raw():
+    caps = VehicleCapabilities(raw={})
+    assert active_capability_labels(caps) == []
+
+
+def test_active_capability_labels_non_dict_entries_ignored():
+    caps = VehicleCapabilities(raw={
+        "telematicsRemoteLockUnlock": {"featureStatus": "active"},
+        "bogusStringEntry": "not a dict",
+        "anotherWeirdOne": None,
+    })
+    labels = active_capability_labels(caps)
+    assert labels == ["telematicsRemoteLockUnlock"]
