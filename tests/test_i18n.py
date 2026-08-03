@@ -17,6 +17,7 @@ def test_available_languages():
     langs = available_languages()
     assert "en" in langs
     assert "it" in langs
+    assert "gl" in langs
 
 
 def test_load_english():
@@ -29,6 +30,12 @@ def test_load_italian():
     load_language("it")
     assert active_language() == "it"
     assert t("app.name") == "My Honda+ per desktop"
+
+
+def test_load_galician():
+    load_language("gl")
+    assert active_language() == "gl"
+    assert t("app.name") == "My Honda+ para escritorio"
 
 
 def test_fallback_to_english():

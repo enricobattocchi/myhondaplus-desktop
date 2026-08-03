@@ -41,7 +41,7 @@ This project is **unofficial** and **not affiliated with, endorsed by, or connec
 - **System tray** — battery bar on the tray icon (coloured on Linux/Windows: green ≥ 50%, yellow 20-49%, red below; monochrome template on macOS with a "!" glyph below the user's low-battery threshold); tooltip with name and lock status; optional "close to tray" and "start minimized".
 - **Background polling** — optional periodic dashboard refresh while the window is hidden (off by default; defaults match the HA integration when enabled).
 - **Desktop notifications** — alerts for charging started / stopped, climate started / stopped, car unlocked, battery below a configurable threshold, warning light on.
-- **Multi-language** — 13 languages included, [easy to add more](TRANSLATING.md)
+- **Multi-language** — 14 languages included, [easy to add more](TRANSLATING.md)
 
 ## Supported vehicles
 
@@ -139,7 +139,7 @@ Notes per platform:
 
 The app auto-detects your system language. Change it from the **General** group of the Settings tab. The change takes effect on restart.
 
-Available: Czech, Danish, Dutch, English, French, German, Hungarian, Italian, Norwegian, Polish, Slovak, Spanish, Swedish. See [TRANSLATING.md](TRANSLATING.md) to contribute a new language.
+Available: Czech, Danish, Dutch, English, French, Galician, German, Hungarian, Italian, Norwegian, Polish, Slovak, Spanish, Swedish. See [TRANSLATING.md](TRANSLATING.md) to contribute a new language.
 
 ### Theme
 

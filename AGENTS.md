@@ -39,7 +39,7 @@ If a task feels like it crosses boundaries, default to "the library owns the API
 
 | Task | Files |
 |---|---|
-| New dashboard tile | `src/myhondaplus_desktop/widgets/dashboard.py`; translation key in `src/myhondaplus_desktop/translations/en.json` (then propagate to the other 12 locales); access `EVStatus` as a dict (`.get()`, `[]`, `in`) |
+| New dashboard tile | `src/myhondaplus_desktop/widgets/dashboard.py`; translation key in `src/myhondaplus_desktop/translations/en.json` (then propagate to the other 13 locales); access `EVStatus` as a dict (`.get()`, `[]`, `in`) |
 | New modal / dialog | new widget under `src/myhondaplus_desktop/widgets/`; wire it in `main_screen_controller.py`; translation keys; tests in `tests/` |
 | New worker for an API call | `src/myhondaplus_desktop/workers.py` (`QThread` subclass with `finished` / `error` signals); the controller connects them; UI mutation can be optimistic |
 | New translated string | `src/myhondaplus_desktop/translations/en.json` (canonical) + 12 other locales; `tests/test_i18n.py` enforces coverage. **Library-owned strings** (geofence states, capability labels, geofence errors) come via `i18n.t_lib(key)` — do not duplicate them in desktop JSONs. |
