@@ -45,7 +45,7 @@ This project is **unofficial** and **not affiliated with, endorsed by, or connec
 
 ## Supported vehicles
 
-Tested on Honda e. Should work with other Honda Connect Europe vehicles (e:Ny1, ZR-V, CR-V, Civic, HR-V, Jazz 2020+) — contributions welcome!
+Tested on Honda e. Should work with other Honda Connect Europe vehicles (e:Ny1, ZR-V, CR-V, Civic, HR-V, Jazz 2020+, 2026 Prelude) — contributions welcome!
 
 ## Download
 
