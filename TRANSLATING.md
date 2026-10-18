@@ -36,6 +36,7 @@ src/myhondaplus_desktop/translations/
   pl.json   ← Polish
   sk.json   ← Slovak
   sv.json   ← Swedish
+  gl.json   ← Galician
 ```
 
 ## Tips
