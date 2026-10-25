@@ -67,7 +67,7 @@ src/myhondaplus_desktop/
     schedules.py            — climate/charge schedule dialogs
     login.py                — login form + device registration flow
     status_bar.py           — bottom status/error bar
-  translations/*.json       — 13 locales (en is canonical)
+  translations/*.json       — 14 locales (en is canonical)
   icons/*.svg               — Lucide icon set
 scripts/
   build_pyinstaller.py      — PyInstaller bundling
@@ -146,7 +146,7 @@ Translation files live in `src/myhondaplus_desktop/translations/`. Each language
 - Python ≥3.11. Uses `match`, `X | Y` union types, etc.
 - PyQt6 — not PyQt5. Signals are `pyqtSignal`.
 - Tags use bare version numbers (`2.7.0`), not `v2.7.0`. The version lives in `src/myhondaplus_desktop/__init__.py` (`__version__`); `pyproject.toml` reads it via `dynamic = ["version"]`.
-- 13 translation files must stay in sync. `en.json` is the source of truth.
+- 14 translation files must stay in sync. `en.json` is the source of truth.
 
 ## Release process
 

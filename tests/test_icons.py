@@ -28,6 +28,6 @@ def test_translation_files_exist():
     """Verify translation JSON files are bundled."""
     from importlib.resources import files
     trans_dir = files("myhondaplus_desktop") / "translations"
-    for lang in ["en", "it"]:
+    for lang in ["en", "it", "gl"]:
         path = trans_dir / f"{lang}.json"
         assert path.is_file(), f"Missing translation: {lang}.json"
