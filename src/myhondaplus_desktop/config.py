@@ -49,6 +49,10 @@ class Settings:
     vin: str = ""
     language: str = ""  # empty = auto-detect from system locale
     theme: str = "system"  # one of "system", "light", "dark"
+    # Email of the last account that logged in, used to prefill the login
+    # screen. Lives here rather than in the token storage so that logout,
+    # which clears that storage, keeps it. The password is never persisted.
+    last_email: str = ""
     # System tray
     tray_enabled: bool = True
     close_to_tray: bool = False

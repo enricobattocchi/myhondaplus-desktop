@@ -554,7 +554,8 @@ class MainWindow(QMainWindow):
         # Login screen
         self._login = LoginWidget(
             on_login_success=self._on_login_success,
-            storage=self._storage)
+            storage=self._storage,
+            email=self._settings.last_email)
         self._stack.addWidget(self._login)
 
         # Main screen
@@ -640,6 +641,9 @@ class MainWindow(QMainWindow):
     def _on_login_success(self, tokens: dict, email: str, password: str):
         self._session.apply_login_tokens(tokens)
         self._sync_session_refs()
+        if email and email != self._settings.last_email:
+            self._settings.last_email = email
+            self._session.save_settings()
         self._show_main_screen()
 
     def _logout(self):
@@ -654,6 +658,7 @@ class MainWindow(QMainWindow):
         self._session.reset()
         self._sync_session_refs()
         self._main.set_api(self._api)
+        self._login.reset(self._settings.last_email)
         self._stack.setCurrentWidget(self._login)
 
     def _on_background_cached_refresh(self):

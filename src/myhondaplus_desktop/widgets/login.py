@@ -23,7 +23,7 @@ from ..workers import (
 
 
 class LoginWidget(QWidget):
-    def __init__(self, on_login_success, storage: SecretStorage):
+    def __init__(self, on_login_success, storage: SecretStorage, email: str = ""):
         super().__init__()
         self._on_login_success = on_login_success
         self._storage = storage
@@ -56,6 +56,7 @@ class LoginWidget(QWidget):
         form = QFormLayout()
         self._email = QLineEdit()
         self._email.setPlaceholderText(t("login.email_placeholder"))
+        self._email.setText(email)
         form.addRow(t("login.email"), self._email)
 
         self._password = QLineEdit()
@@ -99,6 +100,28 @@ class LoginWidget(QWidget):
 
         self._password.returnPressed.connect(self._do_login)
 
+    def showEvent(self, event):
+        super().showEvent(event)
+        # With a remembered email, the password is the only field left.
+        if self._email.text():
+            self._password.setFocus()
+        else:
+            self._email.setFocus()
+
+    def reset(self, email: str = ""):
+        """Return the form to its initial state, keeping ``email`` prefilled."""
+        self._email.setText(email)
+        self._password.clear()
+        self._status.setText("")
+        self._set_inputs_enabled(True)
+
+    def _set_inputs_enabled(self, enabled: bool):
+        # Lock the fields too while a login runs, so the email saved on
+        # success is the one that was submitted.
+        self._email.setEnabled(enabled)
+        self._password.setEnabled(enabled)
+        self._login_btn.setEnabled(enabled)
+
     def _toggle_password_visibility(self):
         if self._password.echoMode() == QLineEdit.EchoMode.Password:
             self._password.setEchoMode(QLineEdit.EchoMode.Normal)
@@ -116,7 +139,7 @@ class LoginWidget(QWidget):
             self._status.setText(t("login.enter_credentials"))
             return
 
-        self._login_btn.setEnabled(False)
+        self._set_inputs_enabled(False)
         self._status.setText(t("login.logging_in"))
 
         retire_worker(self._worker, self._retired_workers)
@@ -130,13 +153,13 @@ class LoginWidget(QWidget):
 
     def _on_login_done(self, tokens):
         self._status.setText(t("login.success"))
-        self._login_btn.setEnabled(True)
+        self._set_inputs_enabled(True)
         self._on_login_success(
             tokens, self._email.text().strip(), self._password.text())
 
     def _on_login_error(self, msg):
         self._status.setText(t("login.error", message=msg))
-        self._login_btn.setEnabled(True)
+        self._set_inputs_enabled(True)
 
     def _on_device_registration_needed(self):
         self._status.setText(t("login.device_not_registered"))
@@ -161,7 +184,7 @@ class LoginWidget(QWidget):
         )
         if not ok or not link.strip():
             self._status.setText(t("login.verification_cancelled"))
-            self._login_btn.setEnabled(True)
+            self._set_inputs_enabled(True)
             return
 
         retire_worker(self._verify_worker, self._retired_workers)

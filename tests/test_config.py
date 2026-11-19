@@ -213,3 +213,13 @@ def test_settings_load_clamps_battery_threshold_below_zero(monkeypatch, tmp_path
     path.write_text('{"notify_battery_low_pct": -5}', encoding="utf-8")
     loaded = Settings.load()
     assert loaded.notify_battery_low_pct == 0
+
+
+def test_settings_last_email_roundtrip(monkeypatch, tmp_path):
+    config_dir = tmp_path / "config"
+    monkeypatch.setattr(config.platformdirs, "user_config_path", lambda *args, **kwargs: config_dir)
+
+    Settings(last_email="user@example.com").save()
+
+    assert Settings.load().last_email == "user@example.com"
+    assert "password" not in config.settings_file().read_text(encoding="utf-8")

@@ -11,10 +11,15 @@ APP.setQuitOnLastWindowClosed(False)
 
 
 class DummyLoginWidget(QWidget):
-    def __init__(self, on_login_success, storage):
+    def __init__(self, on_login_success, storage, email=""):
         super().__init__()
         self.on_login_success = on_login_success
         self.storage = storage
+        self.email = email
+        self.reset_calls = []
+
+    def reset(self, email=""):
+        self.reset_calls.append(email)
 
 
 class DummyMainScreen(QWidget):
@@ -135,6 +140,53 @@ def test_mainwindow_logout_resets_session_api(monkeypatch):
     assert first_api is not window._api
     assert window._main._api is window._api
     assert window._stack.currentWidget() is window._login
+
+
+def test_mainwindow_prefills_login_with_last_email(monkeypatch):
+    session = DummySession()
+    session.settings.last_email = "user@example.com"
+    _patch_window_dependencies(monkeypatch, session)
+
+    window = MainWindow()
+
+    assert window._login.email == "user@example.com"
+
+
+def test_mainwindow_login_success_remembers_email(monkeypatch):
+    session = DummySession()
+    _patch_window_dependencies(monkeypatch, session)
+
+    window = MainWindow()
+    window._on_login_success({"access_token": "a", "refresh_token": "r"},
+                             "user@example.com", "secret")
+
+    assert session.settings.last_email == "user@example.com"
+    assert session.saved == 1
+
+
+def test_mainwindow_login_success_replaces_remembered_email(monkeypatch):
+    session = DummySession()
+    session.settings.last_email = "old@example.com"
+    _patch_window_dependencies(monkeypatch, session)
+
+    window = MainWindow()
+    window._on_login_success({"access_token": "a", "refresh_token": "r"},
+                             "new@example.com", "secret")
+
+    assert session.settings.last_email == "new@example.com"
+
+
+def test_mainwindow_logout_keeps_email_on_login_screen(monkeypatch):
+    session = DummySession()
+    _patch_window_dependencies(monkeypatch, session)
+
+    window = MainWindow()
+    window._on_login_success({"access_token": "a", "refresh_token": "r"},
+                             "user@example.com", "secret")
+    window._logout()
+
+    assert window._login.reset_calls == ["user@example.com"]
+    assert session.settings.last_email == "user@example.com"
 
 
 def test_mainwindow_close_event_saves_session_settings(monkeypatch):
