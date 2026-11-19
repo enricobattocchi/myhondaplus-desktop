@@ -94,6 +94,8 @@ myhondaplus-desktop --minimized
 3. **Do not click** the link in the email — copy the URL and paste it in the dialog
 4. You're in! Tokens are encrypted and saved locally for future sessions
 
+The app also saves the email of the last account that logged in to `settings.json`, so the login screen shows it after a logout or an expired session. Logout deletes the tokens but keeps the email. The app never saves your password.
+
 ### Dashboard
 
 Once logged in, the app shows your vehicle status with auto-refresh. Use the buttons at the bottom to send commands to your car.
