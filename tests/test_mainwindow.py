@@ -111,6 +111,17 @@ def test_mainwindow_shows_main_screen_when_session_restores(monkeypatch):
 
     assert window._stack.currentWidget() is window._main
     assert window._main.activated == 1
+    assert window.is_logged_in() is True
+
+
+def test_mainwindow_is_logged_out_when_session_does_not_restore(monkeypatch):
+    session = DummySession()
+    session.restore_result = False
+    _patch_window_dependencies(monkeypatch, session)
+
+    window = MainWindow()
+
+    assert window.is_logged_in() is False
 
 
 def test_mainwindow_login_success_delegates_to_session(monkeypatch):
@@ -140,6 +151,7 @@ def test_mainwindow_logout_resets_session_api(monkeypatch):
     assert first_api is not window._api
     assert window._main._api is window._api
     assert window._stack.currentWidget() is window._login
+    assert window.is_logged_in() is False
 
 
 def test_mainwindow_prefills_login_with_last_email(monkeypatch):

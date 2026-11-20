@@ -83,7 +83,8 @@ python -m myhondaplus_desktop
 myhondaplus-desktop --light
 myhondaplus-desktop --dark
 
-# Start with the window hidden in the tray (useful for autostart entries)
+# Start with the window hidden in the tray (useful for autostart entries).
+# If you're logged out, the window opens on the login screen anyway.
 myhondaplus-desktop --minimized
 ```
 
@@ -119,7 +120,7 @@ The Geofence tab shows a map with a circular geofence centered on your vehicle's
 All preferences live in the **Impostazioni** tab (last tab on the right), grouped in four panels:
 
 - **General** — language, theme.
-- **Tray** — show the icon, "close to tray" (hide instead of quit when pressing the window's X), "start minimized" (window hidden at launch, app reachable from the tray).
+- **Tray** — show the icon, "close to tray" (hide instead of quit when pressing the window's X), "start minimized" (window hidden at launch, app reachable from the tray; if you're logged out, the window opens on the login screen).
 - **Background polling** — refresh the cached dashboard at a configurable interval (5 / 10 / 15 / 30 / 60 minutes; default 10), and optionally wake the TCU on a slower one (6 / 12 / 24 hours). Polling only runs while the window is hidden — open window means the user is there and can refresh by hand.
 - **Notifications** — desktop alerts for the events listed above, each independently toggleable. Notifications use the OS notification daemon (libnotify on Linux, balloon on Windows, NSUserNotification on macOS).
 
