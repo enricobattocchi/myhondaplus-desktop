@@ -603,6 +603,10 @@ class MainWindow(QMainWindow):
         """True if a tray icon was successfully created on this platform."""
         return self._tray is not None and self._tray.available
 
+    def is_logged_in(self) -> bool:
+        """True if the main screen is showing, false on the login screen."""
+        return self._stack.currentWidget() is self._main
+
     def _tray_toggle_window(self):
         """Show/raise the window, or hide it if it's already visible on top."""
         if self.isVisible() and not self.isMinimized() and self.isActiveWindow():
@@ -826,8 +830,11 @@ def main():
     cli_minimized = "--minimized" in sys.argv
     if cli_minimized and window.has_tray():
         app.setQuitOnLastWindowClosed(False)
+    # Logged out, a hidden window does nothing: show the login screen.
     start_hidden = (
-        (settings.start_minimized or cli_minimized) and window.has_tray())
+        (settings.start_minimized or cli_minimized)
+        and window.has_tray()
+        and window.is_logged_in())
     if not start_hidden:
         window.show()
     sys.exit(app.exec())
