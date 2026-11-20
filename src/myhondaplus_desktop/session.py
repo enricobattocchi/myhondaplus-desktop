@@ -43,8 +43,11 @@ class AppSession:
         )
 
     def reset(self) -> HondaAPI:
-        """Clear persisted auth state and replace the API client."""
-        self.storage.clear()
+        """Clear the saved tokens, keep the device key, and replace the API client.
+
+        Keeping the device key lets the next login skip device verification.
+        """
+        self.storage.clear_tokens()
         self.api = HondaAPI(storage=self.storage)
         return self.api
 
