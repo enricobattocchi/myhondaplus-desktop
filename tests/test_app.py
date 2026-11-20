@@ -4,6 +4,8 @@ import builtins
 import sys
 from types import ModuleType
 
+import pytest
+
 from myhondaplus_desktop.__main__ import _load_main
 from myhondaplus_desktop.app import MainScreen, _vehicle_label
 
@@ -220,3 +222,27 @@ def test_entrypoint_falls_back_to_absolute_import(monkeypatch):
     monkeypatch.setattr(builtins, "__import__", fake_import)
 
     assert _load_main() is marker
+
+
+@pytest.mark.parametrize(("status", "expected"), [
+    ({"climate_defrost": None}, False),
+    ({}, True),
+])
+def test_open_climate_settings_dialog_defrost_is_always_bool(monkeypatch, status, expected):
+    state = {}
+
+    class FakeDialog:
+        def __init__(self, parent, temp, duration, defrost):
+            state["defrost"] = defrost
+
+        def set_accept_handler(self, handler):
+            pass
+
+        def exec(self):
+            pass
+
+    monkeypatch.setattr("myhondaplus_desktop.app.ClimateSettingsDialog", FakeDialog)
+
+    MainScreen.open_climate_settings_dialog(object(), status, lambda dialog: None)
+
+    assert state["defrost"] is expected

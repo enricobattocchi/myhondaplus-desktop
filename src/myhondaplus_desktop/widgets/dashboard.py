@@ -28,6 +28,13 @@ from ..icons import (
 )
 
 
+def _format_temp(value, unit_symbol: str) -> str:
+    """Format a temperature, or a dash when the vehicle doesn't report one."""
+    if value is None or value == "":
+        return "\u2014"
+    return f"{value}{unit_symbol}"
+
+
 def _dms_to_decimal(dms: str) -> float | None:
     """Convert 'DD,MM,SS.sss' to decimal degrees."""
     try:
@@ -372,8 +379,8 @@ class DashboardWidget(QWidget):
             "headlights": lambda v: t("dashboard.on") if str(v).lower() == "on" else t("dashboard.off"),
             "parking_lights": lambda v: t("dashboard.on") if str(v).lower() == "on" else t("dashboard.off"),
             "climate_active": lambda v: t("dashboard.climate_on") if v else t("dashboard.climate_off"),
-            "cabin_temp": lambda v: f"{v}{temp_sym}",
-            "interior_temp": lambda v: f"{v}{temp_sym}",
+            "cabin_temp": lambda v: _format_temp(v, temp_sym),
+            "interior_temp": lambda v: _format_temp(v, temp_sym),
             "speed": lambda v: f"{v} {spd}",
         }
 

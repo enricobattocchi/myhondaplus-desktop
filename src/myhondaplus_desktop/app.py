@@ -511,7 +511,8 @@ class MainScreen(QWidget):
             self,
             temp=status.get("climate_temp", "normal"),
             duration=status.get("climate_duration", 30),
-            defrost=status.get("climate_defrost", True),
+            # None means the vehicle reports no setting: start unchecked.
+            defrost=bool(status.get("climate_defrost", True)),
         )
         dlg.set_accept_handler(lambda: on_accept(dlg))
         dlg.exec()

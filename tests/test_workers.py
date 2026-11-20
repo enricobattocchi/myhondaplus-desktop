@@ -493,3 +493,16 @@ def test_image_worker_cache_miss(tmp_path, monkeypatch):
     from pathlib import Path
     assert Path(results["finished"]).exists()
     assert Path(results["finished"]).read_bytes() == image_data
+
+
+def test_schedule_load_worker_reports_missing_defrost_as_off(monkeypatch, mock_api):
+    monkeypatch.setattr(workers, "parse_ev_status", lambda dashboard: {
+        "climate_defrost": None,
+    })
+    monkeypatch.setattr(workers, "parse_climate_schedule", lambda dashboard: [])
+    monkeypatch.setattr(workers, "parse_charge_schedule", lambda dashboard: [])
+    mock_api.get_dashboard.return_value = {"raw": True}
+
+    results = _run_worker(ScheduleLoadWorker(mock_api, "VIN123"))
+
+    assert results["finished"]["climate_defrost"] is False
