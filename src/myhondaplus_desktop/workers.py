@@ -484,7 +484,8 @@ class ScheduleLoadWorker(QThread):
                 "charge_schedule": charge_schedule,
                 "climate_temp": ev.get("climate_temp", "normal"),
                 "climate_duration": ev.get("climate_duration", 30),
-                "climate_defrost": ev.get("climate_defrost", True),
+                # None means the vehicle reports no setting: treat it as off.
+                "climate_defrost": bool(ev.get("climate_defrost", True)),
             })
         except HondaAuthError:
             self.auth_error.emit()
