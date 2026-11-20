@@ -7,9 +7,13 @@ from myhondaplus_desktop.session import AppSession
 class DummyStorage:
     def __init__(self):
         self.clear_calls = 0
+        self.clear_tokens_calls = 0
 
     def clear(self):
         self.clear_calls += 1
+
+    def clear_tokens(self):
+        self.clear_tokens_calls += 1
 
 
 class DummyTokens:
@@ -88,7 +92,7 @@ def test_apply_login_tokens_sets_user_id(monkeypatch):
     }]
 
 
-def test_reset_clears_storage_and_replaces_api(monkeypatch):
+def test_reset_clears_tokens_keeps_device_key_and_replaces_api(monkeypatch):
     storage = DummyStorage()
     initial_api = DummyAPI(storage)
     created_apis = []
@@ -103,7 +107,8 @@ def test_reset_clears_storage_and_replaces_api(monkeypatch):
 
     new_api = session.reset()
 
-    assert storage.clear_calls == 1
+    assert storage.clear_tokens_calls == 1
+    assert storage.clear_calls == 0
     assert new_api is created_apis[0]
     assert session.api is new_api
 
