@@ -152,7 +152,7 @@ Same group as the language selector. Pick **System default** (follows the OS col
 
 - Python 3.11+
 - PyQt6 >= 6.6
-- [pymyhondaplus](https://pypi.org/project/pymyhondaplus/) >= 5.12.0b3
+- [pymyhondaplus](https://pypi.org/project/pymyhondaplus/) >= 5.12.0
 
 ### Optional
 
